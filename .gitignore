@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment variables - NEVER push this!
+.env
+backend/.env
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db

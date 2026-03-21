@@ -3,12 +3,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
+from database import engine, Base
+from models.user import User, UserSkill, ResumeAnalysis
+from models.job import JobPosting
+Base.metadata.create_all(bind=engine)
+
 from routes.auth import router as auth_router
 from routes.resume import router as resume_router
 from routes.profile import router as profile_router
 from routes.jobs import router as jobs_router
-
-load_dotenv()
 
 app = FastAPI(
     title="SkillNeuron AI API",
@@ -33,7 +38,7 @@ app.include_router(jobs_router)
 
 @app.get("/")
 def root():
-    return {"message": "SkillNeuron AI backend is running!"}
+    return {"message": "SkillNeuron AI backend is running! 🚀"}
 
 @app.get("/health")
 def health_check():

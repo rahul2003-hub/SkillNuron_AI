@@ -1,14 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from database import get_db
+from models.job import JobPosting
 from services.ai_service import match_jobs_to_candidate
-from typing import Optional
 import uuid
-from datetime import datetime
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
-
-# Temporary in-memory storage (we'll add database later)
-jobs_db = []
 
 
 # --- Request Models ---
@@ -31,88 +29,114 @@ class JobMatchRequest(BaseModel):
 # --- Endpoints ---
 
 @router.get("/")
-async def get_all_jobs():
-    """Get all job postings"""
+async def get_all_jobs(db: Session = Depends(get_db)):
+    """Get all job postings from PostgreSQL"""
+    jobs = db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()
     return {
         "success": True,
-        "total": len(jobs_db),
-        "jobs": jobs_db
+        "total": len(jobs),
+        "jobs": [
+            {
+                "id": str(j.id),
+                "title": j.title,
+                "company": j.company,
+                "location": j.location,
+                "type": j.type,
+                "salary": j.salary,
+                "requiredSkills": j.required_skills or [],
+                "description": j.description,
+                "postedBy": j.posted_by,
+                "postedDate": str(j.created_at.date()) if j.created_at else ""
+            }
+            for j in jobs
+        ]
     }
 
 
 @router.post("/")
-async def create_job(job: JobPostingRequest):
-    """Create a new job posting"""
+async def create_job(job: JobPostingRequest, db: Session = Depends(get_db)):
+    """Create a new job posting — saves to PostgreSQL"""
 
     if not job.title or not job.company:
-        raise HTTPException(
-            status_code=400,
-            detail="Job title and company are required"
-        )
+        raise HTTPException(status_code=400, detail="Job title and company are required")
 
-    new_job = {
-        "id": str(uuid.uuid4()),
-        "title": job.title,
-        "company": job.company,
-        "location": job.location,
-        "type": job.type,
-        "salary": job.salary,
-        "requiredSkills": job.required_skills,
-        "description": job.description,
-        "postedBy": job.posted_by,
-        "postedDate": datetime.now().strftime("%Y-%m-%d"),
-    }
+    new_job = JobPosting(
+        title=job.title,
+        company=job.company,
+        location=job.location,
+        type=job.type,
+        salary=job.salary,
+        required_skills=job.required_skills,
+        description=job.description,
+        posted_by=job.posted_by
+    )
 
-    jobs_db.append(new_job)
+    db.add(new_job)
+    db.commit()
+    db.refresh(new_job)
 
     return {
         "success": True,
         "message": "Job posted successfully",
-        "job": new_job
+        "job": {
+            "id": str(new_job.id),
+            "title": new_job.title,
+            "company": new_job.company,
+            "location": new_job.location,
+            "type": new_job.type,
+            "salary": new_job.salary,
+            "requiredSkills": new_job.required_skills or [],
+            "description": new_job.description,
+            "postedBy": new_job.posted_by,
+            "postedDate": str(new_job.created_at.date())
+        }
     }
 
 
 @router.delete("/{job_id}")
-async def delete_job(job_id: str):
-    """Delete a job posting by ID"""
+async def delete_job(job_id: str, db: Session = Depends(get_db)):
+    """Delete a job posting from PostgreSQL"""
 
-    job = next((j for j in jobs_db if j["id"] == job_id), None)
-
+    job = db.query(JobPosting).filter(JobPosting.id == job_id).first()
     if not job:
-        raise HTTPException(
-            status_code=404,
-            detail="Job not found"
-        )
+        raise HTTPException(status_code=404, detail="Job not found")
 
-    jobs_db.remove(job)
+    db.delete(job)
+    db.commit()
 
-    return {
-        "success": True,
-        "message": "Job deleted successfully"
-    }
+    return {"success": True, "message": "Job deleted successfully"}
 
 
 @router.post("/match")
-async def match_jobs(request: JobMatchRequest):
-    """AI-powered job matching based on user skills"""
+async def match_jobs(request: JobMatchRequest, db: Session = Depends(get_db)):
+    """AI-powered job matching using real jobs from PostgreSQL"""
 
     if not request.user_skills:
-        raise HTTPException(
-            status_code=400,
-            detail="Please provide at least one skill"
-        )
+        raise HTTPException(status_code=400, detail="Please provide at least one skill")
 
-    if not jobs_db:
+    jobs = db.query(JobPosting).all()
+
+    if not jobs:
         return {
             "success": True,
-            "message": "No jobs available to match",
+            "message": "No jobs available yet",
             "matches": []
         }
+
+    job_listings = [
+        {
+            "id": str(j.id),
+            "title": j.title,
+            "company": j.company,
+            "requiredSkills": j.required_skills or []
+        }
+        for j in jobs
+    ]
 
     try:
         matches = match_jobs_to_candidate(
             user_skills=request.user_skills,
-            job_listings=jobs_db
+            job_listings=job_listings
         )
         return {
             "success": True,
@@ -120,7 +144,4 @@ async def match_jobs(request: JobMatchRequest):
             "matches": matches
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Job matching failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Job matching failed: {str(e)}")

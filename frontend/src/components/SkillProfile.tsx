@@ -2,49 +2,35 @@ import { useState } from 'react';
 import { Plus, X, Award, Sparkles } from 'lucide-react';
 import { Skill } from '../App';
 
-const initialSkills: Skill[] = [
-  { name: 'JavaScript', level: 85, category: 'Programming' },
-  { name: 'React', level: 80, category: 'Frontend' },
-  { name: 'Python', level: 70, category: 'Programming' },
-  { name: 'SQL', level: 65, category: 'Database' },
-  { name: 'Git', level: 75, category: 'Tools' },
-  { name: 'HTML/CSS', level: 90, category: 'Frontend' },
-];
+interface SkillProfileProps {
+  skills: Skill[];
+  setSkills: (skills: Skill[]) => void;
+}
 
-export function SkillProfile() {
-  const [skills, setSkills] = useState<Skill[]>(initialSkills);
+export function SkillProfile({ skills, setSkills }: SkillProfileProps) {
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [newSkill, setNewSkill] = useState({ name: '', level: 50, category: 'Programming' });
 
   const getCategoryAccentClass = (category: string) => {
     switch (category) {
-      case 'Programming':
-        return 'text-purple-700';
-      case 'Frontend':
-        return 'text-pink-600';
-      case 'Database':
-        return 'text-sky-600';
-      case 'Tools':
-        return 'text-amber-600';
-      default:
-        return 'text-gray-900';
+      case 'Programming': return 'text-purple-700';
+      case 'Frontend': return 'text-pink-600';
+      case 'Database': return 'text-sky-600';
+      case 'Tools': return 'text-amber-600';
+      default: return 'text-gray-900';
     }
   };
 
   const getCategoryBadgeBg = (category: string) => {
     switch (category) {
-      case 'Programming':
-        return 'bg-purple-100 text-purple-700';
-      case 'Frontend':
-        return 'bg-pink-100 text-pink-600';
-      case 'Database':
-        return 'bg-sky-100 text-sky-600';
-      case 'Tools':
-        return 'bg-amber-100 text-amber-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
+      case 'Programming': return 'bg-purple-100 text-purple-700';
+      case 'Frontend': return 'bg-pink-100 text-pink-600';
+      case 'Database': return 'bg-sky-100 text-sky-600';
+      case 'Tools': return 'bg-amber-100 text-amber-700';
+      default: return 'bg-gray-100 text-gray-700';
     }
-  }
+  };
+
   const handleAddSkill = () => {
     if (newSkill.name.trim()) {
       setSkills([...skills, { ...newSkill, name: newSkill.name.trim() }]);
@@ -58,133 +44,137 @@ export function SkillProfile() {
   };
 
   const categories = Array.from(new Set(skills.map(s => s.category)));
-  const averageLevel = Math.round(skills.reduce((acc, s) => acc + s.level, 0) / skills.length);
 
   return (
-    <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Total Skills</span>
-            <Award className="w-5 h-5 text-purple-600" />
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-6 shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+            <Award className="w-6 h-6" />
           </div>
-          <p className="text-3xl text-gray-900">{skills.length}</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Categories</span>
-            <Sparkles className="w-5 h-5 text-pink-600" />
+          <div>
+            <h2 className="text-2xl mb-1">My Skill Profile</h2>
+            <p className="opacity-90 text-sm">
+              {skills.length} skills added · These are shared with Gap Analysis and Career Path tabs
+            </p>
           </div>
-          <p className="text-3xl text-gray-900">{categories.length}</p>
-        </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">Average Level</span>
-            <Award className="w-5 h-5 text-blue-600" />
-          </div>
-          <p className="text-3xl text-gray-900">{averageLevel}%</p>
         </div>
       </div>
 
-      {/* Skills Section */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl text-gray-900">Your Skills</h2>
-          <button
-            onClick={() => setShowAddSkill(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            Add Skill
-          </button>
-        </div>
+      {/* Info banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-800">
+          Add your real skills here. The <strong>Gap Analysis</strong> and <strong>Career Path</strong> tabs will use these skills to give you personalised AI recommendations.
+        </p>
+      </div>
 
-        {/* Add Skill Form */}
-        {showAddSkill && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
+      {/* Skills by category */}
+      {categories.map(category => (
+        <div key={category} className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className={`text-lg font-medium ${getCategoryAccentClass(category)}`}>
+              {category}
+            </span>
+            <span className={`text-xs px-2 py-1 rounded-full ${getCategoryBadgeBg(category)}`}>
+              {skills.filter(s => s.category === category).length} skills
+            </span>
+          </div>
+          <div className="space-y-3">
+            {skills.filter(s => s.category === category).map(skill => (
+              <div key={skill.name} className="flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm text-gray-700">{skill.name}</span>
+                    <span className="text-sm text-gray-500">{skill.level}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                      style={{ width: `${skill.level}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleRemoveSkill(skill.name)}
+                  className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {/* Add Skill */}
+      {showAddSkill ? (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="text-gray-900 mb-4">Add New Skill</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Skill Name</label>
               <input
                 type="text"
-                placeholder="Skill name"
+                placeholder="e.g. TypeScript, Docker, AWS..."
                 value={newSkill.name}
-                onChange={(e) => setNewSkill({ ...newSkill, name: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                onChange={e => setNewSkill({ ...newSkill, name: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400"
               />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Proficiency Level: {newSkill.level}%
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={newSkill.level}
+                onChange={e => setNewSkill({ ...newSkill, level: Number(e.target.value) })}
+                className="w-full accent-purple-600"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Category</label>
               <select
                 value={newSkill.category}
-                onChange={(e) => setNewSkill({ ...newSkill, category: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                onChange={e => setNewSkill({ ...newSkill, category: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400"
               >
-                <option value="Programming">Programming</option>
-                <option value="Frontend">Frontend</option>
-                <option value="Backend">Backend</option>
-                <option value="Database">Database</option>
-                <option value="Tools">Tools</option>
-                <option value="Soft Skills">Soft Skills</option>
+                <option>Programming</option>
+                <option>Frontend</option>
+                <option>Database</option>
+                <option>Tools</option>
+                <option>Other</option>
               </select>
-              <div>
-                <label className="text-sm text-gray-600">Level: {newSkill.level}%</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newSkill.level}
-                  onChange={(e) => setNewSkill({ ...newSkill, level: parseInt(e.target.value) })}
-                  className="w-full"
-                />
-              </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleAddSkill}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 rounded-lg hover:shadow-lg transition-all"
               >
-                Add
+                Add Skill
               </button>
               <button
                 onClick={() => setShowAddSkill(false)}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
             </div>
           </div>
-        )}
-
-        {/* Skills by Category */}
-        {categories.map(category => (
-          <div key={category} className="mb-8 last:mb-0">
-            <h3 className={`mb-3 font-semibold ${getCategoryAccentClass(category)}`}>{category}</h3>
-            <div className="space-y-4">
-              {skills
-                .filter(skill => skill.category === category)
-                .map(skill => (
-                  <div key={skill.name} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50 transition-all">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-800 font-medium">{skill.name}</span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getCategoryBadgeBg(category)}`}>{skill.level}%</span>
-                      </div>
-                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-500 ease-out rounded-full"
-                          style={{ width: `${skill.level}%` }}
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveSkill(skill.name)}
-                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-            </div>
-          </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowAddSkill(true)}
+          className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          Add New Skill
+        </button>
+      )}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Brain, LogOut, User, TrendingUp, Target, Briefcase, BookOpen, ChevronRight, FileSearch } from 'lucide-react';
+import { Brain, LogOut, User, TrendingUp, Target, Briefcase, FileSearch } from 'lucide-react';
 import { SkillProfile } from './SkillProfile';
 import { SkillGapAnalysis } from './SkillGapAnalysis';
 import { CareerPathView } from './CareerPathView';
 import { JobRecommendations } from './JobRecommendations';
 import { ResumeAnalyzer } from './ResumeAnalyzer';
+import { Skill } from '../App';
 
 interface JobSeekerDashboardProps {
   userName: string;
@@ -13,8 +14,21 @@ interface JobSeekerDashboardProps {
 
 type Tab = 'profile' | 'resume-analyzer' | 'gap-analysis' | 'career-path' | 'job-recommendations';
 
+// Default skills to start with
+const defaultSkills: Skill[] = [
+  { name: 'JavaScript', level: 85, category: 'Programming' },
+  { name: 'React', level: 80, category: 'Frontend' },
+  { name: 'Python', level: 70, category: 'Programming' },
+  { name: 'SQL', level: 65, category: 'Database' },
+  { name: 'Git', level: 75, category: 'Tools' },
+  { name: 'HTML/CSS', level: 90, category: 'Frontend' },
+];
+
 export function JobSeekerDashboard({ userName, onLogout }: JobSeekerDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
+
+  // Skills state lifted here — shared across ALL tabs
+  const [skills, setSkills] = useState<Skill[]>(defaultSkills);
 
   return (
     <div className="min-h-screen">
@@ -47,70 +61,41 @@ export function JobSeekerDashboard({ userName, onLogout }: JobSeekerDashboardPro
         {/* Navigation Tabs */}
         <div className="bg-white rounded-xl shadow-sm mb-8 p-2 overflow-x-auto">
           <div className="flex md:grid md:grid-cols-5 gap-2 min-w-max md:min-w-0">
-            <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === 'profile'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span className="hidden sm:inline">Profile</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('resume-analyzer')}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === 'resume-analyzer'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <FileSearch className="w-4 h-4" />
-              <span className="hidden sm:inline">Resume Analyzer</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('gap-analysis')}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === 'gap-analysis'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Gap Analysis</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('career-path')}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === 'career-path'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Career Path</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('job-recommendations')}
-              className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
-                activeTab === 'job-recommendations'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Briefcase className="w-4 h-4" />
-              <span className="hidden sm:inline">Jobs</span>
-            </button>
+            {[
+              { id: 'profile', icon: User, label: 'Profile' },
+              { id: 'resume-analyzer', icon: FileSearch, label: 'Resume Analyzer' },
+              { id: 'gap-analysis', icon: Target, label: 'Gap Analysis' },
+              { id: 'career-path', icon: TrendingUp, label: 'Career Path' },
+              { id: 'job-recommendations', icon: Briefcase, label: 'Jobs' },
+            ].map(({ id, icon: Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as Tab)}
+                className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all whitespace-nowrap ${
+                  activeTab === id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Content Area */}
+        {/* Content Area — skills passed as props to all tabs */}
         <div>
-          {activeTab === 'profile' && <SkillProfile />}
+          {activeTab === 'profile' && (
+            <SkillProfile skills={skills} setSkills={setSkills} />
+          )}
           {activeTab === 'resume-analyzer' && <ResumeAnalyzer />}
-          {activeTab === 'gap-analysis' && <SkillGapAnalysis />}
-          {activeTab === 'career-path' && <CareerPathView />}
+          {activeTab === 'gap-analysis' && (
+            <SkillGapAnalysis skills={skills} />
+          )}
+          {activeTab === 'career-path' && (
+            <CareerPathView skills={skills} />
+          )}
           {activeTab === 'job-recommendations' && <JobRecommendations />}
         </div>
       </div>

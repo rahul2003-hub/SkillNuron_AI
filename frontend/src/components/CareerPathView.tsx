@@ -1,97 +1,51 @@
-import { TrendingUp, ArrowRight, DollarSign, Clock, Target, Zap, Cpu, Server, Users, Shield, Cloud } from 'lucide-react';
-import { CareerPath } from '../App';
+import { useState } from 'react';
+import { TrendingUp, Clock, Target, Loader2, Sparkles, Brain, ArrowRight } from 'lucide-react';
+import { getCareerPath } from '../services/api';
+import { Skill } from '../App';
 
-const careerPaths: CareerPath[] = [
-  {
-    role: 'Senior Full Stack Developer',
-    level: 'Next Step (6-12 months)',
-    timeline: '6-12 months',
-    requiredSkills: ['TypeScript', 'Node.js', 'Docker', 'AWS', 'System Design'],
-    averageSalary: '$120k - $160k',
-  },
-  {
-    role: 'Technical Lead',
-    level: 'Mid-term Goal (1-2 years)',
-    timeline: '1-2 years',
-    requiredSkills: ['Leadership', 'Architecture', 'Code Review', 'Mentoring', 'Project Management'],
-    averageSalary: '$140k - $180k',
-  },
-  {
-    role: 'Engineering Manager',
-    level: 'Long-term Goal (2-4 years)',
-    timeline: '2-4 years',
-    requiredSkills: ['Team Management', 'Strategic Planning', 'Hiring', 'Budget Management', 'Stakeholder Communication'],
-    averageSalary: '$160k - $220k',
-  },
-  {
-    role: 'VP of Engineering',
-    level: 'Executive Path (4+ years)',
-    timeline: '4+ years',
-    requiredSkills: ['Org Design', 'Strategic Vision', 'Executive Communication', 'P&L Management', 'Innovation Leadership'],
-    averageSalary: '$220k - $350k+',
-  },
-];
+interface CareerPathViewProps {
+  skills: Skill[];
+}
 
-const alternativePaths = [
-  {
-    title: 'Staff Engineer (IC Track)',
-    description: 'Deep technical expertise without management responsibilities',
-    salary: '$180k - $280k',
-    skills: ['Advanced Architecture', 'Technical Strategy', 'Cross-team Collaboration'],
-  },
-  {
-    title: 'Solutions Architect',
-    description: 'Design complex systems and guide technical decisions',
-    salary: '$140k - $200k',
-    skills: ['Cloud Architecture', 'System Design', 'Client Consulting'],
-  },
-  {
-    title: 'DevOps Lead',
-    description: 'Focus on automation, infrastructure, and deployment',
-    salary: '$130k - $180k',
-    skills: ['Kubernetes', 'CI/CD', 'Infrastructure as Code', 'Monitoring'],
-  },
-];
+export function CareerPathView({ skills }: CareerPathViewProps) {
+  const [targetRole, setTargetRole] = useState('');
+  const [experienceYears, setExperienceYears] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<any>(null);
 
-// Helper functions for alternative paths styling
-const getAlternativePathIcon = (index: number) => {
-  const icons = [
-    <Zap key="zap" className="w-5 h-5 text-purple-700" />,
-    <Cpu key="cpu" className="w-5 h-5 text-blue-700" />,
-    <Server key="server" className="w-5 h-5 text-amber-700" />,
-  ];
-  return icons[index] || icons[0];
-};
+  const getLevelColor = (level: string) => {
+    if (level?.toLowerCase().includes('junior')) return 'bg-green-100 text-green-700';
+    if (level?.toLowerCase().includes('mid')) return 'bg-blue-100 text-blue-700';
+    if (level?.toLowerCase().includes('senior')) return 'bg-purple-100 text-purple-700';
+    return 'bg-gray-100 text-gray-700';
+  };
 
-const getAlternativePathGradient = (index: number) => {
-  const gradients = [
-    'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%)',
-    'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)',
-    'linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(251, 146, 60, 0.08) 100%)',
-  ];
-  return gradients[index] || gradients[0];
-};
+  const handleGetCareerPath = async () => {
+    if (!targetRole.trim()) {
+      setError('Please enter a target role');
+      return;
+    }
+    if (skills.length === 0) {
+      setError('Please add your skills in the Profile tab first');
+      return;
+    }
 
-const getAlternativePathCardClass = (index: number) => {
-  return 'bg-white rounded-xl p-6 border border-gray-200/50 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300';
-};
+    setIsLoading(true);
+    setError('');
+    setResult(null);
 
-const getAlternativePathIconBg = (index: number) => {
-  const backgrounds = ['bg-purple-100', 'bg-blue-100', 'bg-amber-100'];
-  return backgrounds[index] || backgrounds[0];
-};
+    try {
+      const skillNames = skills.map(s => s.name);
+      const data = await getCareerPath(skillNames, experienceYears, targetRole);
+      setResult(data.recommendation);
+    } catch (err: any) {
+      setError(err.message || 'Failed to get career path. Make sure your backend is running.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-const getAlternativePathBadgeBg = (index: number) => {
-  const backgrounds = ['bg-purple-100', 'bg-blue-100', 'bg-amber-100'];
-  return backgrounds[index] || backgrounds[0];
-};
-
-const getAlternativePathTextColor = (index: number) => {
-  const colors = ['text-purple-700', 'text-blue-700', 'text-amber-700'];
-  return colors[index] || colors[0];
-};
-
-export function CareerPathView() {
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -101,151 +55,209 @@ export function CareerPathView() {
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl mb-2">AI-Generated Career Path</h2>
+            <h2 className="text-2xl mb-2">AI Career Path Recommender</h2>
             <p className="opacity-90">
-              Based on your current skills, market trends, and career progression data, here's your personalized roadmap to success.
+              Get a personalised career roadmap based on your current skills and experience.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Current Position */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border-2 border-purple-300">
-        <div className="flex items-center gap-3 mb-2">
-          <Target className="w-5 h-5 text-purple-600" />
-          <span className="text-sm text-purple-600">CURRENT POSITION</span>
-        </div>
-        <h3 className="text-2xl text-gray-900 mb-2">Mid-Level Full Stack Developer</h3>
-        <p className="text-gray-600 mb-4">You have strong foundational skills in web development with room to grow in modern technologies.</p>
-        <div className="flex flex-wrap gap-2">
-          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">JavaScript</span>
-          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">React</span>
-          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">Python</span>
-          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">SQL</span>
-        </div>
+      {/* Current Skills */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <h3 className="text-gray-900 mb-3">Your Current Skills ({skills.length})</h3>
+        {skills.length === 0 ? (
+          <p className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+            ⚠️ No skills found. Go to the <strong>Profile</strong> tab and add your skills first.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {skills.map(skill => (
+              <span key={skill.name} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Career Progression */}
+      {/* Input Form */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-2xl text-gray-900 mb-6">Your Career Progression Path</h3>
-        <div className="space-y-6">
-          {careerPaths.map((path, index) => (
-            <div key={index}>
-              <div className="relative">
-                {index < careerPaths.length - 1 && (
-                  <div className="absolute left-6 top-full h-6 w-0.5 bg-gradient-to-b from-purple-300 to-transparent" />
-                )}
-                <div className="flex gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="text-xl text-gray-900 mb-1">{path.role}</h4>
-                        <span className="text-sm text-purple-600">{path.level}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 text-green-600 mb-1">
-                          <DollarSign className="w-4 h-4" />
-                          <span className="text-sm">{path.averageSalary}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="w-4 h-4" />
-                          <span className="text-sm">{path.timeline}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Required Skills:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {path.requiredSkills.map((skill, skillIndex) => (
-                          <span key={skillIndex} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        <h3 className="text-gray-900 mb-4">Tell us about your goal</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Target Role</label>
+            <input
+              type="text"
+              placeholder="e.g. Full Stack Developer, Data Scientist, ML Engineer..."
+              value={targetRole}
+              onChange={e => setTargetRole(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleGetCareerPath()}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">
+              Years of Experience: <strong>{experienceYears} {experienceYears === 1 ? 'year' : 'years'}</strong>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="15"
+              value={experienceYears}
+              onChange={e => setExperienceYears(Number(e.target.value))}
+              className="w-full accent-purple-600"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>0 (Fresher)</span>
+              <span>5 years</span>
+              <span>10 years</span>
+              <span>15+ years</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGetCareerPath}
+            disabled={isLoading}
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                AI is building your roadmap...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Get My Career Path
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="mt-4 flex items-center gap-3 text-purple-600">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+            <span className="text-sm">Groq AI is building your personalised roadmap... 3–5 seconds</span>
+          </div>
+        )}
+      </div>
+
+      {/* Results */}
+      {result && (
+        <>
+          {/* Summary Banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div className="flex items-start gap-3">
+              <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-blue-900 mb-1">
+                  Recommended Path: <strong>{result.recommended_path}</strong>
+                </h4>
+                <p className="text-sm text-blue-800">
+                  Total timeline to reach your goal: <strong>{result.total_timeline}</strong>
+                </p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Alternative Career Paths */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-2xl text-gray-900 mb-4">Alternative Career Paths</h3>
-        <p className="text-gray-600 mb-6">
-          Not interested in management? Consider these alternative paths that leverage your technical skills.
-        </p>
-        <div className="grid md:grid-cols-3 gap-4">
-          {alternativePaths.map((alt, index) => (
-            <div key={index} className={getAlternativePathCardClass(index)} style={{ background: getAlternativePathGradient(index) }}>
-              <div className="flex items-start gap-3 mb-4">
-                <div className={`p-2.5 rounded-lg ${getAlternativePathIconBg(index)}`}>
-                  {getAlternativePathIcon(index)}
-                </div>
-                <h4 className="text-lg font-semibold text-gray-900 leading-tight">{alt.title}</h4>
-              </div>
+          {/* Career Path Steps */}
+          {result.career_paths?.length > 0 && (
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <h3 className="text-xl text-gray-900 mb-6">Your Career Roadmap</h3>
+              <div className="space-y-4">
+                {result.career_paths.map((path: any, index: number) => (
+                  <div key={index}>
+                    <div className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h4 className="text-lg text-gray-900">{path.role}</h4>
+                            <span className={`px-3 py-1 text-xs rounded-full ${getLevelColor(path.level)}`}>
+                              {path.level}
+                            </span>
+                          </div>
+                          {path.description && (
+                            <p className="text-sm text-gray-600 mb-3">{path.description}</p>
+                          )}
+                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4 text-purple-500" />
+                              <span>{path.timeline}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span className="text-green-500 font-medium text-base">₹</span>
+                              <span>{path.averageSalary}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{alt.description}</p>
+                      {/* Required Skills */}
+                      {path.requiredSkills?.length > 0 && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                            <Target className="w-3 h-3" /> Required skills
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {path.requiredSkills.map((skill: string, i: number) => (
+                              <span
+                                key={i}
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  skills.some(s => s.name.toLowerCase() === skill.toLowerCase())
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">
+                            🟢 Green = you already have this skill
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-4 ${getAlternativePathBadgeBg(index)}`}>
-                <DollarSign className={`w-4 h-4 ${getAlternativePathTextColor(index)}`} />
-                <span className={`text-sm font-semibold ${getAlternativePathTextColor(index)}`}>{alt.salary}</span>
-              </div>
-
-              <div className="space-y-2">
-                {alt.skills.map((skill, skillIndex) => (
-                  <div key={skillIndex} className="flex items-center gap-2 text-gray-600">
-                    <ArrowRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                    <span>{skill}</span>
+                    {/* Arrow between steps */}
+                    {index < result.career_paths.length - 1 && (
+                      <div className="flex justify-center my-2">
+                        <ArrowRight className="w-5 h-5 text-purple-400 rotate-90" />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      {/* Action Steps */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-        <h3 className="text-xl text-gray-900 mb-4">Next Steps to Advance Your Career</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">1</div>
-            <div>
-              <p className="text-gray-900 mb-1">Complete TypeScript & Node.js courses</p>
-              <p className="text-sm text-gray-600">Estimated: 2-3 months</p>
+          {/* Next Steps */}
+          {result.next_steps?.length > 0 && (
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+              <h3 className="text-xl text-gray-900 mb-4">Immediate Next Steps</h3>
+              <div className="space-y-3">
+                {result.next_steps.map((step: string, index: number) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+                      {index + 1}
+                    </div>
+                    <p className="text-gray-700 pt-1">{step}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">2</div>
-            <div>
-              <p className="text-gray-900 mb-1">Build 2-3 full-stack projects</p>
-              <p className="text-sm text-gray-600">Portfolio enhancement</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">3</div>
-            <div>
-              <p className="text-gray-900 mb-1">Get AWS certification</p>
-              <p className="text-sm text-gray-600">Career differentiator</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">4</div>
-            <div>
-              <p className="text-gray-900 mb-1">Apply to senior positions</p>
-              <p className="text-sm text-gray-600">6-9 months from now</p>
-            </div>
-          </div>
-        </div>
-      </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
-
-

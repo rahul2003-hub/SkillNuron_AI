@@ -1,4 +1,6 @@
 import os
+import json
+import re
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -6,6 +8,35 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 MODEL = "llama-3.3-70b-versatile"
+
+
+def clean_json_response(text: str) -> dict:
+    """Remove markdown code blocks and parse JSON safely"""
+    # Remove ```json ... ``` or ``` ... ``` wrappers
+    text = text.strip()
+    text = re.sub(r'^```json\s*', '', text)
+    text = re.sub(r'^```\s*', '', text)
+    text = re.sub(r'\s*```$', '', text)
+    text = text.strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Find JSON object using regex - extract everything between first { and last }
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    # Last resort - raise clear error
+    raise ValueError(f"Could not parse AI response as JSON. Raw response: {text[:200]}")
+
+
 
 def analyze_skill_gap(user_skills: list, target_role: str) -> dict:
     prompt = f"""
@@ -37,74 +68,123 @@ def analyze_skill_gap(user_skills: list, target_role: str) -> dict:
         "summary": "brief summary of the gap analysis"
     }}
     
-    Return ONLY the JSON, no extra text.
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
-    
+
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=2000
     )
-    
-    import json
+
     result = response.choices[0].message.content
-    return json.loads(result)
+    return clean_json_response(result)
 
 
 def analyze_resume(resume_text: str) -> dict:
     prompt = f"""
-    You are an expert resume reviewer and ATS specialist.
+    You are an expert ATS (Applicant Tracking System) specialist and resume reviewer.
     
-    Analyze this resume text and respond in this exact JSON format:
+    Analyze the resume text using these SPECIFIC ATS scoring criteria:
+    
+    ATS SCORING RULES (be strict and realistic):
+    
+    1. ats_compatibility (0-100): Check for:
+       - Standard section headings (Experience, Education, Skills, Summary)
+       - No tables, columns, images or special characters
+       - Standard fonts and clean formatting
+       - Contact info present (name, email, phone)
+       - File is text-readable (not scanned)
+       Deduct points for each missing item.
+    
+    2. keyword_optimization (0-100): Check for:
+       - Industry-specific technical keywords present
+       - Action verbs (developed, led, built, managed, designed)
+       - Measurable achievements with numbers
+       - Job title keywords matching common roles
+       Deduct 10 points for each missing category.
+    
+    3. content_quality (0-100): Check for:
+       - Professional summary or objective
+       - Work experience with dates and company names
+       - Quantified achievements (%, numbers, INR amounts)
+       - Education section complete
+       Deduct points for vague or missing content.
+    
+    4. formatting (0-100): Check for:
+       - Consistent date formats
+       - Proper use of bullet points
+       - Logical reverse-chronological order
+       - No spelling/grammar errors visible
+       - Appropriate length (1-2 pages worth of content)
+    
+    5. impact_score (0-100): Check for:
+       - Strong action verbs at start of bullets
+       - Quantified results (increased sales by 30%)
+       - Leadership or ownership language
+       - Unique value proposition visible
+    
+    6. overall_score: Weighted average:
+       ats_compatibility x 0.25 + keyword_optimization x 0.25 + 
+       content_quality x 0.20 + formatting x 0.15 + impact_score x 0.15
+       Round to nearest integer.
+    
+    Return ONLY this JSON structure, no markdown, no code blocks:
     {{
-        "overall_score": 75,
+        "overall_score": 72,
         "ats_compatibility": 80,
         "content_quality": 70,
         "formatting": 75,
         "keyword_optimization": 65,
-        "impact_score": 72,
+        "impact_score": 68,
         "strengths": [
-            {{"title": "strength title", "description": "description"}}
+            {{"title": "strength title", "description": "specific observation from resume"}}
         ],
         "improvements": [
-            {{"title": "issue title", "description": "how to fix it", "severity": "high/medium/low"}}
+            {{"title": "issue title", "description": "specific actionable fix", "severity": "high/medium/low"}}
         ],
-        "keywords_present": ["keyword1", "keyword2"],
-        "keywords_missing": ["keyword1", "keyword2"],
-        "keywords_recommended": ["keyword1", "keyword2"],
-        "extracted_skills": ["skill1", "skill2"],
-        "extracted_name": "full name if found",
-        "extracted_email": "email if found",
-        "summary": "brief overall feedback"
+        "keywords_present": ["actual keywords found in resume"],
+        "keywords_missing": ["important missing keywords for this role"],
+        "keywords_recommended": ["suggested keywords to add"],
+        "extracted_skills": ["skills found in resume"],
+        "extracted_name": "name from resume",
+        "extracted_email": "email from resume",
+        "summary": "2 sentence honest overall feedback"
     }}
     
-    Resume text:
-    {resume_text[:3000]}
-    
-    Return ONLY the JSON, no extra text.
+    Resume text to analyze:
+    {resume_text[:2500]}
     """
-    
+
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=2000
     )
-    
-    import json
+
     result = response.choices[0].message.content
-    return json.loads(result)
+    return clean_json_response(result)
 
 
 def recommend_career_path(user_skills: list, experience_years: int, target_role: str) -> dict:
     prompt = f"""
     You are an expert career advisor.
     
+    You are an expert career advisor specializing in the Indian job market.
+    
     User profile:
     - Current skills: {', '.join(user_skills)}
     - Years of experience: {experience_years}
     - Target role: {target_role}
+    - Location preference: Indian cities (Mumbai, Pune, Navi Mumbai, Bangalore, Hyderabad, Noida, Chennai, Delhi)
+    
+    Important rules:
+    - All salaries MUST be in Indian Rupees (INR) per annum e.g. "₹6,00,000 - ₹10,00,000 per annum"
+    - Mention which Indian cities have the most demand for each role
+    - Use Indian job market standards for experience levels
+    - Reference Indian companies and platforms where relevant (TCS, Infosys, Wipro, Flipkart, Swiggy, Zomato, startups etc.)
     
     Recommend a career path in this exact JSON format:
     {{
@@ -114,7 +194,7 @@ def recommend_career_path(user_skills: list, experience_years: int, target_role:
                 "level": "Junior/Mid/Senior",
                 "timeline": "6 months",
                 "requiredSkills": ["skill1", "skill2"],
-                "averageSalary": "$80,000 - $100,000",
+                "averageSalary": "₹8,00,000 - ₹12,00,000 per annum",
                 "description": "brief role description"
             }}
         ],
@@ -123,19 +203,18 @@ def recommend_career_path(user_skills: list, experience_years: int, target_role:
         "next_steps": ["step1", "step2", "step3"]
     }}
     
-    Return ONLY the JSON, no extra text.
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
-    
+
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=2000
     )
-    
-    import json
+
     result = response.choices[0].message.content
-    return json.loads(result)
+    return clean_json_response(result)
 
 
 def match_jobs_to_candidate(user_skills: list, job_listings: list) -> list:
@@ -159,17 +238,16 @@ def match_jobs_to_candidate(user_skills: list, job_listings: list) -> list:
         ]
     }}
     
-    Return ONLY the JSON, no extra text.
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
-    
+
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
         max_tokens=1500
     )
-    
-    import json
+
     result = response.choices[0].message.content
-    parsed = json.loads(result)
+    parsed = clean_json_response(result)
     return parsed["matches"]

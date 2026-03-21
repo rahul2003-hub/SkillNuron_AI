@@ -1,13 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from pydantic import BaseModel
 from services.ai_service import analyze_resume
-import fitz  # PyMuPDF
-import io
+import fitz
 
 router = APIRouter(prefix="/api/resume", tags=["Resume"])
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extract text from PDF bytes using PyMuPDF"""
     try:
         pdf_document = fitz.open(stream=file_bytes, filetype="pdf")
         text = ""
@@ -19,70 +18,66 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         raise HTTPException(status_code=400, detail=f"Could not read PDF: {str(e)}")
 
 
-@router.post("/upload")
-async def upload_resume(file: UploadFile = File(...)):
-    """Upload a resume PDF and extract text"""
+@router.post("/analyze")
+async def analyze_resume_endpoint(file: UploadFile = File(...)):
+    """Upload resume PDF and get full AI analysis"""
 
-    # Check file type
-    if not file.filename.endswith(".pdf"):
+    if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported"
+            detail="Only PDF files are supported. Please upload a .pdf file."
         )
 
-    # Check file size (max 10MB)
     file_bytes = await file.read()
+
     if len(file_bytes) > 10 * 1024 * 1024:
         raise HTTPException(
             status_code=400,
-            detail="File too large. Maximum size is 10MB"
+            detail="File too large. Maximum size is 10MB."
         )
 
-    # Extract text from PDF
     resume_text = extract_text_from_pdf(file_bytes)
 
-    if not resume_text:
+    # If PDF text extraction failed, return specific error code
+    if not resume_text or len(resume_text) < 30:
         raise HTTPException(
-            status_code=400,
-            detail="Could not extract text from PDF. Make sure it is not a scanned image."
+            status_code=422,
+            detail="PDF_TEXT_EXTRACTION_FAILED"
         )
 
-    return {
-        "success": True,
-        "filename": file.filename,
-        "text_length": len(resume_text),
-        "resume_text": resume_text
-    }
-
-
-@router.post("/analyze")
-async def analyze_resume_endpoint(file: UploadFile = File(...)):
-    """Upload resume and get full AI analysis"""
-
-    # Check file type
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF files are supported"
-        )
-
-    file_bytes = await file.read()
-
-    # Extract text
-    resume_text = extract_text_from_pdf(file_bytes)
-
-    if not resume_text:
-        raise HTTPException(
-            status_code=400,
-            detail="Could not extract text from PDF"
-        )
-
-    # Send to AI for analysis
     try:
         analysis = analyze_resume(resume_text)
         return {
             "success": True,
             "filename": file.filename,
+            "analysis": analysis
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI analysis failed: {str(e)}"
+        )
+
+
+class ResumeTextRequest(BaseModel):
+    resume_text: str
+
+
+@router.post("/analyze-text")
+async def analyze_resume_from_text(request: ResumeTextRequest):
+    """Analyze resume from pasted plain text — fallback when PDF fails"""
+
+    if not request.resume_text or len(request.resume_text) < 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Please paste at least some resume content"
+        )
+
+    try:
+        analysis = analyze_resume(request.resume_text)
+        return {
+            "success": True,
+            "filename": "pasted_text",
             "analysis": analysis
         }
     except Exception as e:

@@ -14,6 +14,7 @@ from routes.auth import router as auth_router
 from routes.resume import router as resume_router
 from routes.profile import router as profile_router
 from routes.jobs import router as jobs_router
+from routes.psychometric import router as psychometric_router
 
 app = FastAPI(
     title="SkillNeuron AI API",
@@ -35,6 +36,7 @@ app.include_router(auth_router)
 app.include_router(resume_router)
 app.include_router(profile_router)
 app.include_router(jobs_router)
+app.include_router(psychometric_router)
 
 @app.get("/")
 def root():

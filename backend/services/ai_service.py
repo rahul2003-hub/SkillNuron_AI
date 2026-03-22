@@ -251,3 +251,63 @@ def match_jobs_to_candidate(user_skills: list, job_listings: list) -> list:
     result = response.choices[0].message.content
     parsed = clean_json_response(result)
     return parsed["matches"]
+
+def analyze_psychometric(answers: dict, career_roles: list) -> dict:
+    """
+    Takes user answers to tech career questions
+    and returns career personality profile + role recommendations
+    """
+
+    formatted_answers = "\n".join([
+        f"Q: {q}\nA: {a}" for q, a in answers.items()
+    ])
+
+    roles_list = ", ".join(career_roles)
+
+    prompt = f"""
+    You are an expert tech career psychologist specializing in the Indian IT industry.
+    
+    A user has answered these tech career interest questions:
+    
+    {formatted_answers}
+    
+    Available career roles to map to: {roles_list}
+    
+    Analyze their answers and respond in this exact JSON format:
+    {{
+        "personality_type": "The Architect / The Creator / The Analyst / The Innovator / The Strategist",
+        "personality_description": "2-3 sentence description of this tech personality",
+        "top_strengths": ["strength1", "strength2", "strength3"],
+        "work_style": "how this person works best in a tech environment",
+        "ideal_environment": "what kind of tech company or team suits them",
+        "career_matches": [
+            {{
+                "role": "exact role from the provided list",
+                "fit_score": 92,
+                "reason": "why this role suits their answers",
+                "indian_companies": ["Flipkart", "Razorpay", "CRED"]
+            }}
+        ],
+        "career_avoid": ["Role - reason why"],
+        "learning_style": "how they learn best technically",
+        "recommended_first_step": "one concrete action they should take this week",
+        "summary": "one paragraph overall tech career assessment"
+    }}
+    
+    Rules:
+    - career_matches must have 3 roles ordered by fit_score descending
+    - fit_score must be between 60 and 99
+    - indian_companies must be real Indian tech companies relevant to that role
+    - career_avoid must have 2 roles with reasons
+    - Return ONLY the JSON object. No markdown, no code blocks, no extra text.
+    """
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.4,
+        max_tokens=2000
+    )
+
+    result = response.choices[0].message.content
+    return clean_json_response(result)

@@ -2,9 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models.user import User, UserSkill, ResumeAnalysis
+from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from services.ai_service import analyze_skill_gap, recommend_career_path
+from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 import uuid
+from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api/profile", tags=["Profile"])
 
@@ -34,6 +36,104 @@ class SaveResumeAnalysisRequest(BaseModel):
 
 
 # --- Skills Endpoints ---
+
+# --- Profile Endpoints ---
+
+class UpdateProfileRequest(BaseModel):
+    user_id: str
+    education: str = ""
+    education_status: str = ""
+    graduation_year: str = ""
+    current_status: str = ""
+    target_role: str = ""
+    location: str = ""
+    phone: str = ""
+    linkedin: str = ""
+    github: str = ""
+
+
+@router.get("/info/{user_id}")
+async def get_profile(user_id: str, db: Session = Depends(get_db)):
+    """Get full profile info for a user"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    profile = db.query(UserProfile).filter(
+        UserProfile.user_id == user_id
+    ).first()
+
+    return {
+        "success": True,
+        "user": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "user_type": user.user_type,
+            "created_at": str(user.created_at)
+        },
+        "profile": {
+            "education": profile.education if profile else "",
+            "education_status": profile.education_status if profile else "",
+            "graduation_year": profile.graduation_year if profile else "",
+            "current_status": profile.current_status if profile else "",
+            "target_role": profile.target_role if profile else "",
+            "location": profile.location if profile else "",
+            "phone": profile.phone if profile else "",
+            "linkedin": profile.linkedin if profile else "",
+            "github": profile.github if profile else "",
+        }
+    }
+
+
+@router.post("/info/update")
+async def update_profile(request: UpdateProfileRequest, db: Session = Depends(get_db)):
+    """Create or update user profile info"""
+    user = db.query(User).filter(User.id == request.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    profile = db.query(UserProfile).filter(
+        UserProfile.user_id == request.user_id
+    ).first()
+
+    if profile:
+        # Update existing profile
+        profile.education = request.education
+        profile.education_status = request.education_status
+        profile.graduation_year = request.graduation_year
+        profile.current_status = request.current_status
+        profile.target_role = request.target_role
+        profile.location = request.location
+        profile.phone = request.phone
+        profile.linkedin = request.linkedin
+        profile.github = request.github
+        profile.updated_at = datetime.now(timezone.utc)
+    else:
+        # Create new profile
+        profile = UserProfile(
+            user_id=uuid.UUID(request.user_id),
+            education=request.education,
+            education_status=request.education_status,
+            graduation_year=request.graduation_year,
+            current_status=request.current_status,
+            target_role=request.target_role,
+            location=request.location,
+            phone=request.phone,
+            linkedin=request.linkedin,
+            github=request.github
+        )
+        db.add(profile)
+
+    db.commit()
+    return {"success": True, "message": "Profile updated successfully"}
+
+
+@router.get("/skill-suggestions")
+async def get_skill_suggestions():
+    """Return predefined skill suggestions for autocomplete"""
+    from models.skill import SKILL_SUGGESTIONS
+    return {"success": True, "suggestions": SKILL_SUGGESTIONS}
 
 @router.post("/skills/save")
 async def save_skills(request: SaveSkillsRequest, db: Session = Depends(get_db)):

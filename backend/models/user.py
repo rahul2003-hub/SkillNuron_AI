@@ -19,7 +19,26 @@ class User(Base):
     # Relationships
     skills = relationship("UserSkill", back_populates="user", cascade="all, delete")
     resume_analyses = relationship("ResumeAnalysis", back_populates="user", cascade="all, delete")
+    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete")
 
+class UserProfile(Base):
+    """Extended profile info — 1 row per user"""
+    __tablename__ = "user_profiles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
+    education = Column(String, default="")        # BCA / MCA / B.Tech etc.
+    education_status = Column(String, default="") # Completed / Pursuing
+    graduation_year = Column(String, default="")  # 2024 / 2025 etc.
+    current_status = Column(String, default="")   # Student / Fresher / Working
+    target_role = Column(String, default="")      # Full Stack Developer etc.
+    location = Column(String, default="")         # Mumbai / Pune etc.
+    phone = Column(String, default="")
+    linkedin = Column(String, default="")
+    github = Column(String, default="")
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="profile")
 
 class UserSkill(Base):
     __tablename__ = "user_skills"

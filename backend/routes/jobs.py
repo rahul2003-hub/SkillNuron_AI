@@ -5,6 +5,8 @@ from database import get_db
 from models.job import JobPosting
 from services.ai_service import match_jobs_to_candidate
 import uuid
+import os
+import httpx
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 
@@ -145,3 +147,91 @@ async def match_jobs(request: JobMatchRequest, db: Session = Depends(get_db)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Job matching failed: {str(e)}")
+
+ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
+ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
+
+@router.get("/search")
+async def search_jobs_adzuna(
+    keywords: str = "software developer",
+    location: str = "Mumbai",
+    results: int = 10
+):
+    """Search real Indian jobs from Adzuna API"""
+
+    # Indian city mapping for Adzuna
+    city_map = {
+        "Mumbai": "mumbai",
+        "Pune": "pune",
+        "Bangalore": "bangalore",
+        "Hyderabad": "hyderabad",
+        "Delhi": "delhi",
+        "Noida": "noida",
+        "Chennai": "chennai",
+        "Navi Mumbai": "navi-mumbai",
+        "Kolkata": "kolkata",
+        "Ahmedabad": "ahmedabad"
+    }
+
+    adzuna_location = city_map.get(location, location.lower())
+
+    url = (
+        f"https://api.adzuna.com/v1/api/jobs/in/search/1"
+        f"?app_id={ADZUNA_APP_ID}"
+        f"&app_key={ADZUNA_APP_KEY}"
+        f"&results_per_page={results}"
+        f"&what={keywords}"
+        f"&where={adzuna_location}"
+        f"&content-type=application/json"
+    )
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url)
+            data = response.json()
+
+        if "results" not in data:
+            return {
+                "success": False,
+                "message": "No results from Adzuna",
+                "jobs": []
+            }
+
+        jobs = []
+        for job in data["results"]:
+            # Convert salary from GBP/USD hint to INR estimate
+            salary_min = job.get("salary_min")
+            salary_max = job.get("salary_max")
+
+            if salary_min and salary_max:
+                # Adzuna India returns INR values
+                salary_str = f"₹{int(salary_min):,} - ₹{int(salary_max):,} per annum"
+            else:
+                salary_str = "Salary not disclosed"
+
+            jobs.append({
+                "id": job.get("id", ""),
+                "title": job.get("title", ""),
+                "company": job.get("company", {}).get("display_name", "Company"),
+                "location": job.get("location", {}).get("display_name", location),
+                "salary": salary_str,
+                "description": job.get("description", "")[:300] + "...",
+                "url": job.get("redirect_url", ""),
+                "posted_date": job.get("created", "")[:10],
+                "type": "Full-time",
+                "source": "Adzuna"
+            })
+
+        return {
+            "success": True,
+            "location": location,
+            "keywords": keywords,
+            "total": len(jobs),
+            "jobs": jobs
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Adzuna API error: {str(e)}"
+        )

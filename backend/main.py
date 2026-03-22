@@ -6,7 +6,8 @@ import os
 load_dotenv()
 
 from database import engine, Base
-from models.user import User, UserSkill, ResumeAnalysis
+from models.user import User, UserProfile, UserSkill, ResumeAnalysis
+from models.skill import SkillCategory
 from models.job import JobPosting
 Base.metadata.create_all(bind=engine)
 

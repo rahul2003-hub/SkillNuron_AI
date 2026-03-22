@@ -8,7 +8,7 @@ interface LoginPageProps {
   initialUserType: UserType;
 }
 
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPageProps) {
   const [userType, setUserType] = useState<UserType>(initialUserType || 'jobseeker');

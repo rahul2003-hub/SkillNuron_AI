@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Brain, ChevronRight, ChevronLeft, CheckCircle, Loader2, Sparkles, RotateCcw, Star, Target, Zap, ArrowRight } from 'lucide-react';
 
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 interface Option {
   id: string;

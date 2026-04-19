@@ -58,15 +58,26 @@ export function PsychometricTest() {
     }
   };
 
-  const handleAnswer = (optionId: string) => {
-    const qId = questions[currentQ].id;
-    setAnswers(prev => ({ ...prev, [qId]: optionId }));
-    // Auto advance after short delay
-    setTimeout(() => {
-      if (currentQ < questions.length - 1) {
-        setCurrentQ(prev => prev + 1);
+  const handleOptionSelect = (qId: string, optId: string) => {
+    if (optId !== 'E') {
+      setAnswers(prev => ({ ...prev, [qId]: optId }));
+      // Auto advance after short delay for standard options
+      setTimeout(() => {
+        if (currentQ < questions.length - 1) {
+          setCurrentQ(prev => prev + 1);
+        }
+      }, 400);
+    } else {
+      // If they click E, initialize it as 'E: ' so the text box appears, do NOT auto advance
+      const currentAnswer = answers[qId] || '';
+      if (!currentAnswer.startsWith('E')) {
+        setAnswers(prev => ({ ...prev, [qId]: 'E: ' }));
       }
-    }, 400);
+    }
+  };
+
+  const handleCustomTextChange = (qId: string, text: string) => {
+    setAnswers(prev => ({ ...prev, [qId]: `E: ${text}` }));
   };
 
   const handleSubmit = async () => {
@@ -80,7 +91,7 @@ export function PsychometricTest() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Analysis failed');
-      setResult(data.profile);
+      setResult(data.analysis); // Make sure this matches backend return (data.analysis)
     } catch (err: any) {
       setError(err.message || 'Analysis failed. Please try again.');
     } finally {
@@ -106,7 +117,7 @@ export function PsychometricTest() {
     'hover:border-blue-400 hover:bg-blue-50',
     'hover:border-teal-400 hover:bg-teal-50',
     'hover:border-amber-400 hover:bg-amber-50',
-    'hover:border-pink-400 hover:bg-pink-50',
+    'hover:border-pink-400 hover:bg-pink-50', // Option E color
   ];
 
   const SELECTED_COLORS = [
@@ -114,7 +125,7 @@ export function PsychometricTest() {
     'border-blue-500 bg-blue-50 text-blue-800',
     'border-teal-500 bg-teal-50 text-teal-800',
     'border-amber-500 bg-amber-50 text-amber-800',
-    'border-pink-500 bg-pink-50 text-pink-800',
+    'border-pink-500 bg-pink-50 text-pink-800', // Option E selected color
   ];
 
   if (isFetching) {
@@ -156,7 +167,7 @@ export function PsychometricTest() {
 
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-800">
-            <strong>15 questions · Takes 3–5 minutes · Tech focused</strong><br />
+            <strong>20 questions · Takes 5 minutes · Tech focused</strong><br />
             Covers: Backend · Frontend · Data · AI/ML · DevOps · Product roles
           </p>
         </div>
@@ -369,28 +380,47 @@ export function PsychometricTest() {
           </div>
 
           <div className="space-y-3">
-            {questions[currentQ].options.map((option, i) => (
-              <button
-                key={option.id}
-                onClick={() => handleAnswer(option.id)}
-                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all text-sm ${
-                  currentAnswered === option.id
-                    ? SELECTED_COLORS[i]
-                    : `border-gray-200 text-gray-700 ${OPTION_COLORS[i]}`
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center font-medium text-xs ${
-                    currentAnswered === option.id
-                      ? 'border-current bg-current text-white'
-                      : 'border-gray-300 text-gray-500'
-                  }`}>
-                    {option.id}
-                  </div>
-                  <span>{option.text}</span>
+            {questions[currentQ].options.map((option, i) => {
+              const isSelected = currentAnswered === option.id || (option.id === 'E' && currentAnswered?.startsWith('E'));
+              
+              return (
+                <div key={option.id} className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleOptionSelect(questions[currentQ].id, option.id)}
+                    className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all text-sm ${
+                      isSelected
+                        ? SELECTED_COLORS[i]
+                        : `border-gray-200 text-gray-700 ${OPTION_COLORS[i]}`
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center font-medium text-xs ${
+                        isSelected
+                          ? 'border-current bg-current text-white'
+                          : 'border-gray-300 text-gray-500'
+                      }`}>
+                        {option.id}
+                      </div>
+                      <span>{option.text}</span>
+                    </div>
+                  </button>
+
+                  {/* Show text input ONLY if Option E is selected */}
+                  {option.id === 'E' && isSelected && (
+                    <div className="pl-14 pr-4 pb-2 animate-in slide-in-from-top-2">
+                      <input
+                        type="text"
+                        placeholder="Type your custom answer here..."
+                        value={(currentAnswered || '').replace('E: ', '')}
+                        onChange={(e) => handleCustomTextChange(questions[currentQ].id, e.target.value)}
+                        className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 bg-white shadow-sm text-sm"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -409,7 +439,7 @@ export function PsychometricTest() {
         {!isLastQuestion ? (
           <button
             onClick={() => setCurrentQ(prev => prev + 1)}
-            disabled={!currentAnswered}
+            disabled={!currentAnswered || currentAnswered === 'E: '}
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next <ChevronRight className="w-4 h-4" />
@@ -417,7 +447,7 @@ export function PsychometricTest() {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={answeredCount < 10 || isLoading}
+            disabled={answeredCount < 20 || currentAnswered === 'E: ' || isLoading}
             className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading
@@ -436,7 +466,7 @@ export function PsychometricTest() {
 
       <p className="text-center text-xs text-gray-400">
         {answeredCount} of {questions.length} answered
-        {answeredCount < 10 && ` · Answer at least 10 to submit`}
+        {answeredCount < 20 && ` · Answer all 20 to submit`}
       </p>
     </div>
   );

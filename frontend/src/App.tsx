@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect} from 'react';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
 import { JobSeekerDashboard } from './components/JobSeekerDashboard';
@@ -52,22 +52,37 @@ function App() {
     setUserName(name);
     setUserEmail(email);
     setUserId(id);
-    setCurrentView('dashboard');
+    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
+    // Save session to browser
+    localStorage.setItem('user_session', JSON.stringify({ type, name, email, id }));
   };
 
   const handleLogout = () => {
-    setUserType(null);
+    setCurrentView('landing'); // <-- Changed from setIsLoggedIn
+    setUserType(null);         // <-- Added to properly clear the user type
     setUserName('');
     setUserEmail('');
     setUserId('');
-    setInitialLoginType(null);
-    setCurrentView('landing');
+    // Clear session from browser
+    localStorage.removeItem('user_session');
   };
 
   const handleBackToLanding = () => {
     setInitialLoginType(null);
     setCurrentView('landing');
   };
+
+  useEffect(() => {
+  const savedSession = localStorage.getItem('user_session');
+  if (savedSession) {
+    const session = JSON.parse(savedSession);
+    setUserType(session.type);
+    setUserName(session.name);
+    setUserEmail(session.email);
+    setUserId(session.id);
+    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
+  }
+}, []);
 
   if (currentView === 'landing') {
     return <LandingPage onUserTypeSelect={handleUserTypeSelect} />;

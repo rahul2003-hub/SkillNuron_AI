@@ -40,7 +40,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     education_status: 'Completed',
     graduation_year: String(CURRENT_YEAR),
     current_status: 'Fresher',
-    target_role: '',
+    target_roles: [] as string[],
+    primary_role: '',
     location: '',
     phone: '',
     linkedin: '',
@@ -131,8 +132,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
               {profileInfo.current_status && (
                 <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{profileInfo.current_status}</span>
               )}
-              {profileInfo.target_role && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">🎯 {profileInfo.target_role}</span>
+              {profileInfo.primary_role && (
+                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">🎯 {profileInfo.primary_role}</span>
               )}
               {profileInfo.location && (
                 <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📍 {profileInfo.location}</span>
@@ -328,26 +329,89 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                 </div>
               </div>
 
-              {/* Target Role Card */}
+              {/* Target Roles Card */}
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="text-gray-900 font-medium mb-4">🎯 Target Career Role</h3>
-                <p className="text-xs text-gray-500 mb-3">Used for Gap Analysis and Career Path recommendations</p>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-gray-900 font-medium">🎯 Target Career Roles</h3>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">{profileInfo.target_roles?.length || 0}/3 Roles</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">Add up to 3 roles. Your primary role powers default AI recommendations.</p>
+
                 {isEditingInfo ? (
-                  <select
-                    value={profileInfo.target_role}
-                    onChange={e => setProfileInfo({ ...profileInfo, target_role: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
-                  >
-                    <option value="">Select your target role</option>
-                    {TARGET_ROLES.map(r => <option key={r}>{r}</option>)}
-                  </select>
+                  <div className="space-y-3">
+                    {/* List existing roles */}
+                    {(profileInfo.target_roles || []).map((role, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                        <span className="flex-1 text-sm text-gray-700 px-2">{role}</span>
+                        
+                        {/* Primary Badge or Button */}
+                        {profileInfo.primary_role === role ? (
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">Primary</span>
+                        ) : (
+                          <button
+                            onClick={() => setProfileInfo(prev => ({ ...prev, primary_role: role }))}
+                            className="text-xs text-gray-500 hover:text-purple-600 px-2 transition-colors"
+                          >
+                            Make Primary
+                          </button>
+                        )}
+                        
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => {
+                            const newRoles = profileInfo.target_roles.filter(r => r !== role);
+                            const newPrimary = profileInfo.primary_role === role ? (newRoles[0] || "") : profileInfo.primary_role;
+                            setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
+                          }}
+                          className="text-gray-400 hover:text-red-500 p-1 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add new role dropdown (hidden if user already has 3) */}
+                    {(profileInfo.target_roles || []).length < 3 && (
+                      <select
+                        value=""
+                        onChange={e => {
+                          const selected = e.target.value;
+                          if (!selected) return;
+                          const currentRoles = profileInfo.target_roles || [];
+                          if (currentRoles.includes(selected)) return;
+                          
+                          const newRoles = [...currentRoles, selected];
+                          const newPrimary = profileInfo.primary_role ? profileInfo.primary_role : selected;
+                          
+                          setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
+                        }}
+                        className="w-full px-4 py-2.5 border border-dashed border-purple-300 text-purple-700 rounded-lg focus:outline-none focus:border-purple-500 text-sm bg-purple-50 cursor-pointer"
+                      >
+                        <option value="">+ Add a target role</option>
+                        {TARGET_ROLES.filter(r => !(profileInfo.target_roles || []).includes(r)).map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 ) : (
-                  <div className={`px-4 py-3 rounded-xl text-sm ${
-                    profileInfo.target_role
-                      ? 'bg-purple-50 border border-purple-200 text-purple-800 font-medium'
-                      : 'bg-gray-50 border border-gray-200 text-gray-500'
-                  }`}>
-                    {profileInfo.target_role || 'Not set — click Edit to choose your target role'}
+                  <div className="flex flex-wrap gap-2">
+                    {(profileInfo.target_roles || []).length > 0 ? (
+                      profileInfo.target_roles.map((role, idx) => (
+                        <div key={idx} className={`px-4 py-2 rounded-xl text-sm border flex items-center gap-2 ${
+                          profileInfo.primary_role === role
+                            ? 'bg-purple-50 border-purple-200 text-purple-800 font-medium shadow-sm'
+                            : 'bg-gray-50 border-gray-200 text-gray-600'
+                        }`}>
+                          {profileInfo.primary_role === role && <span className="text-base leading-none">⭐</span>}
+                          {role}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 rounded-xl text-sm bg-gray-50 border border-gray-200 text-gray-500 w-full">
+                        Not set — click Edit to choose up to 3 roles
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

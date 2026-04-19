@@ -1,14 +1,22 @@
-import { useState } from 'react';
-import { Brain, TrendingUp, AlertCircle, BookOpen, CheckCircle, Loader2, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Brain, TrendingUp, AlertCircle, BookOpen, CheckCircle, Loader2, Sparkles, Target } from 'lucide-react';
 import { analyzeSkillGap } from '../services/api';
 import { Skill } from '../App';
 
 interface SkillGapAnalysisProps {
   skills: Skill[];
+  savedRole?: string;
+  setActiveTab?: (tab: any) => void;
 }
 
-export function SkillGapAnalysis({ skills }: SkillGapAnalysisProps) {
-  const [targetRole, setTargetRole] = useState('');
+export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAnalysisProps) {
+  const [targetRole, setTargetRole] = useState(savedRole || '');
+
+  useEffect(() => {
+    if (savedRole && !targetRole) {
+      setTargetRole(savedRole);
+    }
+  }, [savedRole]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -82,9 +90,19 @@ export function SkillGapAnalysis({ skills }: SkillGapAnalysisProps) {
         )}
       </div>
 
+      {/* Feature Purpose Banner */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-start gap-3">
+        <Target className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-indigo-900 font-medium text-sm">Tool Purpose: The Skills Audit</h4>
+          <p className="text-indigo-800 text-sm mt-1">This tool compares your current skills directly against role requirements to find exactly what you're missing. (For timeline and salary, use Career Path).</p>
+        </div>
+      </div>
+
       {/* Target Role Input */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-gray-900 mb-4">What role are you targeting?</h3>
+        <h3 className="text-gray-900 mb-1">What role are you targeting?</h3>
+        {savedRole && <p className="text-xs text-purple-600 mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Auto-loaded from your profile</p>}
         <div className="flex gap-3">
           <input
             type="text"
@@ -236,6 +254,18 @@ export function SkillGapAnalysis({ skills }: SkillGapAnalysisProps) {
               </div>
             </div>
           )}
+
+          {/* Nudge to Career Path */}
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center mb-6">
+            <h3 className="text-purple-900 font-medium mb-2">Ready to see your long-term roadmap?</h3>
+            <p className="text-purple-700 text-sm mb-4">Now that you know your gaps, plot your salary and timeline.</p>
+            <button 
+              onClick={() => setActiveTab && setActiveTab('career-path')}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+            >
+              Go to Career Path →
+            </button>
+          </div>
 
           {/* Action Plan */}
           {result.action_plan?.length > 0 && (

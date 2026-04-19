@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, Clock, Target, Loader2, Sparkles, Brain, ArrowRight } from 'lucide-react';
 import { getCareerPath } from '../services/api';
 import { Skill } from '../App';
 
 interface CareerPathViewProps {
   skills: Skill[];
+  savedRole?: string;
 }
 
-export function CareerPathView({ skills }: CareerPathViewProps) {
-  const [targetRole, setTargetRole] = useState('');
-  const [experienceYears, setExperienceYears] = useState(1);
+export function CareerPathView({ skills, savedRole }: CareerPathViewProps) {
+  const [targetRole, setTargetRole] = useState(savedRole || '');
+
+  useEffect(() => {
+    if (savedRole && !targetRole) {
+      setTargetRole(savedRole);
+    }
+  }, [savedRole]);
+  const [experienceLevel, setExperienceLevel] = useState('Fresher');
+  const [experienceYears, setExperienceYears] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
@@ -81,9 +89,19 @@ export function CareerPathView({ skills }: CareerPathViewProps) {
         )}
       </div>
 
+      {/* Feature Purpose Banner */}
+      <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-start gap-3">
+        <TrendingUp className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-teal-900 font-medium text-sm">Tool Purpose: The Roadmap</h4>
+          <p className="text-teal-800 text-sm mt-1">This tool plots your step-by-step timeline, salary progression, and milestones over the coming months and years.</p>
+        </div>
+      </div>
+
       {/* Input Form */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-gray-900 mb-4">Tell us about your goal</h3>
+        <h3 className="text-gray-900 mb-1">Tell us about your goal</h3>
+        {savedRole && <p className="text-xs text-purple-600 mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Auto-loaded from your profile</p>}
         <div className="space-y-4">
           <div>
             <label className="block text-sm text-gray-600 mb-1">Target Role</label>
@@ -97,23 +115,46 @@ export function CareerPathView({ skills }: CareerPathViewProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">
-              Years of Experience: <strong>{experienceYears} {experienceYears === 1 ? 'year' : 'years'}</strong>
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="15"
-              value={experienceYears}
-              onChange={e => setExperienceYears(Number(e.target.value))}
-              className="w-full accent-purple-600"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>0 (Fresher)</span>
-              <span>5 years</span>
-              <span>10 years</span>
-              <span>15+ years</span>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Experience Level Dropdown */}
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Experience Level</label>
+              <select
+                value={experienceLevel}
+                onChange={e => {
+                  const level = e.target.value;
+                  setExperienceLevel(level);
+                  // Auto-update years based on level selection
+                  if (level === 'Fresher') setExperienceYears(0);
+                  if (level === 'Intermediate') setExperienceYears(2);
+                  if (level === 'Experienced') setExperienceYears(5);
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 bg-white"
+              >
+                <option value="Fresher">Fresher</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Experienced">Experienced</option>
+              </select>
+            </div>
+
+            {/* Exact Years Input */}
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Years of Experience</label>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                value={experienceYears}
+                onChange={e => {
+                  const years = Number(e.target.value);
+                  setExperienceYears(years);
+                  // Auto-update dropdown based on typed years
+                  if (years <= 2) setExperienceLevel('Fresher');
+                  else if (years <= 5) setExperienceLevel('Intermediate');
+                  else setExperienceLevel('Experienced');
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400"
+              />
             </div>
           </div>
 

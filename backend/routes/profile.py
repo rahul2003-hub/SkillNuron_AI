@@ -45,7 +45,8 @@ class UpdateProfileRequest(BaseModel):
     education_status: str = ""
     graduation_year: str = ""
     current_status: str = ""
-    target_role: str = ""
+    target_roles: list[str] = []
+    primary_role: str = ""
     location: str = ""
     phone: str = ""
     linkedin: str = ""
@@ -77,7 +78,8 @@ async def get_profile(user_id: str, db: Session = Depends(get_db)):
             "education_status": profile.education_status if profile else "",
             "graduation_year": profile.graduation_year if profile else "",
             "current_status": profile.current_status if profile else "",
-            "target_role": profile.target_role if profile else "",
+            "target_roles": profile.target_roles if profile else [], # Changed this
+            "primary_role": profile.primary_role if profile else "",  # Added this
             "location": profile.location if profile else "",
             "phone": profile.phone if profile else "",
             "linkedin": profile.linkedin if profile else "",
@@ -103,7 +105,8 @@ async def update_profile(request: UpdateProfileRequest, db: Session = Depends(ge
         profile.education_status = request.education_status
         profile.graduation_year = request.graduation_year
         profile.current_status = request.current_status
-        profile.target_role = request.target_role
+        profile.target_roles = request.target_roles      # Changed this
+        profile.primary_role = request.primary_role      # Added this
         profile.location = request.location
         profile.phone = request.phone
         profile.linkedin = request.linkedin
@@ -117,7 +120,8 @@ async def update_profile(request: UpdateProfileRequest, db: Session = Depends(ge
             education_status=request.education_status,
             graduation_year=request.graduation_year,
             current_status=request.current_status,
-            target_role=request.target_role,
+            target_roles=request.target_roles,           # Changed this
+            primary_role=request.primary_role,           # Added this
             location=request.location,
             phone=request.phone,
             linkedin=request.linkedin,

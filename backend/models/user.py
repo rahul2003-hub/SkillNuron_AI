@@ -31,7 +31,9 @@ class UserProfile(Base):
     education_status = Column(String, default="") # Completed / Pursuing
     graduation_year = Column(String, default="")  # 2024 / 2025 etc.
     current_status = Column(String, default="")   # Student / Fresher / Working
-    target_role = Column(String, default="")      # Full Stack Developer etc.
+    # target_role = Column(String, default="")      # Full Stack Developer etc.
+    target_roles = Column(ARRAY(String), default=list)  # Stores up to 3 roles
+    primary_role = Column(String, default="")           # The main role used by AI
     location = Column(String, default="")         # Mumbai / Pune etc.
     phone = Column(String, default="")
     linkedin = Column(String, default="")

@@ -23,7 +23,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     /* Paths */
-    "baseUrl": ".",
+    // "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

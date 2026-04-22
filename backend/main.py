@@ -9,6 +9,7 @@ from database import engine, Base
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from models.skill import SkillCategory
 from models.job import JobPosting
+from models.application import JobApplication
 Base.metadata.create_all(bind=engine)
 
 from routes.auth import router as auth_router
@@ -16,6 +17,10 @@ from routes.resume import router as resume_router
 from routes.profile import router as profile_router
 from routes.jobs import router as jobs_router
 from routes.psychometric import router as psychometric_router
+from routes.recruiter import router as recruiter_router
+from routes.talent_pool import router as talent_router 
+from routes.applications import router as applications_router
+from routes.recruiter_analytics import router as recruiter_analytics_router
 
 app = FastAPI(
     title="SkillNeuron AI API",
@@ -43,6 +48,10 @@ app.include_router(resume_router)
 app.include_router(profile_router)
 app.include_router(jobs_router)
 app.include_router(psychometric_router)
+app.include_router(recruiter_router) 
+app.include_router(talent_router)
+app.include_router(applications_router)
+app.include_router(recruiter_analytics_router)
 
 @app.get("/")
 def root():

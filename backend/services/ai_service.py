@@ -311,3 +311,37 @@ def analyze_psychometric(answers: dict, career_roles: list) -> dict:
 
     result = response.choices[0].message.content
     return clean_json_response(result)
+
+def ai_candidate_match(job_skills: list, candidate_skills: list) -> dict:
+    # Safely handle empty lists
+    job_str = ', '.join(job_skills) if job_skills else 'No specific skills listed'
+    cand_str = ', '.join(candidate_skills) if candidate_skills else 'No skills listed'
+
+    prompt = f"""
+    You are an expert AI technical recruiter.
+    
+    Evaluate how well the candidate matches the job based ONLY on skills. 
+    Reason about frameworks and ecosystems (e.g., if job needs React, Next.js is a good indicator. If job needs Backend, Docker is a plus).
+    
+    Job Skills required: {job_str}
+    Candidate Skills: {cand_str}
+    
+    Return EXACTLY this JSON format:
+    {{
+        "match_score": 85,
+        "reason": "1 short sentence explaining why they fit or don't fit based on tech stack synergy",
+        "missing_skills": ["skill1", "skill2"]
+    }}
+    
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
+    """
+
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2, # Low temperature for consistent scoring
+        max_tokens=500
+    )
+
+    result = response.choices[0].message.content
+    return clean_json_response(result)

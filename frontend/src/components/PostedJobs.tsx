@@ -1,4 +1,4 @@
-import { MapPin, Briefcase, DollarSign, Trash2, Users } from 'lucide-react';
+import { MapPin, Briefcase, IndianRupee, Trash2, Users } from 'lucide-react';
 import { JobPosting } from '../App';
 
 interface PostedJobsProps {
@@ -54,9 +54,9 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                     <Briefcase className="w-4 h-4" />
                     <span>{job.type}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <DollarSign className="w-4 h-4" />
-                    <span>{job.salary}</span>
+                  <div className="flex items-center gap-1 text-green-600">
+                    <IndianRupee className="w-4 h-4" />
+                    {job.salary}
                   </div>
                 </div>
 

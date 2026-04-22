@@ -1,8 +1,8 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
-import { JobSeekerDashboard } from './components/JobSeekerDashboard';
 import { RecruiterDashboard } from './components/RecruiterDashboard';
+import { JobSeekerLayout } from './components/JobSeekerLayout'; // We only import the Layout now!
 
 export type UserType = 'jobseeker' | 'recruiter' | null;
 
@@ -37,10 +37,22 @@ export interface CareerPath {
 function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [userType, setUserType] = useState<UserType>(null);
+  const [initialLoginType, setInitialLoginType] = useState<UserType>(null);
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
-  const [initialLoginType, setInitialLoginType] = useState<UserType>(null);
+
+  useEffect(() => {
+    const savedSession = localStorage.getItem('user_session');
+    if (savedSession) {
+      const session = JSON.parse(savedSession);
+      setUserType(session.type);
+      setUserName(session.name);
+      setUserEmail(session.email);
+      setUserId(session.id);
+      setCurrentView('dashboard');
+    }
+  }, []);
 
   const handleUserTypeSelect = (type: UserType) => {
     setInitialLoginType(type);
@@ -52,37 +64,27 @@ function App() {
     setUserName(name);
     setUserEmail(email);
     setUserId(id);
-    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
-    // Save session to browser
-    localStorage.setItem('user_session', JSON.stringify({ type, name, email, id }));
+    
+    localStorage.setItem('user_session', JSON.stringify({
+      type, name, email, id
+    }));
+    
+    setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
-    setCurrentView('landing'); // <-- Changed from setIsLoggedIn
-    setUserType(null);         // <-- Added to properly clear the user type
+    setUserType(null);
     setUserName('');
     setUserEmail('');
     setUserId('');
-    // Clear session from browser
     localStorage.removeItem('user_session');
+    setCurrentView('landing');
   };
 
   const handleBackToLanding = () => {
     setInitialLoginType(null);
     setCurrentView('landing');
   };
-
-  useEffect(() => {
-  const savedSession = localStorage.getItem('user_session');
-  if (savedSession) {
-    const session = JSON.parse(savedSession);
-    setUserType(session.type);
-    setUserName(session.name);
-    setUserEmail(session.email);
-    setUserId(session.id);
-    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
-  }
-}, []);
 
   if (currentView === 'landing') {
     return <LandingPage onUserTypeSelect={handleUserTypeSelect} />;
@@ -98,24 +100,30 @@ function App() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {userType === 'jobseeker' ? (
-        <JobSeekerDashboard
-          userName={userName}
-          userId={userId}
-          userEmail={userEmail}
-          onLogout={handleLogout}
-        />
-      ) : (
+  if (userType === 'jobseeker') {
+    return (
+      <JobSeekerLayout
+        userName={userName}
+        userId={userId}
+        userEmail={userEmail}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (userType === 'recruiter') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         <RecruiterDashboard
           userName={userName}
           userId={userId}
           onLogout={handleLogout}
         />
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default App;

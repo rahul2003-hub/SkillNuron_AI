@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, LogOut, Plus, Briefcase, Users } from 'lucide-react';
 import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
@@ -13,32 +13,57 @@ interface RecruiterDashboardProps {
 
 type Tab = 'posted-jobs' | 'create-job' | 'candidates';
 
-const initialJobs: JobPosting[] = [
-  {
-    id: '1',
-    title: 'Senior Full Stack Developer',
-    company: 'TechCorp Inc.',
-    location: 'Remote',
-    type: 'Full-time',
-    salary: '$120k - $160k',
-    requiredSkills: ['React', 'Node.js', 'TypeScript', 'MongoDB', 'AWS'],
-    description: 'We are looking for an experienced Full Stack Developer to join our growing team.',
-    postedBy: 'Demo Recruiter',
-    postedDate: '2025-11-20',
-  },
-];
-
 export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('posted-jobs');
-  const [jobs, setJobs] = useState<JobPosting[]>(initialJobs);
+  
+  // 1. Start with an empty array instead of mock data
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 2. Fetch jobs from the database when the dashboard loads
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/jobs');
+        if (!response.ok) throw new Error('Failed to fetch jobs');
+        
+        const data = await response.json();
+        if (data.success) {
+          // Filter to only show jobs posted by this specific recruiter
+          const myJobs = data.jobs.filter((job: JobPosting) => job.postedBy === userName);
+          setJobs(myJobs);
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [userName]); // Re-run if the userName changes
 
   const handleCreateJob = (job: JobPosting) => {
+    // Add the new job to the top of the list locally so it feels instant
     setJobs([job, ...jobs]);
     setActiveTab('posted-jobs');
   };
 
-  const handleDeleteJob = (jobId: string) => {
-    setJobs(jobs.filter(job => job.id !== jobId));
+  const handleDeleteJob = async (jobId: string) => {
+    // 1. Delete from database
+    try {
+      const response = await fetch(`http://localhost:8000/api/jobs/${jobId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete job');
+      
+      // 2. Remove from React state to update the UI
+      setJobs(jobs.filter(job => job.id !== jobId));
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      alert('Failed to delete job. Please try again.');
+    }
   };
 
   return (
@@ -111,14 +136,22 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
 
         {/* Content Area */}
         <div>
-          {activeTab === 'posted-jobs' && (
-            <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />
-          )}
-          {activeTab === 'create-job' && (
-            <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />
-          )}
-          {activeTab === 'candidates' && (
-            <CandidateMatches jobs={jobs} />
+          {isLoading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'posted-jobs' && (
+                <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />
+              )}
+              {activeTab === 'create-job' && (
+                <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />
+              )}
+              {activeTab === 'candidates' && (
+                <CandidateMatches jobs={jobs} />
+              )}
+            </>
           )}
         </div>
       </div>

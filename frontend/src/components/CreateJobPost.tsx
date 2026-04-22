@@ -31,33 +31,66 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
     setSkills(skills.filter(s => s !== skill));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // UPDATED: Now an async function that sends data to FastAPI
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.company || skills.length === 0) {
       alert('Please fill in all required fields and add at least one skill');
       return;
     }
 
-    const newJob: JobPosting = {
-      id: Date.now().toString(),
-      ...formData,
-      requiredSkills: skills,
-      postedBy: recruiterName,
-      postedDate: new Date().toISOString().split('T')[0],
+    // 1. Format the data EXACTLY as your FastAPI JobPostingRequest expects (snake_case)
+    const requestBody = {
+      title: formData.title,
+      company: formData.company,
+      location: formData.location,
+      type: formData.type,
+      salary: formData.salary,
+      description: formData.description,
+      required_skills: skills,      // snake_case to match backend
+      posted_by: recruiterName      // snake_case to match backend
     };
 
-    onCreateJob(newJob);
+    try {
+      // 2. Send to your FastAPI jobs route
+      // Make sure your FastAPI server is running on port 8000
+      const response = await fetch('http://localhost:8000/api/jobs/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    // Reset form
-    setFormData({
-      title: '',
-      company: '',
-      location: '',
-      type: 'Full-time',
-      salary: '',
-      description: '',
-    });
-    setSkills([]);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // 3. Get the successful response from your backend
+      const data = await response.json();
+
+      // 4. Update the React UI using the job your backend returned
+      if (data.success && data.job) {
+        onCreateJob(data.job);
+      }
+
+      // 5. Reset form
+      setFormData({
+        title: '',
+        company: '',
+        location: '',
+        type: 'Full-time',
+        salary: '',
+        description: '',
+      });
+      setSkills([]);
+      
+      alert('Job successfully posted and saved to database!');
+
+    } catch (error) {
+      console.error("Error posting job:", error);
+      alert('There was an error posting the job. Make sure your FastAPI backend is running!');
+    }
   };
 
   return (
@@ -160,7 +193,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     type="text"
                     value={formData.salary}
                     onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                    placeholder="e.g. $100k - $150k"
+                    placeholder="e.g. ₹5,00,000 - ₹8,00,000"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   />
                 </div>

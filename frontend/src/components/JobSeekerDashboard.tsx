@@ -1,173 +1,156 @@
-import { useState, useEffect } from 'react';
-import { Brain, LogOut, User, TrendingUp, Target, Briefcase, FileSearch, Menu, ChevronLeft } from 'lucide-react';
-import { SkillProfile } from './SkillProfile';
-import { SkillGapAnalysis } from './SkillGapAnalysis';
-import { CareerPathView } from './CareerPathView';
-import { JobRecommendations } from './JobRecommendations';
-import { ResumeAnalyzer } from './ResumeAnalyzer';
-import { Skill } from '../App';
-import { PsychometricTest } from './PsychometricTest';
-import { getProfile } from '../services/api';
+import { ArrowRight, Target, Brain, FileSearch, TrendingUp, Award, Zap, Sparkles, Briefcase } from 'lucide-react';
 
 interface JobSeekerDashboardProps {
   userName: string;
-  userId: string;
-  userEmail: string;
-  onLogout: () => void;
+  primaryRole: string;
+  skillsCount: number;
+  onNavigate: (tab: any) => void;
 }
 
-type Tab = 'profile' | 'resume-analyzer' | 'gap-analysis' | 'career-path' | 'job-recommendations' | 'assessment';
+export function JobSeekerDashboard({ userName, primaryRole, skillsCount, onNavigate }: JobSeekerDashboardProps) {
+  const profileStrength = 20 + (skillsCount > 0 ? 40 : 0) + (primaryRole ? 40 : 0);
 
-const defaultSkills: Skill[] = [
-  { name: 'JavaScript', level: 85, category: 'Programming' },
-  { name: 'React', level: 80, category: 'Frontend' },
-  { name: 'Python', level: 70, category: 'Programming' },
-  { name: 'SQL', level: 65, category: 'Database' },
-  { name: 'Git', level: 75, category: 'Tools' },
-  { name: 'HTML/CSS', level: 90, category: 'Frontend' },
-];
-
-export function JobSeekerDashboard({ userName, userId, userEmail, onLogout }: JobSeekerDashboardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('profile');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [skills, setSkills] = useState<Skill[]>(defaultSkills);
-  const [primaryRole, setPrimaryRole] = useState<string>('');
-
-  useEffect(() => {
-    if (activeTab === 'gap-analysis' || activeTab === 'career-path') {
-      getProfile(userId).then(data => {
-        if (data.profile && data.profile.primary_role) {
-          setPrimaryRole(data.profile.primary_role);
-        }
-      }).catch(console.error);
+  const quickTools = [
+    {
+      id: 'assessment',
+      title: 'Tech Persona Assessment',
+      description: 'Discover your ideal tech career path and work environment.',
+      icon: Brain,
+      color: 'bg-purple-100 text-purple-600',
+      border: 'hover:border-purple-300',
+    },
+    {
+      id: 'resume-analyzer',
+      title: 'ATS Resume Analyzer',
+      description: 'Scan your resume against industry standards and missing keywords.',
+      icon: FileSearch,
+      color: 'bg-blue-100 text-blue-600',
+      border: 'hover:border-blue-300',
+    },
+    {
+      id: 'gap-analysis',
+      title: 'Skill Gap Analysis',
+      description: 'Compare your current skills against your dream job requirements.',
+      icon: Target,
+      color: 'bg-pink-100 text-pink-600',
+      border: 'hover:border-pink-300',
+    },
+    {
+      id: 'career-path',
+      title: 'AI Career Roadmap',
+      description: 'Generate a step-by-step timeline and salary projection.',
+      icon: TrendingUp,
+      color: 'bg-teal-100 text-teal-600',
+      border: 'hover:border-teal-300',
     }
-  }, [activeTab, userId]);
-
-  const navItems = [
-    { id: 'profile', icon: User, label: 'Dashboard' },
-    { id: 'assessment', icon: Brain, label: 'Assessment' },
-    { id: 'resume-analyzer', icon: FileSearch, label: 'Resume Analyzer' },
-    { id: 'gap-analysis', icon: Target, label: 'Gap Analysis' },
-    { id: 'career-path', icon: TrendingUp, label: 'Career Path' },
-    { id: 'job-recommendations', icon: Briefcase, label: 'Jobs' },
   ];
 
   return (
-    <div className="fixed inset-0 flex bg-[#F8F9FA] font-sans overflow-hidden">
-      
-      {/* Sidebar - Strictly defined width transition */}
-      <aside 
-        className={`h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out relative z-20 flex-shrink-0 ${
-          isSidebarOpen ? 'w-64' : 'w-20'
-        }`}
-      >
-        {/* Sidebar Header */}
-        <div className={`h-16 flex items-center border-b border-gray-100 flex-shrink-0 transition-all duration-300 ${
-          isSidebarOpen ? 'justify-between px-4' : 'justify-center'
-        }`}>
-          {/* Logo strictly unmounts text to prevent lingering "Sk" */}
-          {isSidebarOpen && (
-            <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-              <Brain className="w-8 h-8 text-purple-600 flex-shrink-0" />
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
-                SkillNuron <span className="text-purple-600">AI</span>
-              </span>
-            </div>
+    <div className="space-y-6">
+      {/* Welcome Banner - Buggy background blurs removed! */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold mb-2">Welcome back, {userName.split(' ')[0] || 'User'} 👋</h1>
+          <p className="text-purple-100 text-lg flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-pink-300 flex-shrink-0" />
+            {primaryRole 
+              ? <span>Working towards your goal of becoming a <strong className="text-white">{primaryRole}</strong></span>
+              : <span>Ready to accelerate your tech career journey?</span>
+            }
+          </p>
+          
+          {!primaryRole && (
+            <button 
+              onClick={() => onNavigate('profile')}
+              className="mt-6 px-6 py-2.5 bg-white text-purple-700 font-medium rounded-lg hover:shadow-lg transition-all"
+            >
+              Complete Your Profile
+            </button>
           )}
-          <button 
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0 outline-none"
-          >
-            {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
+      </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-2">
-          {navItems.map(({ id, icon: Icon, label }) => {
-            const isActive = activeTab === id;
-            return (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as Tab)}
-                className={`flex items-center transition-all duration-200 group ${
-                  isActive
-                    ? 'bg-purple-50 text-purple-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                } ${
-                  isSidebarOpen 
-                    ? 'w-full px-4 py-3 rounded-xl justify-start' 
-                    : 'w-12 h-12 justify-center rounded-xl mx-auto' /* mx-auto perfectly centers the box */
-                }`}
-                title={!isSidebarOpen ? label : ''}
-              >
-                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                  isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
-                }`} />
-                {/* Text fully unmounts to prevent layout snapping */}
-                {isSidebarOpen && <span className="ml-3 truncate whitespace-nowrap">{label}</span>}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer (Logout) */}
-        <div className="p-4 border-t border-gray-100 flex-shrink-0 bg-white">
-          <button
-            onClick={onLogout}
-            className={`flex items-center transition-all duration-200 group text-gray-600 hover:bg-red-50 hover:text-red-600 ${
-              isSidebarOpen 
-                ? 'w-full px-4 py-3 rounded-xl justify-start' 
-                : 'w-12 h-12 justify-center rounded-xl mx-auto'
-            }`}
-            title={!isSidebarOpen ? "Logout" : ""}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0 text-gray-400 group-hover:text-red-500 transition-colors" />
-            {isSidebarOpen && <span className="ml-3 font-medium whitespace-nowrap">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Wrapper */}
-      <main className="flex-1 h-full flex flex-col min-w-0 overflow-hidden relative z-10 bg-[#F8F9FA]">
-        
-        {/* Top Navbar */}
-        <header className="flex-none h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-10 z-10">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-gray-800 capitalize tracking-tight">
-              {activeTab.replace('-', ' ')}
-            </h1>
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Zap className="w-6 h-6 text-green-500" />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Welcome back</p>
-              <p className="text-sm font-bold text-gray-900">{userName}</p>
-            </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
-              {userName.charAt(0).toUpperCase()}
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Profile Strength</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-2xl font-bold text-gray-900">{profileStrength}%</span>
+              <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500 rounded-full" style={{ width: `${profileStrength}%` }}></div>
+              </div>
             </div>
           </div>
-        </header>
+        </div>
 
-        {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
-          <div className="max-w-6xl mx-auto pb-8">
-            {activeTab === 'profile' && (
-              <SkillProfile skills={skills} setSkills={setSkills} userId={userId} userName={userName} userEmail={userEmail} />
-            )}
-            {activeTab === 'resume-analyzer' && <ResumeAnalyzer />}
-            {activeTab === 'gap-analysis' && (
-              <SkillGapAnalysis skills={skills} savedRole={primaryRole} setActiveTab={setActiveTab} />
-            )}
-            {activeTab === 'career-path' && (
-              <CareerPathView skills={skills} savedRole={primaryRole} />
-            )}
-            {activeTab === 'job-recommendations' && <JobRecommendations />}
-            {activeTab === 'assessment' && <PsychometricTest />}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Award className="w-6 h-6 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Verified Skills</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{skillsCount} <span className="text-sm font-normal text-gray-400">added</span></p>
           </div>
         </div>
-      </main>
 
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Target className="w-6 h-6 text-orange-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-gray-500 font-medium">Active Goal</p>
+            <p className="text-lg font-bold text-gray-900 mt-1 truncate">
+              {primaryRole || "Not Set"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Tools Grid */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Explore AI Tools</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {quickTools.map((tool) => (
+            <div 
+              key={tool.id}
+              onClick={() => onNavigate(tool.id)}
+              className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${tool.border} group`}
+            >
+              <div className="flex items-start justify-between">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${tool.color}`}>
+                  <tool.icon className="w-6 h-6" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600 transition-colors transform group-hover:translate-x-1" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">{tool.title}</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">{tool.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mini Job Teaser */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Briefcase className="w-6 h-6 text-purple-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Ready to start applying?</h3>
+            <p className="text-sm text-gray-500">We have curated job matches based on your skills.</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => onNavigate('job-recommendations')}
+          className="px-6 py-2.5 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors whitespace-nowrap w-full sm:w-auto"
+        >
+          View Job Matches
+        </button>
+      </div>
     </div>
   );
 }

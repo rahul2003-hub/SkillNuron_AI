@@ -1,3 +1,4 @@
+import React from 'react';
 import { Brain, Briefcase, Users, TrendingUp, Target, Sparkles } from 'lucide-react';
 import { UserType } from '../App';
 
@@ -10,8 +11,20 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
     onUserTypeSelect(type, '');
   };
 
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div id="home" className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
@@ -20,10 +33,36 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
               <Brain className="w-8 h-8 text-purple-600" />
               <span className="text-2xl text-purple-900">SkillNuron AI</span>
             </div>
+            
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-gray-700 hover:text-purple-600 transition-colors">Features</a>
-              <a href="#how-it-works" className="text-gray-700 hover:text-purple-600 transition-colors">How It Works</a>
-              <a href="#get-started" className="text-gray-700 hover:text-purple-600 transition-colors">Get Started</a>
+              <a 
+                href="#home" 
+                onClick={(e) => scrollToSection(e, 'home')} 
+                className="text-gray-700 hover:text-purple-600 transition-colors cursor-pointer"
+              >
+                Home
+              </a>
+              <a 
+                href="#features" 
+                onClick={(e) => scrollToSection(e, 'features')} 
+                className="text-gray-700 hover:text-purple-600 transition-colors cursor-pointer"
+              >
+                Features
+              </a>
+              <a 
+                href="#how-it-works" 
+                onClick={(e) => scrollToSection(e, 'how-it-works')} 
+                className="text-gray-700 hover:text-purple-600 transition-colors cursor-pointer"
+              >
+                How It Works
+              </a>
+              <a 
+                href="#get-started" 
+                onClick={(e) => scrollToSection(e, 'get-started')} 
+                className="text-gray-700 hover:text-purple-600 transition-colors cursor-pointer"
+              >
+                Get Started
+              </a>
             </nav>
           </div>
         </div>
@@ -61,7 +100,7 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-6 py-20">
+      <section id="features" className="container mx-auto px-6 py-20 scroll-mt-24">
         <h2 className="text-4xl text-center text-gray-900 mb-16">Powerful Features for Everyone</h2>
         <div className="grid md:grid-cols-3 gap-8">
           <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
@@ -95,7 +134,7 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="bg-white py-20">
+      <section id="how-it-works" className="bg-white py-20 scroll-mt-24">
         <div className="container mx-auto px-6">
           <h2 className="text-4xl text-center text-gray-900 mb-16">How SkillNuron AI Works</h2>
           <div className="grid md:grid-cols-2 gap-16">
@@ -176,7 +215,7 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
       </section>
 
       {/* CTA Section */}
-      <section id="get-started" className="container mx-auto px-6 py-20">
+      <section id="get-started" className="container mx-auto px-6 py-20 scroll-mt-24">
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-12 text-center text-white">
           <h2 className="text-4xl mb-6">Ready to Transform Your Career Journey?</h2>
           <p className="text-xl mb-8 opacity-90">Join thousands of professionals using AI to achieve their career goals</p>
@@ -200,7 +239,7 @@ export function LandingPage({ onUserTypeSelect }: LandingPageProps) {
       {/* Footer */}
       <footer className="border-t bg-white py-8">
         <div className="container mx-auto px-6 text-center text-gray-600">
-          <p>&copy; 2025 SkillNuron AI. Powered by Machine Learning.</p>
+          <p>&copy; 2026 SkillNuron AI. Powered by Machine Learning.</p>
         </div>
       </footer>
     </div>

@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from database import Base
 import uuid
 from datetime import datetime, timezone
-
+    
 
 class JobPosting(Base):
     __tablename__ = "job_postings"

@@ -107,7 +107,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               }`}
             >
               <Briefcase className="w-4 h-4" />
-              <span>My Jobs</span>
+              <span>Jobs</span>
             </button>
             <button
               onClick={() => setActiveTab('create-job')}

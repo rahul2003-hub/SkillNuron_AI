@@ -6,10 +6,10 @@ import os
 load_dotenv()
 
 from database import engine, Base
-from models.user import User, UserProfile, UserSkill, ResumeAnalysis
-from models.skill import SkillCategory
-from models.job import JobPosting
-from models.application import JobApplication
+
+# Import all models to ensure they're registered with SQLAlchemy
+from models import user, job, application, skill
+
 Base.metadata.create_all(bind=engine)
 
 from routes.auth import router as auth_router
@@ -42,7 +42,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#Regeister all routes
+# Register all routes
 app.include_router(auth_router)
 app.include_router(resume_router)
 app.include_router(profile_router)

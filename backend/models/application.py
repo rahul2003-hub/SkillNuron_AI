@@ -11,12 +11,12 @@ class JobApplication(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    job_id = Column(UUID(as_uuid=True), ForeignKey("job_postings.id"))
-    candidate_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    job_id = Column(UUID(as_uuid=True), ForeignKey("job_postings.id", ondelete="CASCADE"))
+    candidate_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"))
 
     match_score = Column(Float)
 
-    status = Column(String, default="applied")
+    status = Column(String(20), default="applied")  # applied, reviewed, accepted, rejected
 
     job = relationship("JobPosting")
     candidate = relationship("User")

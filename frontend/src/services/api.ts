@@ -149,3 +149,32 @@ export async function getSkillSuggestions() {
   if (!response.ok) throw new Error("Failed to fetch skill suggestions");
   return response.json();
 }
+
+// --- RECRUITER DASHBOARD & ANALYTICS ---
+export async function getRecruiterDashboard() {
+  const response = await fetch(`${BASE_URL}/recruiter/dashboard`);
+  if (!response.ok) throw new Error("Failed to fetch recruiter dashboard");
+  return response.json();
+}
+
+export async function getRecruiterAnalytics() {
+  const response = await fetch(`${BASE_URL}/recruiter/analytics`);
+  if (!response.ok) throw new Error("Failed to fetch recruiter analytics");
+  return response.json();
+}
+
+// --- TALENT POOL & MATCHING ---
+export async function getCandidates(skill?: string) {
+  const url = skill
+    ? `${BASE_URL}/recruiter/candidates?skill=${skill}`
+    : `${BASE_URL}/recruiter/candidates`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch candidates");
+  return response.json();
+}
+
+export async function getCandidateMatches(jobId: string) {
+  const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches`);
+  if (!response.ok) throw new Error("Failed to fetch candidate matches");
+  return response.json();
+}

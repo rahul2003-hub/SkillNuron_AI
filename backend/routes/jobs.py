@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models.job import JobPosting
+from models.user import User
+from deps import get_current_user, require_recruiter
 from services.ai_service import match_jobs_to_candidate
 import uuid
 import os
@@ -56,7 +58,11 @@ async def get_all_jobs(db: Session = Depends(get_db)):
 
 
 @router.post("/")
-async def create_job(job: JobPostingRequest, db: Session = Depends(get_db)):
+async def create_job(
+    job: JobPostingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
+):
     """Create a new job posting — saves to PostgreSQL"""
 
     if not job.title or not job.company:
@@ -96,7 +102,11 @@ async def create_job(job: JobPostingRequest, db: Session = Depends(get_db)):
 
 
 @router.delete("/{job_id}")
-async def delete_job(job_id: str, db: Session = Depends(get_db)):
+async def delete_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
+):
     """Delete a job posting from PostgreSQL"""
 
     job = db.query(JobPosting).filter(JobPosting.id == job_id).first()
@@ -110,7 +120,11 @@ async def delete_job(job_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/match")
-async def match_jobs(request: JobMatchRequest, db: Session = Depends(get_db)):
+async def match_jobs(
+    request: JobMatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """AI-powered job matching using real jobs from PostgreSQL"""
 
     if not request.user_skills:

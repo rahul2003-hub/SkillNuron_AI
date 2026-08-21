@@ -14,6 +14,7 @@
 | Styling | Tailwind CSS |
 | UI Components | shadcn/ui |
 | Icons | Lucide React |
+| Authentication | Supabase Auth (@supabase/supabase-js) |
 | HTTP Client | Native Fetch API |
 | Routing | State-based (useState) |
 
@@ -23,6 +24,7 @@
 
 ```
 frontend/
+├── .env                             # Environment variables
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -34,11 +36,12 @@ frontend/
     ├── index.css                    # Global styles
     │
     ├── services/
-    │   └── api.ts                   # All backend API calls (single source)
+    │   ├── api.ts                   # All backend API calls (single source)
+    │   └── supabase.ts              # Supabase client instance
     │
     └── components/
         ├── LandingPage.tsx          # Home page with user type selection
-        ├── LoginPage.tsx            # Login + Register with real backend auth
+        ├── LoginPage.tsx            # Login + Register with Supabase Auth
         ├── JobSeekerDashboard.tsx   # Main dashboard — 6 tabs
         ├── RecruiterDashboard.tsx   # Recruiter dashboard — 3 tabs
         │
@@ -75,7 +78,14 @@ cd SkillNuronAI-frontend/frontend
 npm install
 ```
 
-### 3. Start development server
+### 3. Configure environment variables
+Create `.env` file in `frontend/`:
+```env
+VITE_SUPABASE_URL=https://your_supabase_project_id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+```
+
+### 4. Start development server
 ```bash
 npm run dev
 ```
@@ -135,11 +145,10 @@ const BASE_URL = "http://localhost:8000"; // change this for production
 ```
 LandingPage
     → Select user type (Job Seeker / Recruiter)
-    → LoginPage (Login or Register)
-    → POST /api/auth/login or /api/auth/register
-    → JWT token stored in localStorage
-    → user_id passed through app via React state
-    → Dashboard renders based on user_type
+    → LoginPage (Login or Register via Supabase Auth)
+    → Session & access token managed by Supabase client (`supabase.ts`)
+    → Bearer token attached to backend request headers (`api.ts`)
+    → Dashboard renders based on user_type metadata
 ```
 
 ---
@@ -160,7 +169,10 @@ Output in `dist/` folder — ready to deploy to Vercel, Netlify or Render.
 1. Push to GitHub
 2. Go to [vercel.com](https://vercel.com) → Import Project
 3. Set framework: Vite
-4. Set environment variable: `VITE_API_URL=your-render-backend-url`
+4. Set environment variables:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_API_URL` (your-render-backend-url)
 5. Deploy!
 
 ### Update API URL after deployment
@@ -173,8 +185,11 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 ## 🧩 Key Components Explained
 
+### `supabase.ts` — Supabase Client Setup
+Initializes and exports the Supabase client instance using `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
 ### `api.ts` — Central API Layer
-Single file for all backend communication. Never write `fetch()` directly in components.
+Single file for all backend communication. Never write `fetch()` directly in components. Handles attaching Supabase authorization headers to backend API requests.
 
 ### `JobSeekerDashboard.tsx` — State Management
 Holds the shared `skills` state that flows down to Profile, Gap Analysis and Career Path tabs via props.

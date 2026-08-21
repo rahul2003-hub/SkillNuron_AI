@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from services.ai_service import analyze_psychometric
+from models.user import User
+from deps import get_current_user
 
 router = APIRouter(prefix="/api/psychometric", tags=["Psychometric"])
 
@@ -251,7 +253,10 @@ async def get_questions():
     }
 
 @router.post("/analyze")
-async def analyze_personality(request: PsychometricRequest):
+async def analyze_personality(
+    request: PsychometricRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Analyze answers and return tech career personality profile"""
 
     # Ensure they answered enough questions

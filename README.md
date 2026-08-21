@@ -20,6 +20,7 @@ SkillNuron_AI/
 │   ├── Procfile                            # Deployment configuration
 │   ├── main.py                             # FastAPI main app entry point
 │   ├── database.py                         # PostgreSQL database setup & engine
+│   ├── deps.py                             # Supabase auth verification & role dependencies
 │   ├── README.md                           # Backend documentation
 │   │
 │   ├── models/                             # SQLAlchemy Data Models
@@ -32,7 +33,6 @@ SkillNuron_AI/
 │   ├── routes/                             # FastAPI Route Handlers
 │   │   ├── __init__.py
 │   │   ├── auth.py                        # Register & login endpoints
-│   │   ├── deps.py                        # JWT authentication & role security dependencies
 │   │   ├── profile.py                     # Profile, skill gap, & career path endpoints
 │   │   ├── jobs.py                        # Job postings & Adzuna search endpoints
 │   │   ├── applications.py                # Job application endpoints
@@ -57,6 +57,7 @@ SkillNuron_AI/
 │       └── test_api.py                    # Comprehensive API tests
 │
 ├── frontend/                                # React + TypeScript Frontend
+│   ├── .env                                # Frontend environment variables
 │   ├── .gitignore
 │   ├── index.html                          # HTML entry point
 │   ├── package.json                        # NPM package definition
@@ -89,8 +90,9 @@ SkillNuron_AI/
 │       │   ├── PsychometricTest.tsx        # 15-question career assessment
 │       │   └── ui/                         # Reusable UI Component Library
 │       │
-│       ├── services/                       # API Client Services
-│       │   └── api.ts                      # Axios/Fetch API wrapper
+│       ├── services/                       # API & Integration Services
+│       │   ├── api.ts                      # Axios/Fetch API wrapper
+│       │   └── supabase.ts                 # Supabase client instance
 │       │
 │       └── styles/                         # Style Assets
 │           └── globals.css
@@ -102,7 +104,7 @@ SkillNuron_AI/
 
 ## 💡 Key Features
 
-- 🔐 **Authentication & Authorization**: Secure JWT-based login with role-based access control (`auth.py`, `deps.py`, `auth_services.py`).
+- 🔐 **Authentication & Authorization**: Supabase Auth integration with FastAPI dependency checks and role-based access control (`deps.py`, `supabase.ts`).
 - 🤖 **AI-Powered Skill Gap Analysis**: Uses Groq API (`qwen/qwen3.6-27b`) to evaluate user skills against industry standards (`profile.py`, `ai_service.py`).
 - 🗺️ **Career Path Recommendations**: Generates tailored career roadmaps with salary estimates and required competencies (`CareerPathView.tsx`).
 - 📄 **ATS Resume Analyzer**: Parses PDF resumes using PyMuPDF and scores ATS compatibility with AI suggestions (`resume.py`, `ResumeAnalyzer.tsx`).
@@ -115,8 +117,9 @@ SkillNuron_AI/
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python 3.11.9+, FastAPI, SQLAlchemy, PostgreSQL, Uvicorn, `uv` workspace manager
+- **Backend**: Python 3.11.9+, FastAPI, SQLAlchemy, PostgreSQL (Supabase), Uvicorn, `uv` workspace manager
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React
+- **Authentication**: Supabase Auth
 - **AI/ML Engine**: Groq API (`qwen/qwen3.6-27b`)
 - **PDF & Document Parsing**: PyMuPDF (`fitz`)
 - **External Data**: Adzuna Job Search API
@@ -145,10 +148,12 @@ SkillNuron_AI/
 
 3. **Configure Environment Variables (`.env`):**
    ```env
-   DATABASE_URL=postgresql://postgres:password@localhost:5432/skillneuron_db
+   DATABASE_URL=postgresql://postgres.xxx:password@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+   SUPABASE_URL=https://your_supabase_project_id.supabase.co
+   SUPABASE_KEY=your_supabase_anon_key
    GROQ_API_KEY=your_groq_api_key
-   SECRET_KEY=your_jwt_secret_key
-   ALGORITHM=HS256
+   ADZUNA_APP_ID=your_adzuna_app_id
+   ADZUNA_APP_KEY=your_adzuna_app_key
    ```
 
 4. **Run Backend Server:**
@@ -169,10 +174,14 @@ SkillNuron_AI/
    npm install
    ```
 
-3. **Run Frontend Development Server:**
+3. **Configure Environment Variables (`.env`):**
+   ```env
+   VITE_SUPABASE_URL=https://your_supabase_project_id.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+   ```
+
+4. **Run Frontend Development Server:**
    ```bash
    npm run dev
    ```
    Application will be running at `http://localhost:5173`.
-
-

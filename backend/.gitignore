@@ -17,3 +17,6 @@ backend/.env
 # OS files
 .DS_Store
 Thumbs.db
+
+skills-lock.json
+.agents

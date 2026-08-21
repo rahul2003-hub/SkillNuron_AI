@@ -10,9 +10,10 @@
 | Layer | Technology |
 |-------|-----------|
 | Framework | FastAPI (Python) |
+| Package Manager | `uv` workspace manager |
 | AI Engine | Groq API — qwen/qwen3.6-27b |
-| Database | PostgreSQL + SQLAlchemy |
-| Authentication | JWT (python-jose) + bcrypt |
+| Database | PostgreSQL (Supabase) + SQLAlchemy |
+| Authentication | Supabase Auth (JWT Bearer Token verification) |
 | PDF Parsing | PyMuPDF (fitz) |
 | Job Data | Adzuna API (Indian job market) |
 | Testing | Pytest + httpx |
@@ -25,22 +26,30 @@
 ```
 backend/
 ├── main.py                  # FastAPI app entry point
-├── database.py              # PostgreSQL connection + session
+├── database.py              # PostgreSQL connection + session engine
+├── deps.py                  # Supabase auth verification & role dependencies
 ├── requirements.txt         # Python dependencies
+├── pyproject.toml           # uv project metadata & dependencies
+├── uv.lock                  # uv dependency lockfile
 ├── Procfile                 # Render deployment config
 ├── .env                     # Environment variables (never commit)
 │
 ├── models/
 │   ├── user.py              # User, UserProfile, UserSkill, ResumeAnalysis
 │   ├── job.py               # JobPosting
-│   └── skill.py             # SkillCategory + SKILL_SUGGESTIONS
+│   ├── skill.py             # SkillCategory + SKILL_SUGGESTIONS
+│   └── application.py       # Job application model
 │
 ├── routes/
-│   ├── auth.py              # Register, Login (JWT)
+│   ├── auth.py              # Auth verification endpoints
 │   ├── profile.py           # Profile CRUD + AI skill gap + career path
 │   ├── resume.py            # PDF upload + AI resume analysis
 │   ├── jobs.py              # Job CRUD + Adzuna live search
-│   └── psychometric.py      # 15-question career assessment
+│   ├── applications.py      # Job application endpoints
+│   ├── talent_pool.py       # Recruiter talent pool endpoints
+│   ├── psychometric.py      # 15-question career assessment
+│   ├── recruiter.py         # Recruiter dashboard endpoints
+│   └── recruiter_analytics.py # Recruiter analytics endpoints
 │
 ├── services/
 │   ├── ai_service.py        # All Groq AI functions
@@ -48,7 +57,7 @@ backend/
 │   └── match_services.py    # Job matching logic
 │
 └── tests/
-    └── test_api.py          # 16 automated API tests
+    └── test_api.py          # Automated API test suite
 ```
 
 ---
@@ -56,55 +65,43 @@ backend/
 ## ⚙️ Local Setup
 
 ### Prerequisites
-- Python 3.12+
-- PostgreSQL installed and running
+- Python 3.11+
+- PostgreSQL database (Supabase instance recommended)
 - Groq API key (free at console.groq.com)
 - Adzuna API credentials (free at developer.adzuna.com)
 
 ### 1. Clone the repo
 ```bash
 git clone https://github.com/yourusername/SkillNuron_AI.git
-cd SkillNuron_AI
-git checkout backend
-cd backend
+cd SkillNuron_AI/backend
 ```
 
-### 2. Create virtual environment
+### 2. Create virtual environment using `uv` or `venv`
 ```bash
+# Using uv (recommended)
+uv sync
+
+# Or using venv
 python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# Mac/Linux
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-```bash
+# Windows: .venv\Scripts\activate
+# Mac/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Create PostgreSQL database
-```sql
-CREATE DATABASE skillneuron_db;
-```
-
-### 5. Configure environment variables
+### 3. Configure environment variables
 Create a `.env` file in the `backend/` folder:
 ```env
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/skillneuron_db
+DATABASE_URL=postgresql://postgres.xxx:password@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+SUPABASE_URL=https://your_supabase_project_id.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
 GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
-SECRET_KEY=your_secret_key_here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
 ADZUNA_APP_ID=your_adzuna_app_id
 ADZUNA_APP_KEY=your_adzuna_app_key
 ```
 
-### 6. Run the server
+### 4. Run the server
 ```bash
-uvicorn main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 Server runs at: `http://localhost:8000`  

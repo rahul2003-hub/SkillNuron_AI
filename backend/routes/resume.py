@@ -1,6 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from services.ai_service import analyze_resume
+from models.user import User
+from deps import get_current_user
 import pymupdf as fitz
 
 router = APIRouter(prefix="/api/resume", tags=["Resume"])
@@ -19,7 +21,10 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
 
 @router.post("/analyze")
-async def analyze_resume_endpoint(file: UploadFile = File(...)):
+async def analyze_resume_endpoint(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
     """Upload resume PDF and get full AI analysis"""
 
     if not file.filename.lower().endswith(".pdf"):
@@ -64,7 +69,10 @@ class ResumeTextRequest(BaseModel):
 
 
 @router.post("/analyze-text")
-async def analyze_resume_from_text(request: ResumeTextRequest):
+async def analyze_resume_from_text(
+    request: ResumeTextRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Analyze resume from pasted plain text — fallback when PDF fails"""
 
     if not request.resume_text or len(request.resume_text) < 30:

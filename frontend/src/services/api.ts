@@ -73,7 +73,7 @@ export async function analyzeResume(file: File) {
   const token = data.session?.access_token;
   const formData = new FormData();
   formData.append("file", file);
-  
+
   const headers: Record<string, string> = {};
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;

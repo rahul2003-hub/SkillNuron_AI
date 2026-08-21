@@ -54,7 +54,9 @@ async def get_profile(
 ):
     """Get full profile info for a user"""
     # Allow user to view their own profile or recruiter viewing candidates
-    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
+    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
+    if target_uuid != current_user.id and current_user.user_type != "recruiter":
+        raise HTTPException(status_code=403, detail="Access denied: cannot view another user's profile")
     
     user = db.query(User).filter(User.id == target_uuid).first()
     if not user:
@@ -171,7 +173,9 @@ async def get_skills(
     current_user: User = Depends(get_current_user)
 ):
     """Get saved skills for a user from PostgreSQL"""
-    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
+    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
+    if target_uuid != current_user.id and current_user.user_type != "recruiter":
+        raise HTTPException(status_code=403, detail="Access denied: cannot view another user's skills")
 
     skills = db.query(UserSkill).filter(UserSkill.user_id == target_uuid).all()
 
@@ -217,7 +221,9 @@ async def get_resume_history(
     current_user: User = Depends(get_current_user)
 ):
     """Get all past resume analyses for a user"""
-    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
+    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
+    if target_uuid != current_user.id and current_user.user_type != "recruiter":
+        raise HTTPException(status_code=403, detail="Access denied: cannot view another user's resume history")
 
     analyses = db.query(ResumeAnalysis).filter(
         ResumeAnalysis.user_id == target_uuid

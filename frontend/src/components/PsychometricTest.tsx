@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Brain, ChevronRight, ChevronLeft, CheckCircle, Loader2, Sparkles, RotateCcw, Star, Target, Zap, ArrowRight } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -84,9 +85,16 @@ export function PsychometricTest() {
     setIsLoading(true);
     setError('');
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${BASE_URL}/api/psychometric/analyze`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ answers })
       });
       const data = await res.json();

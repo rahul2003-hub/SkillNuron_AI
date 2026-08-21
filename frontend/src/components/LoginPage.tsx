@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Brain, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { UserType } from '../App';
+import { supabase } from '../services/supabase';
+import { syncUserWithBackend } from '../services/api';
 
 interface LoginPageProps {
   onLogin: (type: UserType, name: string, email: string, id: string) => void;
   onBackToLanding: () => void;
   initialUserType: UserType;
 }
-
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPageProps) {
   const [userType, setUserType] = useState<UserType>(initialUserType || 'jobseeker');
@@ -39,33 +39,67 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
     setIsLoading(true);
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      const body = isLogin
-        ? { email: formData.email, password: formData.password, user_type: userType }
-        : { name: formData.name, email: formData.email, password: formData.password, user_type: userType };
+      if (isLogin) {
+        // Supabase Auth Sign In
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
 
-      const response = await fetch(`${BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+        if (authError) {
+          setError(authError.message);
+          return;
+        }
 
-      const data = await response.json();
+        if (!data.user) {
+          setError('Failed to authenticate with Supabase');
+          return;
+        }
 
-      if (!response.ok) {
-        setError(data.detail || 'Something went wrong. Please try again.');
-        return;
+        const metadata = data.user.user_metadata || {};
+        const name = metadata.name || formData.name || data.user.email?.split('@')[0] || 'User';
+        const role = (metadata.user_type as UserType) || userType || 'jobseeker';
+
+        // Sync with backend PostgreSQL database
+        await syncUserWithBackend(name, role);
+
+        onLogin(role, name, data.user.email || formData.email, data.user.id);
+      } else {
+        // Supabase Auth Sign Up
+        const { data, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name,
+              user_type: userType,
+            },
+          },
+        });
+
+        if (authError) {
+          setError(authError.message);
+          return;
+        }
+
+        if (!data.user) {
+          setError('Registration failed. Please try again.');
+          return;
+        }
+
+        const name = formData.name;
+        const role = userType || 'jobseeker';
+
+        if (data.session) {
+          await syncUserWithBackend(name, role);
+          onLogin(role, name, data.user.email || formData.email, data.user.id);
+        } else {
+          setError('Account created! Please check your email to verify your account or proceed to login.');
+          setIsLogin(true);
+        }
       }
-
-      // Store token in localStorage for future use
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user_id', data.user.id);
-
-      // Pass user info up to App
-      onLogin(data.user.user_type, data.user.name, data.user.email, data.user.id);
-
-    } catch (err) {
-      setError('Cannot connect to server. Make sure your backend is running.');
+    } catch (err: any) {
+      setError(err.message || 'Cannot connect to server. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -94,21 +128,19 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
           <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
             <button
               onClick={() => setUserType('jobseeker')}
-              className={`flex-1 py-2 rounded-lg text-sm transition-all ${
-                userType === 'jobseeker'
+              className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'jobseeker'
                   ? 'bg-white shadow text-purple-700 font-medium'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Job Seeker
             </button>
             <button
               onClick={() => setUserType('recruiter')}
-              className={`flex-1 py-2 rounded-lg text-sm transition-all ${
-                userType === 'recruiter'
+              className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'recruiter'
                   ? 'bg-white shadow text-purple-700 font-medium'
                   : 'text-gray-600'
-              }`}
+                }`}
             >
               Recruiter
             </button>
@@ -118,17 +150,15 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
           <div className="flex gap-2 mb-6 border-b border-gray-200">
             <button
               onClick={() => { setIsLogin(true); setError(''); }}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
-              }`}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
+                }`}
             >
               Login
             </button>
             <button
               onClick={() => { setIsLogin(false); setError(''); }}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                !isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
-              }`}
+              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${!isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
+                }`}
             >
               Register
             </button>
@@ -184,7 +214,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             {/* Error message */}
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-                ⚠️ {error}
+                {error}
               </div>
             )}
 

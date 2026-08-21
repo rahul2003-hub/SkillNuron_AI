@@ -5,6 +5,7 @@ import uuid
 
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
+from deps import require_recruiter
 
 router = APIRouter(prefix="/recruiter", tags=["Talent Pool"])
 
@@ -14,9 +15,9 @@ router = APIRouter(prefix="/recruiter", tags=["Talent Pool"])
 @router.get("/candidates")
 def get_candidates(
     skill: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
 ):
-    # FIXED: Uses user_type and "jobseeker" instead of role
     query = db.query(User).filter(User.user_type == "jobseeker")
     candidates = query.all()
 
@@ -55,9 +56,9 @@ def get_candidates(
 @router.get("/candidate/{candidate_id}")
 def get_candidate_profile(
     candidate_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
 ):
-    # FIXED: Added UUID validation to prevent DB crashes
     try:
         valid_uuid = uuid.UUID(candidate_id)
     except ValueError:

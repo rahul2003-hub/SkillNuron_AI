@@ -123,3 +123,6 @@ dist
 .vscode
 *.swp
 *.swo
+
+skills-lock.json
+.agents

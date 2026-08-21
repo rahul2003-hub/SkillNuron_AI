@@ -157,7 +157,7 @@ export function ResumeAnalyzer() {
             </div>
             <div className="flex items-center gap-2 text-purple-600">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              <span className="text-sm">AI powered by Llama 3.3</span>
+              <span className="text-sm">AI powered by qwen3.6</span>
             </div>
           </div>
         </div>
@@ -327,10 +327,9 @@ export function ResumeAnalyzer() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="text-sm font-medium text-gray-900">{imp.title}</h4>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          imp.severity === 'high' ? 'bg-red-100 text-red-700' :
-                          imp.severity === 'medium' ? 'bg-orange-100 text-orange-700' :
-                          'bg-yellow-100 text-yellow-700'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${imp.severity === 'high' ? 'bg-red-100 text-red-700' :
+                            imp.severity === 'medium' ? 'bg-orange-100 text-orange-700' :
+                              'bg-yellow-100 text-yellow-700'}`}>
                           {imp.severity}
                         </span>
                       </div>

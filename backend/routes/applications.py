@@ -7,12 +7,12 @@ import uuid
 from models.application import JobApplication
 from models.job import JobPosting
 from models.user import User
+from deps import get_current_user, require_recruiter
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
-# FIXED: Use a Pydantic model so candidate_id is sent securely in the JSON body
 class ApplicationRequest(BaseModel):
-    candidate_id: str
+    candidate_id: str | None = None
 
 # ---------------------------
 # Candidate applies for job
@@ -20,15 +20,15 @@ class ApplicationRequest(BaseModel):
 @router.post("/apply/{job_id}")
 def apply_for_job(
     job_id: str,
-    req: ApplicationRequest,
-    db: Session = Depends(get_db)
+    req: ApplicationRequest | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    # FIXED: Validate UUIDs to prevent 500 Internal Server Errors
     try:
         valid_job_id = uuid.UUID(job_id)
-        valid_candidate_id = uuid.UUID(req.candidate_id)
+        valid_candidate_id = current_user.id
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid job_id or candidate_id format")
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
 
     job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
 
@@ -65,9 +65,9 @@ def apply_for_job(
 @router.get("/job/{job_id}")
 def get_job_applications(
     job_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
 ):
-    # FIXED: Safety check for UUID
     try:
         valid_job_id = uuid.UUID(job_id)
     except ValueError:
@@ -85,7 +85,7 @@ def get_job_applications(
             results.append({
                 "application_id": str(app.id),
                 "candidate_id": str(user.id),
-                "name": user.name, # FIXED: Added Name for the UI
+                "name": user.name,
                 "email": user.email,
                 "status": app.status
             })

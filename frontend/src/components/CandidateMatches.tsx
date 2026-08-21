@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { JobPosting } from '../App';
 import { MapPin, FileText, CheckCircle2, AlertCircle, BrainCircuit, Users } from 'lucide-react';
+import { getCandidateMatches } from '../services/api';
 
 interface CandidateMatchesProps {
   jobs: JobPosting[];
@@ -17,11 +18,8 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
     const fetchMatches = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/recruiter/job/${selectedJobId}/matches`);
-        if (response.ok) {
-          const data = await response.json();
-          setMatches(data.matches || []);
-        }
+        const data = await getCandidateMatches(selectedJobId);
+        setMatches(data.matches || []);
       } catch (error) {
         console.error("Failed to fetch matches", error);
       } finally {
@@ -48,10 +46,10 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">AI Candidate Matching</h2>
-          <p className="text-gray-500 text-sm mt-1">Select a job to view Llama-3.3 ranked candidates.</p>
+          <p className="text-gray-500 text-sm mt-1">Select a job to view qwen3.6 ranked candidates.</p>
         </div>
-        <select 
-          value={selectedJobId} 
+        <select
+          value={selectedJobId}
           onChange={(e) => setSelectedJobId(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none min-w-[250px] font-medium bg-white"
         >
@@ -78,7 +76,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
           {matches.map((candidate, index) => (
             <div key={candidate.candidate_id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex flex-col md:flex-row gap-6">
-                
+
                 {/* Left Column: Candidate Info */}
                 <div className="md:w-1/3 md:border-r border-gray-100 pr-6">
                   <div className="flex items-center gap-4 mb-4">
@@ -92,14 +90,14 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
                       <p className="text-gray-500 text-sm truncate">{candidate.email}</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400 shrink-0"/> 
+                      <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
                       <span className="truncate">{candidate.location || 'Location not specified'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400 shrink-0"/> 
+                      <FileText className="w-4 h-4 text-gray-400 shrink-0" />
                       ATS Score: <span className="font-semibold text-gray-900">{candidate.resume_score || 'N/A'}</span>
                     </div>
                   </div>

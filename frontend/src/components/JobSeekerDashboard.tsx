@@ -7,18 +7,20 @@ import { JobRecommendations } from './JobRecommendations';
 import { ResumeAnalyzer } from './ResumeAnalyzer';
 import { Skill } from '../App';
 import { PsychometricTest } from './PsychometricTest';
-import { getProfile } from '../services/api';
+import { getProfile, getSkills } from '../services/api';
 
+// 1. Added missing Tab type
+type Tab = 'profile' | 'assessment' | 'resume-analyzer' | 'gap-analysis' | 'career-path' | 'job-recommendations';
+
+// 2. Updated interface to match the props actually used in the layout
 interface JobSeekerDashboardProps {
   userName: string;
-  primaryRole: string;
-  skillsCount: number;
-  onNavigate: (tab: any) => void;
+  userId: string;
+  userEmail: string;
+  onLogout: () => void;
 }
 
-export function JobSeekerDashboard({ userName, primaryRole, skillsCount, onNavigate }: JobSeekerDashboardProps) {
-  const profileStrength = 20 + (skillsCount > 0 ? 40 : 0) + (primaryRole ? 40 : 0);
-
+// 3. Moved defaultSkills outside the component
 const defaultSkills: Skill[] = [
   { name: 'JavaScript', level: 85, category: 'Programming' },
   { name: 'React', level: 80, category: 'Frontend' },
@@ -28,11 +30,24 @@ const defaultSkills: Skill[] = [
   { name: 'HTML/CSS', level: 90, category: 'Frontend' },
 ];
 
+// 4. Single, clean component declaration
 export function JobSeekerDashboard({ userName, userId, userEmail, onLogout }: JobSeekerDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [skills, setSkills] = useState<Skill[]>(defaultSkills);
   const [primaryRole, setPrimaryRole] = useState<string>('');
+
+  useEffect(() => {
+    if (userId) {
+      getSkills(userId)
+        .then(data => {
+          if (data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
+            setSkills(data.skills);
+          }
+        })
+        .catch(err => console.error("Failed to load saved skills:", err));
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (activeTab === 'gap-analysis' || activeTab === 'career-path') {
@@ -98,14 +113,13 @@ export function JobSeekerDashboard({ userName, userId, userEmail, onLogout }: Jo
                 } ${
                   isSidebarOpen 
                     ? 'w-full px-4 py-3 rounded-xl justify-start' 
-                    : 'w-12 h-12 justify-center rounded-xl mx-auto' /* mx-auto perfectly centers the box */
+                    : 'w-12 h-12 justify-center rounded-xl mx-auto' 
                 }`}
                 title={!isSidebarOpen ? label : ''}
               >
                 <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
                   isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
                 }`} />
-                {/* Text fully unmounts to prevent layout snapping */}
                 {isSidebarOpen && <span className="ml-3 truncate whitespace-nowrap">{label}</span>}
               </button>
             );

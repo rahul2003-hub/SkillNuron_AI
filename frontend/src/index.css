@@ -263,7 +263,7 @@
 
   img, svg, video, canvas, audio, iframe, embed, object {
     vertical-align: middle;
-    display: block;
+    display: inline-block;
   }
 
   img, video {

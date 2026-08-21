@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from services.ai_service import analyze_resume
-import fitz
+import pymupdf as fitz
 
 router = APIRouter(prefix="/api/resume", tags=["Resume"])
 

@@ -12,7 +12,7 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True, default="supabase_auth")
     user_type = Column(String, nullable=False)  # jobseeker or recruiter
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

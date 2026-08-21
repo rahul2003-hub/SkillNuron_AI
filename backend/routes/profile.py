@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from services.ai_service import analyze_skill_gap, recommend_career_path
-from models.user import User, UserProfile, UserSkill, ResumeAnalysis
+from deps import get_current_user
 import uuid
 from datetime import datetime, timezone
 
@@ -25,22 +25,14 @@ class CareerPathRequest(BaseModel):
 
 
 class SaveSkillsRequest(BaseModel):
-    user_id: str
     skills: list[dict]  # [{"skill_name": "Python", "level": 80, "category": "Programming"}]
 
 
 class SaveResumeAnalysisRequest(BaseModel):
-    user_id: str
     overall_score: int
     analysis_json: dict
 
-
-# --- Skills Endpoints ---
-
-# --- Profile Endpoints ---
-
 class UpdateProfileRequest(BaseModel):
-    user_id: str
     education: str = ""
     education_status: str = ""
     graduation_year: str = ""
@@ -52,16 +44,24 @@ class UpdateProfileRequest(BaseModel):
     linkedin: str = ""
     github: str = ""
 
+# --- Profile Endpoints ---
 
 @router.get("/info/{user_id}")
-async def get_profile(user_id: str, db: Session = Depends(get_db)):
+async def get_profile(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get full profile info for a user"""
-    user = db.query(User).filter(User.id == user_id).first()
+    # Allow user to view their own profile or recruiter viewing candidates
+    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
+    
+    user = db.query(User).filter(User.id == target_uuid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     profile = db.query(UserProfile).filter(
-        UserProfile.user_id == user_id
+        UserProfile.user_id == target_uuid
     ).first()
 
     return {
@@ -89,18 +89,17 @@ async def get_profile(user_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/info/update")
-async def update_profile(request: UpdateProfileRequest, db: Session = Depends(get_db)):
+async def update_profile(
+    request: UpdateProfileRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Create or update user profile info"""
-    user = db.query(User).filter(User.id == request.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     profile = db.query(UserProfile).filter(
-        UserProfile.user_id == request.user_id
+        UserProfile.user_id == current_user.id
     ).first()
 
     if profile:
-        # Update existing profile
         profile.education = request.education
         profile.education_status = request.education_status
         profile.graduation_year = request.graduation_year
@@ -115,7 +114,7 @@ async def update_profile(request: UpdateProfileRequest, db: Session = Depends(ge
     else:
         # Create new profile
         profile = UserProfile(
-            user_id=uuid.UUID(request.user_id),
+            user_id=current_user.id,
             education=request.education,
             education_status=request.education_status,
             graduation_year=request.graduation_year,
@@ -140,20 +139,17 @@ async def get_skill_suggestions():
     return {"success": True, "suggestions": SKILL_SUGGESTIONS}
 
 @router.post("/skills/save")
-async def save_skills(request: SaveSkillsRequest, db: Session = Depends(get_db)):
-    """Save user skills to PostgreSQL — replaces all existing skills"""
-
-    # Verify user exists
-    user = db.query(User).filter(User.id == request.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Delete old skills and replace with new ones
-    db.query(UserSkill).filter(UserSkill.user_id == request.user_id).delete()
+async def save_skills(
+    request: SaveSkillsRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Save user skills to PostgreSQL — replaces all existing skills for authenticated user"""
+    db.query(UserSkill).filter(UserSkill.user_id == current_user.id).delete()
 
     for skill_data in request.skills:
         skill = UserSkill(
-            user_id=uuid.UUID(request.user_id),
+            user_id=current_user.id,
             skill_name=skill_data.get("skill_name") or skill_data.get("name", ""),
             level=skill_data.get("level", 50),
             category=skill_data.get("category", "Programming")
@@ -169,14 +165,19 @@ async def save_skills(request: SaveSkillsRequest, db: Session = Depends(get_db))
 
 
 @router.get("/skills/{user_id}")
-async def get_skills(user_id: str, db: Session = Depends(get_db)):
+async def get_skills(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get saved skills for a user from PostgreSQL"""
+    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
 
-    skills = db.query(UserSkill).filter(UserSkill.user_id == user_id).all()
+    skills = db.query(UserSkill).filter(UserSkill.user_id == target_uuid).all()
 
     return {
         "success": True,
-        "user_id": user_id,
+        "user_id": str(target_uuid),
         "skills": [
             {
                 "name": s.skill_name,
@@ -191,15 +192,14 @@ async def get_skills(user_id: str, db: Session = Depends(get_db)):
 # --- Resume Analysis Save ---
 
 @router.post("/resume/save")
-async def save_resume_analysis(request: SaveResumeAnalysisRequest, db: Session = Depends(get_db)):
-    """Save resume analysis result to PostgreSQL"""
-
-    user = db.query(User).filter(User.id == request.user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
+async def save_resume_analysis(
+    request: SaveResumeAnalysisRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Save resume analysis result for authenticated user"""
     analysis = ResumeAnalysis(
-        user_id=uuid.UUID(request.user_id),
+        user_id=current_user.id,
         overall_score=request.overall_score,
         analysis_json=request.analysis_json
     )
@@ -211,11 +211,16 @@ async def save_resume_analysis(request: SaveResumeAnalysisRequest, db: Session =
 
 
 @router.get("/resume/history/{user_id}")
-async def get_resume_history(user_id: str, db: Session = Depends(get_db)):
+async def get_resume_history(
+    user_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get all past resume analyses for a user"""
+    target_uuid = uuid.UUID(user_id) if user_id and user_id != "me" else current_user.id
 
     analyses = db.query(ResumeAnalysis).filter(
-        ResumeAnalysis.user_id == user_id
+        ResumeAnalysis.user_id == target_uuid
     ).order_by(ResumeAnalysis.created_at.desc()).all()
 
     return {
@@ -236,7 +241,10 @@ async def get_resume_history(user_id: str, db: Session = Depends(get_db)):
 # --- AI Endpoints ---
 
 @router.post("/skill-gap")
-async def get_skill_gap(request: SkillGapRequest):
+async def get_skill_gap(
+    request: SkillGapRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Analyze skill gap between user skills and target role"""
 
     if not request.user_skills:
@@ -261,7 +269,10 @@ async def get_skill_gap(request: SkillGapRequest):
 
 
 @router.post("/career-path")
-async def get_career_path(request: CareerPathRequest):
+async def get_career_path(
+    request: CareerPathRequest,
+    current_user: User = Depends(get_current_user)
+):
     """Get AI-powered career path recommendations"""
 
     if not request.user_skills:

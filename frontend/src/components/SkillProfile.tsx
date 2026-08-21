@@ -52,6 +52,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     if (userId) {
       loadProfile();
       loadSuggestions();
+    } else {
+      setIsLoadingProfile(false); // Add this line to prevent infinite loading
     }
   }, [userId]);
 

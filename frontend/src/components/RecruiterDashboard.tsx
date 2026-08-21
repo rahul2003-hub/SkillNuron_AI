@@ -4,6 +4,7 @@ import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
 import { CandidateMatches } from './CandidateMatches';
 import { JobPosting } from '../App';
+import { getAllJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
 interface RecruiterDashboardProps {
   userName: string;
@@ -17,13 +18,13 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
   const [activeTab, setActiveTab] = useState<Tab>('posted-jobs');
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for Recruiter Analytics
   const [analytics, setAnalytics] = useState({
     total_jobs: 0,
     total_candidates: 0,
     average_resume_score: 0,
-    top_skills: [] as {skill: string, count: number}[]
+    top_skills: [] as { skill: string, count: number }[]
   });
 
   useEffect(() => {
@@ -31,20 +32,21 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
       try {
         setIsLoading(true);
         // 1. Fetch Jobs for this recruiter
-        const jobsRes = await fetch('http://localhost:8000/api/jobs');
-        if (jobsRes.ok) {
-          const jobsData = await jobsRes.json();
-          if (jobsData.success) {
-            const myJobs = jobsData.jobs.filter((job: JobPosting) => job.postedBy === userName);
-            setJobs(myJobs);
-          }
+        const jobsData = await getAllJobs();
+        if (jobsData.success && Array.isArray(jobsData.jobs)) {
+          const myJobs = jobsData.jobs.filter((job: JobPosting) => job.postedBy === userName);
+          setJobs(myJobs);
         }
 
         // 2. Fetch Analytics
-        const analyticsRes = await fetch('http://localhost:8000/recruiter/analytics');
-        if (analyticsRes.ok) {
-          const analyticsData = await analyticsRes.json();
-          setAnalytics(analyticsData);
+        const analyticsData = await getRecruiterAnalytics();
+        if (analyticsData) {
+          setAnalytics({
+            total_jobs: analyticsData.total_jobs ?? 0,
+            total_candidates: analyticsData.total_candidates ?? 0,
+            average_resume_score: analyticsData.average_resume_score ?? 0,
+            top_skills: analyticsData.top_skills ?? []
+          });
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -63,10 +65,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
 
   const handleDeleteJob = async (jobId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/jobs/${jobId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete job');
+      await deleteJob(jobId);
       setJobs(jobs.filter(job => job.id !== jobId));
     } catch (error) {
       console.error('Error deleting job:', error);
@@ -98,7 +97,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        
+
         {/* Analytics KPI Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">

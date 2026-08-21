@@ -1,8 +1,9 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/LoginPage';
 import { RecruiterDashboard } from './components/RecruiterDashboard';
-import { JobSeekerLayout } from './components/JobSeekerLayout'; // We only import the Layout now!
+import { JobSeekerLayout } from './components/JobSeekerLayout';
+import { supabase } from './services/supabase';
 
 export type UserType = 'jobseeker' | 'recruiter' | null;
 
@@ -43,15 +44,43 @@ function App() {
   const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
-    const savedSession = localStorage.getItem('user_session');
-    if (savedSession) {
-      const session = JSON.parse(savedSession);
-      setUserType(session.type);
-      setUserName(session.name);
-      setUserEmail(session.email);
-      setUserId(session.id);
-      setCurrentView('dashboard');
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const metadata = session.user.user_metadata || {};
+        const role = (metadata.user_type as UserType) || 'jobseeker';
+        const name = metadata.name || session.user.email?.split('@')[0] || 'User';
+
+        setUserType(role);
+        setUserName(name);
+        setUserEmail(session.user.email || '');
+        setUserId(session.user.id);
+        setCurrentView('dashboard');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const metadata = session.user.user_metadata || {};
+        const role = (metadata.user_type as UserType) || 'jobseeker';
+        const name = metadata.name || session.user.email?.split('@')[0] || 'User';
+
+        setUserType(role);
+        setUserName(name);
+        setUserEmail(session.user.email || '');
+        setUserId(session.user.id);
+        setCurrentView('dashboard');
+      } else {
+        setUserType(null);
+        setUserName('');
+        setUserEmail('');
+        setUserId('');
+        setCurrentView('landing');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleUserTypeSelect = (type: UserType) => {
@@ -64,37 +93,22 @@ function App() {
     setUserName(name);
     setUserEmail(email);
     setUserId(id);
-    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
-    // Save session to browser
-    localStorage.setItem('user_session', JSON.stringify({ type, name, email, id }));
+    setCurrentView('dashboard');
   };
 
-  const handleLogout = () => {
-    setCurrentView('landing'); // <-- Changed from setIsLoggedIn
-    setUserType(null);         // <-- Added to properly clear the user type
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setCurrentView('landing');
+    setUserType(null);
     setUserName('');
     setUserEmail('');
     setUserId('');
-    // Clear session from browser
-    localStorage.removeItem('user_session');
   };
 
   const handleBackToLanding = () => {
     setInitialLoginType(null);
     setCurrentView('landing');
   };
-
-  useEffect(() => {
-  const savedSession = localStorage.getItem('user_session');
-  if (savedSession) {
-    const session = JSON.parse(savedSession);
-    setUserType(session.type);
-    setUserName(session.name);
-    setUserEmail(session.email);
-    setUserId(session.id);
-    setCurrentView('dashboard'); // <-- Changed from setIsLoggedIn
-  }
-}, []);
 
   if (currentView === 'landing') {
     return <LandingPage onUserTypeSelect={handleUserTypeSelect} />;

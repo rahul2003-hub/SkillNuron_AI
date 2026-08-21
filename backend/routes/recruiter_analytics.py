@@ -6,6 +6,7 @@ from collections import Counter
 from database import get_db
 from models.user import User, UserSkill, ResumeAnalysis
 from models.job import JobPosting
+from deps import require_recruiter
 
 router = APIRouter(prefix="/recruiter", tags=["Recruiter Analytics"])
 
@@ -14,37 +15,39 @@ router = APIRouter(prefix="/recruiter", tags=["Recruiter Analytics"])
 # Recruiter Dashboard Analytics
 # ---------------------------------
 @router.get("/analytics")
-def recruiter_analytics(db: Session = Depends(get_db)):
+def recruiter_analytics(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
+):
+    try:
+        total_jobs = db.query(JobPosting).count()
+    except Exception:
+        total_jobs = 0
 
-    # total jobs
-    total_jobs = db.query(JobPosting).count()
+    try:
+        total_candidates = db.query(User).filter(
+            User.user_type == "jobseeker"
+        ).count()
+    except Exception:
+        total_candidates = 0
 
-    # total candidates
-    # FIXED: Uses user_type and "jobseeker"
-    total_candidates = db.query(User).filter(
-        User.user_type == "jobseeker"
-    ).count()
+    try:
+        skills = db.query(UserSkill).all()
+        skill_list = [s.skill_name for s in skills if getattr(s, 'skill_name', None)]
+        skill_counter = Counter(skill_list)
+        top_skills = [
+            {"skill": skill, "count": count}
+            for skill, count in skill_counter.most_common(5)
+        ]
+    except Exception:
+        top_skills = []
 
-    # collect all candidate skills
-    skills = db.query(UserSkill).all()
-    skill_list = [s.skill_name for s in skills]
-
-    skill_counter = Counter(skill_list)
-
-    # top 5 skills
-    top_skills = [
-        {"skill": skill, "count": count}
-        for skill, count in skill_counter.most_common(5)
-    ]
-
-    # resume score analytics
-    # FIXED: Uses overall_score instead of score
-    scores = db.query(ResumeAnalysis.overall_score).all()
-    scores = [s[0] for s in scores if s[0] is not None]
-
-    avg_resume_score = None
-    if scores:
-        avg_resume_score = round(sum(scores) / len(scores), 2)
+    try:
+        scores = db.query(ResumeAnalysis.overall_score).all()
+        valid_scores = [s[0] for s in scores if s and s[0] is not None]
+        avg_resume_score = round(sum(valid_scores) / len(valid_scores), 2) if valid_scores else 0
+    except Exception:
+        avg_resume_score = 0
 
     return {
         "total_jobs": total_jobs,

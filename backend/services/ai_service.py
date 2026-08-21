@@ -7,34 +7,53 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "qwen/qwen3.6-27b"
 
 
 def clean_json_response(text: str) -> dict:
-    """Remove markdown code blocks and parse JSON safely"""
-    # Remove ```json ... ``` or ``` ... ``` wrappers
-    text = text.strip()
-    text = re.sub(r'^```json\s*', '', text)
-    text = re.sub(r'^```\s*', '', text)
-    text = re.sub(r'\s*```$', '', text)
-    text = text.strip()
+    """Parse a JSON response safely, including Qwen reasoning-wrapper output."""
+    text = (text or "").strip()
 
-    # Try direct parse first
+    # Fallback for Qwen responses that contain an explicit reasoning wrapper.
+    text = re.sub(
+        r"<think>.*?</think>", "", text,
+        flags=re.DOTALL | re.IGNORECASE
+    ).strip()
+
+    # Remove markdown code fences if present.
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s*```$", "", text).strip()
+
     try:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Find JSON object using regex - extract everything between first { and last }
-    match = re.search(r'\{.*\}', text, re.DOTALL)
+    # Last fallback: extract the JSON object from surrounding text.
+    match = re.search(r"\{.*\}", text, re.DOTALL)
     if match:
         try:
             return json.loads(match.group())
         except json.JSONDecodeError:
             pass
 
-    # Last resort - raise clear error
-    raise ValueError(f"Could not parse AI response as JSON. Raw response: {text[:200]}")
+    raise ValueError(
+        f"Could not parse AI response as JSON. Raw response: {text[:500]}"
+    )
+
+
+def _chat_json(prompt: str, max_tokens: int = 2000, temperature: float = 0.3) -> dict:
+    """Call Groq/Qwen using JSON Object Mode with reasoning disabled."""
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+        max_tokens=max_tokens,
+        response_format={"type": "json_object"},
+        reasoning_effort="none",
+    )
+
+    return clean_json_response(response.choices[0].message.content)
 
 
 
@@ -71,15 +90,7 @@ def analyze_skill_gap(user_skills: list, target_role: str) -> dict:
     Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=2000
-    )
-
-    result = response.choices[0].message.content
-    return clean_json_response(result)
+    return _chat_json(prompt, max_tokens=2000, temperature=0.3)
 
 
 def analyze_resume(resume_text: str) -> dict:
@@ -157,15 +168,7 @@ def analyze_resume(resume_text: str) -> dict:
     {resume_text[:2500]}
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=2000
-    )
-
-    result = response.choices[0].message.content
-    return clean_json_response(result)
+    return _chat_json(prompt, max_tokens=2000, temperature=0.3)
 
 
 def recommend_career_path(user_skills: list, experience_years: int, target_role: str) -> dict:
@@ -206,15 +209,7 @@ def recommend_career_path(user_skills: list, experience_years: int, target_role:
     Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=2000
-    )
-
-    result = response.choices[0].message.content
-    return clean_json_response(result)
+    return _chat_json(prompt, max_tokens=2000, temperature=0.3)
 
 
 def match_jobs_to_candidate(user_skills: list, job_listings: list) -> list:
@@ -241,15 +236,7 @@ def match_jobs_to_candidate(user_skills: list, job_listings: list) -> list:
     Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-        max_tokens=1500
-    )
-
-    result = response.choices[0].message.content
-    parsed = clean_json_response(result)
+    parsed = _chat_json(prompt, max_tokens=1500, temperature=0.3)
     return parsed["matches"]
 
 def analyze_psychometric(answers: dict, career_roles: list) -> dict:
@@ -302,15 +289,7 @@ def analyze_psychometric(answers: dict, career_roles: list) -> dict:
     - Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.4,
-        max_tokens=2000
-    )
-
-    result = response.choices[0].message.content
-    return clean_json_response(result)
+    return _chat_json(prompt, max_tokens=2000, temperature=0.4)
 
 def ai_candidate_match(job_skills: list, candidate_skills: list) -> dict:
     # Safely handle empty lists
@@ -336,12 +315,4 @@ def ai_candidate_match(job_skills: list, candidate_skills: list) -> dict:
     Return ONLY the JSON object. No markdown, no code blocks, no extra text.
     """
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2, # Low temperature for consistent scoring
-        max_tokens=500
-    )
-
-    result = response.choices[0].message.content
-    return clean_json_response(result)
+    return _chat_json(prompt, max_tokens=500, temperature=0.2) # Low temperature for consistent scoring

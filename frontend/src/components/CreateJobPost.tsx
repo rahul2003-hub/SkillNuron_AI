@@ -1,7 +1,7 @@
-// @ts-nocheck
 import { useState } from 'react';
 import { Plus, X, Briefcase, Zap } from 'lucide-react';
 import type { JobPosting } from '../App';
+import { createJob } from '../services/api';
 
 interface CreateJobPostProps {
   onCreateJob: (job: JobPosting) => void;
@@ -31,7 +31,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
     setSkills(skills.filter(s => s !== skill));
   };
 
-  // UPDATED: Now an async function that sends data to FastAPI
+  // UPDATED: Now an async function that sends data to FastAPI via authenticated API helper
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.company || skills.length === 0) {
@@ -39,7 +39,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
       return;
     }
 
-    // 1. Format the data EXACTLY as your FastAPI JobPostingRequest expects (snake_case)
+    // 1. Format the data EXACTLY as FastAPI JobPostingRequest expects (snake_case)
     const requestBody = {
       title: formData.title,
       company: formData.company,
@@ -52,24 +52,10 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
     };
 
     try {
-      // 2. Send to your FastAPI jobs route
-      // Make sure your FastAPI server is running on port 8000
-      const response = await fetch('http://localhost:8000/api/jobs/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      // 2. Send to FastAPI jobs route with Supabase Auth headers
+      const data = await createJob(requestBody);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // 3. Get the successful response from your backend
-      const data = await response.json();
-
-      // 4. Update the React UI using the job your backend returned
+      // 3. Update the React UI using the job backend returned
       if (data.success && data.job) {
         onCreateJob(data.job);
       }

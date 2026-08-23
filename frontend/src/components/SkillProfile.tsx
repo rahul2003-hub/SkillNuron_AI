@@ -122,9 +122,9 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     <div className="max-w-4xl mx-auto space-y-5">
 
       {/* Profile Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-6 shadow-lg">
+      <div className="bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl p-6 shadow-lg">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl font-medium">
+          <div className="w-14 h-14 bg-base-100/20 rounded-full flex items-center justify-center text-2xl font-medium">
             {userName?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div>
@@ -132,13 +132,13 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
             <p className="opacity-75 text-sm">{userEmail}</p>
             <div className="flex gap-2 mt-1 flex-wrap">
               {profileInfo.current_status && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{profileInfo.current_status}</span>
+                <span className="text-xs bg-base-100/20 px-2 py-0.5 rounded-full">{profileInfo.current_status}</span>
               )}
               {profileInfo.primary_role && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">🎯 {profileInfo.primary_role}</span>
+                <span className="text-xs bg-base-100/20 px-2 py-0.5 rounded-full">🎯 {profileInfo.primary_role}</span>
               )}
               {profileInfo.location && (
-                <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">📍 {profileInfo.location}</span>
+                <span className="text-xs bg-base-100/20 px-2 py-0.5 rounded-full">📍 {profileInfo.location}</span>
               )}
             </div>
           </div>
@@ -146,13 +146,13 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       </div>
 
       {/* Section Toggle */}
-      <div className="bg-white rounded-xl shadow-sm p-1 flex gap-1">
+      <div className="bg-base-100 rounded-xl shadow-sm p-1 flex gap-1">
         <button
           onClick={() => setActiveSection('info')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${
             activeSection === 'info'
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
+              : 'text-base-content/60 hover:bg-base-200'
           }`}
         >
           <User className="w-4 h-4" />
@@ -162,8 +162,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
           onClick={() => setActiveSection('skills')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${
             activeSection === 'skills'
-              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
+              : 'text-base-content/60 hover:bg-base-200'
           }`}
         >
           <Award className="w-4 h-4" />
@@ -175,19 +175,19 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       {activeSection === 'info' && (
         <div className="space-y-4">
           {isLoadingProfile ? (
-            <div className="bg-white rounded-xl p-8 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-purple-600 animate-spin" />
+            <div className="bg-base-100 rounded-xl p-8 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
             </div>
           ) : (
             <>
               {/* Basic Info Card */}
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-base-100 rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-gray-900 font-medium">Basic Information</h3>
+                  <h3 className="text-base-content font-medium">Basic Information</h3>
                   {!isEditingInfo ? (
                     <button
                       onClick={() => setIsEditingInfo(true)}
-                      className="flex items-center gap-2 px-4 py-1.5 border border-purple-300 text-purple-600 rounded-lg hover:bg-purple-50 text-sm"
+                      className="flex items-center gap-2 px-4 py-1.5 border border-primary/30 text-primary rounded-lg hover:bg-primary/10 text-sm"
                     >
                       <Edit3 className="w-3.5 h-3.5" /> Edit
                     </button>
@@ -195,14 +195,14 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     <div className="flex gap-2">
                       <button
                         onClick={() => setIsEditingInfo(false)}
-                        className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm"
+                        className="px-3 py-1.5 border border-base-300 text-base-content/60 rounded-lg text-sm"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleSaveInfo}
                         disabled={isSavingInfo}
-                        className="flex items-center gap-1.5 px-4 py-1.5 bg-purple-600 text-white rounded-lg text-sm"
+                        className="flex items-center gap-1.5 px-4 py-1.5 bg-primary text-primary-content rounded-lg text-sm"
                       >
                         {isSavingInfo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         Save
@@ -212,7 +212,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                 </div>
 
                 {saveInfoSuccess && (
-                  <div className="mb-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2 text-sm">
+                  <div className="mb-4 flex items-center gap-2 text-success bg-success/10 border border-success/30 rounded-lg px-4 py-2 text-sm">
                     <CheckCircle className="w-4 h-4" /> Profile saved successfully!
                   </div>
                 )}
@@ -220,139 +220,139 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                 <div className="grid md:grid-cols-2 gap-4">
                   {/* Name - readonly */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Full Name</label>
-                    <input value={userName} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                    <label className="block text-xs text-base-content/50 mb-1">Full Name</label>
+                    <input value={userName} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                   </div>
 
                   {/* Email - readonly */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Email</label>
-                    <input value={userEmail} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                    <label className="block text-xs text-base-content/50 mb-1">Email</label>
+                    <input value={userEmail} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                   </div>
 
                   {/* Education */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Education</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Education</label>
                     {isEditingInfo ? (
                       <select
                         value={profileInfo.education}
                         onChange={e => setProfileInfo({ ...profileInfo, education: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         <option value="">Select education</option>
                         {EDUCATION_OPTIONS.map(e => <option key={e}>{e}</option>)}
                       </select>
                     ) : (
-                      <input value={profileInfo.education || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.education || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 
                   {/* Education Status */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Education Status</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Education Status</label>
                     {isEditingInfo ? (
                       <select
                         value={profileInfo.education_status}
                         onChange={e => setProfileInfo({ ...profileInfo, education_status: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         <option>Completed</option>
                         <option>Pursuing</option>
                       </select>
                     ) : (
-                      <input value={profileInfo.education_status || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.education_status || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 
                   {/* Graduation Year */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Graduation Year</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Graduation Year</label>
                     {isEditingInfo ? (
                       <select
                         value={profileInfo.graduation_year}
                         onChange={e => setProfileInfo({ ...profileInfo, graduation_year: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         {YEAR_OPTIONS.map(y => <option key={y}>{y}</option>)}
                       </select>
                     ) : (
-                      <input value={profileInfo.graduation_year || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.graduation_year || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 
                   {/* Current Status */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Current Status</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Current Status</label>
                     {isEditingInfo ? (
                       <select
                         value={profileInfo.current_status}
                         onChange={e => setProfileInfo({ ...profileInfo, current_status: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
                       </select>
                     ) : (
-                      <input value={profileInfo.current_status || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.current_status || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 
                   {/* Location */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Location</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Location</label>
                     {isEditingInfo ? (
                       <select
                         value={profileInfo.location}
                         onChange={e => setProfileInfo({ ...profileInfo, location: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         <option value="">Select city</option>
                         {CITY_OPTIONS.map(c => <option key={c}>{c}</option>)}
                       </select>
                     ) : (
-                      <input value={profileInfo.location || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.location || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Phone</label>
+                    <label className="block text-xs text-base-content/50 mb-1">Phone</label>
                     {isEditingInfo ? (
                       <input
                         type="tel"
                         value={profileInfo.phone}
                         onChange={e => setProfileInfo({ ...profileInfo, phone: e.target.value })}
                         placeholder="+91 98765 43210"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       />
                     ) : (
-                      <input value={profileInfo.phone || '—'} readOnly className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 text-sm" />
+                      <input value={profileInfo.phone || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Target Roles Card */}
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-base-100 rounded-xl shadow-sm p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-gray-900 font-medium">🎯 Target Career Roles</h3>
-                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">{profileInfo.target_roles?.length || 0}/3 Roles</span>
+                  <h3 className="text-base-content font-medium">🎯 Target Career Roles</h3>
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">{profileInfo.target_roles?.length || 0}/3 Roles</span>
                 </div>
-                <p className="text-xs text-gray-500 mb-4">Add up to 3 roles. Your primary role powers default AI recommendations.</p>
+                <p className="text-xs text-base-content/50 mb-4">Add up to 3 roles. Your primary role powers default AI recommendations.</p>
 
                 {isEditingInfo ? (
                   <div className="space-y-3">
                     {/* List existing roles */}
                     {(profileInfo.target_roles || []).map((role, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
-                        <span className="flex-1 text-sm text-gray-700 px-2">{role}</span>
+                      <div key={idx} className="flex items-center gap-2 bg-base-200 p-2 rounded-lg border border-base-300">
+                        <span className="flex-1 text-sm text-base-content/70 px-2">{role}</span>
                         
                         {/* Primary Badge or Button */}
                         {profileInfo.primary_role === role ? (
-                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">Primary</span>
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">Primary</span>
                         ) : (
                           <button
                             onClick={() => setProfileInfo(prev => ({ ...prev, primary_role: role }))}
-                            className="text-xs text-gray-500 hover:text-purple-600 px-2 transition-colors"
+                            className="text-xs text-base-content/50 hover:text-primary px-2 transition-colors"
                           >
                             Make Primary
                           </button>
@@ -365,7 +365,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                             const newPrimary = profileInfo.primary_role === role ? (newRoles[0] || "") : profileInfo.primary_role;
                             setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
                           }}
-                          className="text-gray-400 hover:text-red-500 p-1 transition-colors"
+                          className="text-base-content/40 hover:text-error p-1 transition-colors"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -387,7 +387,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                           
                           setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
                         }}
-                        className="w-full px-4 py-2.5 border border-dashed border-purple-300 text-purple-700 rounded-lg focus:outline-none focus:border-purple-500 text-sm bg-purple-50 cursor-pointer"
+                        className="w-full px-4 py-2.5 border border-dashed border-primary/40 text-primary rounded-lg focus:outline-none focus:border-primary text-sm bg-primary/5 cursor-pointer"
                       >
                         <option value="">+ Add a target role</option>
                         {TARGET_ROLES.filter(r => !(profileInfo.target_roles || []).includes(r)).map(r => (
@@ -402,15 +402,15 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                       profileInfo.target_roles.map((role, idx) => (
                         <div key={idx} className={`px-4 py-2 rounded-xl text-sm border flex items-center gap-2 ${
                           profileInfo.primary_role === role
-                            ? 'bg-purple-50 border-purple-200 text-purple-800 font-medium shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-gray-600'
+                            ? 'bg-primary/10 border-primary/30 text-primary font-medium shadow-sm'
+                            : 'bg-base-200 border-base-300 text-base-content/60'
                         }`}>
                           {profileInfo.primary_role === role && <span className="text-base leading-none">⭐</span>}
                           {role}
                         </div>
                       ))
                     ) : (
-                      <div className="px-4 py-3 rounded-xl text-sm bg-gray-50 border border-gray-200 text-gray-500 w-full">
+                      <div className="px-4 py-3 rounded-xl text-sm bg-base-200 border border-base-300 text-base-content/50 w-full">
                         Not set — click Edit to choose up to 3 roles
                       </div>
                     )}
@@ -419,39 +419,39 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
               </div>
 
               {/* Links Card */}
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h3 className="text-gray-900 font-medium mb-4">🔗 Professional Links</h3>
+              <div className="bg-base-100 rounded-xl shadow-sm p-6">
+                <h3 className="text-base-content font-medium mb-4">🔗 Professional Links</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">LinkedIn URL</label>
+                    <label className="block text-xs text-base-content/50 mb-1">LinkedIn URL</label>
                     {isEditingInfo ? (
                       <input
                         type="url"
                         value={profileInfo.linkedin}
                         onChange={e => setProfileInfo({ ...profileInfo, linkedin: e.target.value })}
                         placeholder="https://linkedin.com/in/yourname"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       />
                     ) : (
                       profileInfo.linkedin
-                        ? <a href={profileInfo.linkedin} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">{profileInfo.linkedin}</a>
-                        : <span className="text-sm text-gray-400">Not added</span>
+                        ? <a href={profileInfo.linkedin} target="_blank" rel="noreferrer" className="text-sm text-info hover:underline">{profileInfo.linkedin}</a>
+                        : <span className="text-sm text-base-content/40">Not added</span>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">GitHub URL</label>
+                    <label className="block text-xs text-base-content/50 mb-1">GitHub URL</label>
                     {isEditingInfo ? (
                       <input
                         type="url"
                         value={profileInfo.github}
                         onChange={e => setProfileInfo({ ...profileInfo, github: e.target.value })}
                         placeholder="https://github.com/yourusername"
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       />
                     ) : (
                       profileInfo.github
-                        ? <a href={profileInfo.github} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">{profileInfo.github}</a>
-                        : <span className="text-sm text-gray-400">Not added</span>
+                        ? <a href={profileInfo.github} target="_blank" rel="noreferrer" className="text-sm text-info hover:underline">{profileInfo.github}</a>
+                        : <span className="text-sm text-base-content/40">Not added</span>
                     )}
                   </div>
                 </div>
@@ -465,17 +465,17 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       {activeSection === 'skills' && (
         <div className="space-y-4">
           {/* Info banner + Save */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start justify-between gap-3">
+          <div className="bg-info/10 border border-info/30 rounded-xl p-4 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-800">
+              <Sparkles className="w-5 h-5 text-info shrink-0 mt-0.5" />
+              <p className="text-sm text-base-content/80">
                 Add your real skills. <strong>Gap Analysis</strong> and <strong>Career Path</strong> tabs use these for personalised AI recommendations.
               </p>
             </div>
             <button
               onClick={handleSaveSkills}
               disabled={isSavingSkills}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm flex-shrink-0 hover:bg-purple-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-content rounded-lg text-sm shrink-0 hover:bg-primary/80 disabled:opacity-50"
             >
               {isSavingSkills ? <Loader2 className="w-4 h-4 animate-spin" /> : saveSkillSuccess ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               {saveSkillSuccess ? 'Saved!' : 'Save Skills'}
@@ -484,12 +484,12 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
 
           {/* Quick add from suggestions */}
           {Object.keys(suggestions).length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="text-gray-900 text-sm font-medium mb-3">Quick Add Popular Skills</h3>
+            <div className="bg-base-100 rounded-xl shadow-sm p-5">
+              <h3 className="text-base-content text-sm font-medium mb-3">Quick Add Popular Skills</h3>
               <div className="space-y-2">
                 {Object.entries(suggestions).slice(0, 3).map(([cat, skillList]) => (
                   <div key={cat}>
-                    <p className="text-xs text-gray-500 mb-1">{cat}</p>
+                    <p className="text-xs text-base-content/50 mb-1">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {(skillList as string[]).slice(0, 6).map(s => {
                         const alreadyAdded = skills.some(sk => sk.name === s);
@@ -500,8 +500,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                             onClick={() => !alreadyAdded && setSkills([...skills, { name: s, level: 70, category: cat }])}
                             className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
                               alreadyAdded
-                                ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                                : 'border-gray-200 text-gray-600 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700'
+                                ? 'bg-success/10 border-success/30 text-success cursor-default'
+                                : 'border-base-300 text-base-content/60 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
                             }`}
                           >
                             {alreadyAdded ? '✓ ' : '+ '}{s}
@@ -517,10 +517,10 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
 
           {/* Skills by category */}
           {categories.map(category => (
-            <div key={category} className="bg-white rounded-xl shadow-sm p-5">
+            <div key={category} className="bg-base-100 rounded-xl shadow-sm p-5">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm font-medium text-purple-700">{category}</span>
-                <span className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
+                <span className="text-sm font-medium text-primary">{category}</span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   {skills.filter(s => s.category === category).length} skills
                 </span>
               </div>
@@ -529,19 +529,19 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   <div key={skill.name} className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-700">{skill.name}</span>
-                        <span className="text-xs text-gray-500">{skill.level}%</span>
+                        <span className="text-sm text-base-content/70">{skill.name}</span>
+                        <span className="text-xs text-base-content/50">{skill.level}%</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-base-200 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                          className="h-full bg-linear-to-r from-primary to-secondary rounded-full"
                           style={{ width: `${skill.level}%` }}
                         />
                       </div>
                     </div>
                     <button
                       onClick={() => setSkills(skills.filter(s => s.name !== skill.name))}
-                      className="text-gray-300 hover:text-red-400 transition-colors"
+                      className="text-base-content/30 hover:text-error transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -553,35 +553,35 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
 
           {/* Add Skill Form */}
           {showAddSkill ? (
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="text-gray-900 text-sm font-medium mb-4">Add New Skill</h3>
+            <div className="bg-base-100 rounded-xl shadow-sm p-5">
+              <h3 className="text-base-content text-sm font-medium mb-4">Add New Skill</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Skill Name</label>
+                  <label className="block text-xs text-base-content/50 mb-1">Skill Name</label>
                   <input
                     type="text"
                     placeholder="e.g. TypeScript, Docker, AWS..."
                     value={newSkill.name}
                     onChange={e => setNewSkill({ ...newSkill, name: e.target.value })}
                     onKeyDown={e => e.key === 'Enter' && handleAddSkill()}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                    className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Proficiency: {newSkill.level}%</label>
+                  <label className="block text-xs text-base-content/50 mb-1">Proficiency: {newSkill.level}%</label>
                   <input
                     type="range" min="0" max="100"
                     value={newSkill.level}
                     onChange={e => setNewSkill({ ...newSkill, level: Number(e.target.value) })}
-                    className="w-full accent-purple-600"
+                    className="w-full accent-primary"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Category</label>
+                  <label className="block text-xs text-base-content/50 mb-1">Category</label>
                   <select
                     value={newSkill.category}
                     onChange={e => setNewSkill({ ...newSkill, category: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+                    className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                   >
                     {Object.keys(suggestions).length > 0
                       ? Object.keys(suggestions).map(c => <option key={c}>{c}</option>)
@@ -590,10 +590,10 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={handleAddSkill} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2.5 rounded-lg text-sm hover:shadow-lg">
+                  <button onClick={handleAddSkill} className="flex-1 bg-linear-to-r from-primary to-secondary text-primary-content py-2.5 rounded-lg text-sm hover:shadow-lg">
                     Add Skill
                   </button>
-                  <button onClick={() => setShowAddSkill(false)} className="px-5 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+                  <button onClick={() => setShowAddSkill(false)} className="px-5 py-2.5 border border-base-300 text-base-content/60 rounded-lg text-sm hover:bg-base-200">
                     Cancel
                   </button>
                 </div>
@@ -602,7 +602,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
           ) : (
             <button
               onClick={() => setShowAddSkill(true)}
-              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-purple-300 text-purple-600 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition-all text-sm"
+              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-primary/40 text-primary rounded-xl hover:border-primary hover:bg-primary/10 transition-all text-sm"
             >
               <Plus className="w-4 h-4" /> Add Custom Skill
             </button>

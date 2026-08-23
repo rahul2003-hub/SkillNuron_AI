@@ -106,31 +106,31 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-base-200 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back button */}
         <button
           onClick={onBackToLanding}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+          className="flex items-center gap-2 text-base-content/60 hover:text-base-content mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
         </button>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-base-100 rounded-2xl shadow-xl p-8">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
-            <Brain className="w-8 h-8 text-purple-600" />
-            <span className="text-2xl text-purple-900">SkillNuron AI</span>
+            <Brain className="w-8 h-8 text-primary" />
+            <span className="text-2xl text-primary">SkillNuron AI</span>
           </div>
 
           {/* User Type Toggle */}
-          <div className="flex gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
+          <div className="flex gap-2 mb-6 p-1 bg-base-200 rounded-xl">
             <button
               onClick={() => setUserType('jobseeker')}
               className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'jobseeker'
-                  ? 'bg-white shadow text-purple-700 font-medium'
-                  : 'text-gray-600'
+                  ? 'bg-base-100 shadow text-primary font-medium'
+                  : 'text-base-content/60'
                 }`}
             >
               Job Seeker
@@ -138,8 +138,8 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             <button
               onClick={() => setUserType('recruiter')}
               className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'recruiter'
-                  ? 'bg-white shadow text-purple-700 font-medium'
-                  : 'text-gray-600'
+                  ? 'bg-base-100 shadow text-primary font-medium'
+                  : 'text-base-content/60'
                 }`}
             >
               Recruiter
@@ -147,51 +147,49 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
           </div>
 
           {/* Login / Register Toggle */}
-          <div className="flex gap-2 mb-6 border-b border-gray-200">
-            <button
-              onClick={() => { setIsLogin(true); setError(''); }}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
-                }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => { setIsLogin(false); setError(''); }}
-              className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${!isLogin ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500'
-                }`}
-            >
-              Register
-            </button>
-          </div>
+          <div className="tabs tabs-bordered w-full">
+              <button
+                onClick={() => { setIsLogin(true); setError(''); }}
+                className={`tab flex-1 font-bold ${isLogin ? 'tab-active' : ''}`}
+              >
+                Login
+              </button>
+              <button
+                onClick={() => { setIsLogin(false); setError(''); }}
+                className={`tab flex-1 font-bold ${!isLogin ? 'tab-active' : ''}`}
+              >
+                Register
+              </button>
+            </div>
 
           <div className="space-y-4">
             {/* Name field — only for register */}
             {!isLogin && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Full Name</label>
+                <label className="block text-sm text-base-content/60 mb-1">Full Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Rahul Panchal"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-400"
+                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:border-primary bg-base-100"
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Email</label>
+              <label className="block text-sm text-base-content/60 mb-1">Email</label>
               <input
                 type="email"
                 placeholder="your@email.com"
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-400"
+                className="w-full px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:border-primary bg-base-100"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Password</label>
+              <label className="block text-sm text-base-content/60 mb-1">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -199,12 +197,12 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
                   value={formData.password}
                   onChange={e => setFormData({ ...formData, password: e.target.value })}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-400 pr-12"
+                  className="w-full px-4 py-3 border border-base-300 rounded-xl focus:outline-none focus:border-primary pr-12 bg-base-100"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content/60"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -213,7 +211,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
 
             {/* Error message */}
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+              <div className="p-3 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
                 {error}
               </div>
             )}
@@ -221,7 +219,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>

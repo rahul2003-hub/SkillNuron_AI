@@ -60,9 +60,9 @@ export function JobRecommendations() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-6 shadow-lg">
+      <div className="bg-linear-to-r from-primary to-secondary text-white rounded-xl p-6 shadow-lg">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-base-100/20 rounded-lg flex items-center justify-center shrink-0">
             <Briefcase className="w-6 h-6" />
           </div>
           <div>
@@ -73,14 +73,14 @@ export function JobRecommendations() {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white rounded-xl shadow-sm p-5">
+      <div className="bg-base-100 rounded-xl shadow-sm p-5">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">Job Role</label>
+            <label className="block text-xs text-base-content/60 mb-1">Job Role</label>
             <select
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+              className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100 text-base-content"
             >
               {TECH_ROLES.map((role) => (
                 <option key={role} value={role}>{role}</option>
@@ -89,11 +89,11 @@ export function JobRecommendations() {
           </div>
 
           <div className="flex-1">
-            <label className="block text-xs text-gray-500 mb-1">City</label>
+            <label className="block text-xs text-base-content/60 mb-1">City</label>
             <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400 text-sm"
+              className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100 text-base-content"
             >
               {INDIAN_CITIES.map((city) => (
                 <option key={city} value={city}>{city}</option>
@@ -105,7 +105,7 @@ export function JobRecommendations() {
             <button
               onClick={handleSearch}
               disabled={isLoading}
-              className="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+              className="w-full md:w-auto px-6 py-2.5 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Searching...</>
@@ -119,7 +119,7 @@ export function JobRecommendations() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+        <div className="bg-error/10 border border-error/30 rounded-xl p-4 text-sm text-error">
           ⚠️ {error}
         </div>
       )}
@@ -128,11 +128,11 @@ export function JobRecommendations() {
       {isLoading && (
         <div className="grid md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-5 shadow-sm animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-3" />
-              <div className="h-3 bg-gray-100 rounded w-1/2 mb-4" />
-              <div className="h-3 bg-gray-100 rounded w-full mb-2" />
-              <div className="h-3 bg-gray-100 rounded w-2/3" />
+            <div key={i} className="bg-base-100 rounded-xl p-5 shadow-sm animate-pulse">
+              <div className="h-4 bg-base-300 rounded w-3/4 mb-3" />
+              <div className="h-3 bg-base-200 rounded w-1/2 mb-4" />
+              <div className="h-3 bg-base-200 rounded w-full mb-2" />
+              <div className="h-3 bg-base-200 rounded w-2/3" />
             </div>
           ))}
         </div>
@@ -141,7 +141,7 @@ export function JobRecommendations() {
       {/* Results Count */}
       {!isLoading && hasSearched && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-base-content/70">
             {jobs.length > 0
               ? `Found ${jobs.length} jobs for "${keywords}" in ${location}`
               : `No jobs found for "${keywords}" in ${location}`
@@ -149,7 +149,7 @@ export function JobRecommendations() {
           </p>
           <button
             onClick={handleSearch}
-            className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-800"
+            className="flex items-center gap-1 text-sm text-primary hover:text-primary"
           >
             <RefreshCw className="w-3 h-3" /> Refresh
           </button>
@@ -162,44 +162,44 @@ export function JobRecommendations() {
           {jobs.map((job) => (
             <div
               key={job.id}
-              className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md hover:border-purple-300 transition-all cursor-pointer"
+              className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
               onClick={() => setSelectedJob(job)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-gray-900 font-medium truncate">{job.title}</h3>
-                  <p className="text-purple-600 text-sm">{job.company}</p>
+                  <h3 className="text-base-content font-medium truncate">{job.title}</h3>
+                  <p className="text-primary text-sm">{job.company}</p>
                 </div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex-shrink-0 ml-2">
+                <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full shrink-0 ml-2">
                   Live
                 </span>
               </div>
 
               <div className="space-y-1.5 mb-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{job.location}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Briefcase className="w-3.5 h-3.5 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-sm text-base-content/70">
+                  <Briefcase className="w-3.5 h-3.5 shrink-0" />
                   <span>{job.type}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-green-600 font-medium">₹</span>
-                  <span className="text-green-700">{job.salary}</span>
+                  <span className="text-success font-medium">₹</span>
+                  <span className="text-success">{job.salary}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 line-clamp-2 mb-4">{job.description}</p>
+              <p className="text-xs text-base-content/60 line-clamp-2 mb-4">{job.description}</p>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Posted: {job.posted_date}</span>
+                <span className="text-xs text-base-content/50">Posted: {job.posted_date}</span>
                 <a
                   href={job.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                  className="flex items-center gap-1 text-xs text-primary hover:text-primary font-medium"
                 >
                   Apply <ExternalLink className="w-3 h-3" />
                 </a>
@@ -216,59 +216,59 @@ export function JobRecommendations() {
           onClick={() => setSelectedJob(null)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-base-100 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-2xl text-gray-900 mb-1">{selectedJob.title}</h2>
-                <p className="text-purple-600 text-lg">{selectedJob.company}</p>
+                <h2 className="text-2xl text-base-content mb-1">{selectedJob.title}</h2>
+                <p className="text-primary text-lg">{selectedJob.company}</p>
               </div>
-              <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
+              <span className="text-xs bg-success/20 text-success px-3 py-1 rounded-full">
                 Live on Adzuna
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-gray-400" />
+                <MapPin className="w-4 h-4 text-base-content/50" />
                 <div>
-                  <p className="text-xs text-gray-500">Location</p>
-                  <p className="text-sm text-gray-900">{selectedJob.location}</p>
+                  <p className="text-xs text-base-content/60">Location</p>
+                  <p className="text-sm text-base-content">{selectedJob.location}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-gray-400" />
+                <Briefcase className="w-4 h-4 text-base-content/50" />
                 <div>
-                  <p className="text-xs text-gray-500">Type</p>
-                  <p className="text-sm text-gray-900">{selectedJob.type}</p>
+                  <p className="text-xs text-base-content/60">Type</p>
+                  <p className="text-sm text-base-content">{selectedJob.type}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-green-500 font-medium">₹</span>
+                <span className="text-success font-medium">₹</span>
                 <div>
-                  <p className="text-xs text-gray-500">Salary</p>
-                  <p className="text-sm text-green-700 font-medium">{selectedJob.salary}</p>
+                  <p className="text-xs text-base-content/60">Salary</p>
+                  <p className="text-sm text-success font-medium">{selectedJob.salary}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
+                <TrendingUp className="w-4 h-4 text-base-content/50" />
                 <div>
-                  <p className="text-xs text-gray-500">Posted</p>
-                  <p className="text-sm text-gray-900">{selectedJob.posted_date}</p>
+                  <p className="text-xs text-base-content/60">Posted</p>
+                  <p className="text-sm text-base-content">{selectedJob.posted_date}</p>
                 </div>
               </div>
             </div>
 
             <div className="mb-6">
-              <h3 className="text-gray-900 font-medium mb-2">Job Description</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">{selectedJob.description}</p>
+              <h3 className="text-base-content font-medium mb-2">Job Description</h3>
+              <p className="text-sm text-base-content/70 leading-relaxed">{selectedJob.description}</p>
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="flex-1 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
+                className="flex-1 py-3 border border-base-300 rounded-xl hover:bg-base-200 text-sm"
               >
                 Close
               </button>
@@ -276,7 +276,7 @@ export function JobRecommendations() {
                 href={selectedJob.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg text-center text-sm flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg text-center text-sm flex items-center justify-center gap-2"
               >
                 Apply on Adzuna <ExternalLink className="w-4 h-4" />
               </a>

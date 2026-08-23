@@ -121,25 +121,25 @@ export function PsychometricTest() {
   const isLastQuestion = currentQ === questions.length - 1;
 
   const OPTION_COLORS = [
-    'hover:border-purple-400 hover:bg-purple-50',
-    'hover:border-blue-400 hover:bg-blue-50',
-    'hover:border-teal-400 hover:bg-teal-50',
-    'hover:border-amber-400 hover:bg-amber-50',
-    'hover:border-pink-400 hover:bg-pink-50', // Option E color
+    'hover:border-primary hover:bg-primary/10',
+    'hover:border-info hover:bg-info/10',
+    'hover:border-accent hover:bg-accent/10',
+    'hover:border-warning hover:bg-warning/10',
+    'hover:border-secondary hover:bg-secondary/10', // Option E color
   ];
 
   const SELECTED_COLORS = [
-    'border-purple-500 bg-purple-50 text-purple-800',
-    'border-blue-500 bg-blue-50 text-blue-800',
-    'border-teal-500 bg-teal-50 text-teal-800',
-    'border-amber-500 bg-amber-50 text-amber-800',
-    'border-pink-500 bg-pink-50 text-pink-800', // Option E selected color
+    'border-primary bg-primary/10 text-primary',
+    'border-info bg-info/10 text-info',
+    'border-accent bg-accent/10 text-accent',
+    'border-warning bg-warning/10 text-warning',
+    'border-secondary bg-secondary/10 text-secondary', // Option E selected color
   ];
 
   if (isFetching) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
@@ -148,16 +148,16 @@ export function PsychometricTest() {
   if (!started) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-8 shadow-lg text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-linear-to-r from-primary to-secondary text-white rounded-xl p-8 shadow-lg text-center">
+          <div className="w-16 h-16 bg-base-100/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Brain className="w-8 h-8" />
           </div>
           <h2 className="text-3xl mb-3">Tech Career Assessment</h2>
           <p className="opacity-90 text-lg">Discover which tech career role matches your personality and interests.</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-gray-900 text-lg mb-4">What you will discover</h3>
+        <div className="bg-base-100 rounded-xl shadow-sm p-6">
+          <h3 className="text-base-content text-lg mb-4">What you will discover</h3>
           <div className="space-y-3">
             {[
               { icon: '🧠', text: 'Your tech personality type and core strengths' },
@@ -167,14 +167,14 @@ export function PsychometricTest() {
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-xl">{item.icon}</span>
-                <p className="text-gray-700 text-sm">{item.text}</p>
+                <p className="text-base-content/80 text-sm">{item.text}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-800">
+        <div className="bg-info/10 border border-info/30 rounded-xl p-4">
+          <p className="text-sm text-info">
             <strong>20 questions · Takes 5 minutes · Tech focused</strong><br />
             Covers: Backend · Frontend · Data · AI/ML · DevOps · Product roles
           </p>
@@ -182,7 +182,7 @@ export function PsychometricTest() {
 
         <button
           onClick={() => setStarted(true)}
-          className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all text-lg flex items-center justify-center gap-2"
+          className="w-full py-4 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all text-lg flex items-center justify-center gap-2"
         >
           <Sparkles className="w-5 h-5" />
           Start Assessment
@@ -197,9 +197,9 @@ export function PsychometricTest() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Personality Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-8 shadow-lg">
+        <div className="bg-linear-to-r from-primary to-secondary text-white rounded-xl p-8 shadow-lg">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-16 h-16 bg-base-100/20 rounded-full flex items-center justify-center shrink-0">
               <Brain className="w-8 h-8" />
             </div>
             <div>
@@ -211,81 +211,81 @@ export function PsychometricTest() {
         </div>
 
         {/* Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+        <div className="bg-info/10 border border-info/30 rounded-xl p-5">
           <div className="flex gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-800">{result.summary}</p>
+            <Sparkles className="w-5 h-5 text-info shrink-0 mt-0.5" />
+            <p className="text-sm text-info">{result.summary}</p>
           </div>
         </div>
 
         {/* Strengths + Work Style */}
         <div className="grid md:grid-cols-2 gap-5">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-base-100 rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Star className="w-5 h-5 text-amber-500" />
-              <h3 className="text-gray-900">Top Strengths</h3>
+              <Star className="w-5 h-5 text-warning" />
+              <h3 className="text-base-content">Top Strengths</h3>
             </div>
             <div className="space-y-2">
               {result.top_strengths?.map((s, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-gray-700">{s}</span>
+                  <CheckCircle className="w-4 h-4 text-success shrink-0 mt-0.5" />
+                  <span className="text-sm text-base-content/80">{s}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-base-100 rounded-xl shadow-sm p-6">
             <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-5 h-5 text-purple-500" />
-              <h3 className="text-gray-900">Work Style</h3>
+              <Zap className="w-5 h-5 text-primary" />
+              <h3 className="text-base-content">Work Style</h3>
             </div>
-            <p className="text-sm text-gray-700 mb-4">{result.work_style}</p>
+            <p className="text-sm text-base-content/80 mb-4">{result.work_style}</p>
             <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-gray-900">Ideal environment</span>
+              <Target className="w-4 h-4 text-info" />
+              <span className="text-sm font-medium text-base-content">Ideal environment</span>
             </div>
-            <p className="text-sm text-gray-600">{result.ideal_environment}</p>
+            <p className="text-sm text-base-content/70">{result.ideal_environment}</p>
           </div>
         </div>
 
         {/* Career Matches */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-gray-900 text-lg mb-6">Your Top Career Matches</h3>
+        <div className="bg-base-100 rounded-xl shadow-sm p-6">
+          <h3 className="text-base-content text-lg mb-6">Your Top Career Matches</h3>
           <div className="space-y-4">
             {result.career_matches?.map((match, i) => (
-              <div key={i} className={`border-2 rounded-xl p-5 ${i === 0 ? 'border-purple-300 bg-purple-50' : 'border-gray-200'}`}>
+              <div key={i} className={`border-2 rounded-xl p-5 ${i === 0 ? 'border-primary/40 bg-primary/10' : 'border-base-300'}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-gray-900 font-medium text-lg">{match.role}</span>
+                      <span className="text-base-content font-medium text-lg">{match.role}</span>
                       {i === 0 && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                        <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full font-medium">
                           ⭐ Best fit
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">{match.reason}</p>
+                    <p className="text-sm text-base-content/70">{match.reason}</p>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-4">
-                    <div className={`text-3xl font-medium ${i === 0 ? 'text-purple-600' : 'text-gray-700'}`}>
+                  <div className="text-right shrink-0 ml-4">
+                    <div className={`text-3xl font-medium ${i === 0 ? 'text-primary' : 'text-base-content/80'}`}>
                       {match.fit_score}%
                     </div>
-                    <div className="text-xs text-gray-400">fit score</div>
+                    <div className="text-xs text-base-content/50">fit score</div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                <div className="w-full bg-base-300 rounded-full h-2 mb-3">
                   <div
-                    className={`h-2 rounded-full ${i === 0 ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-gray-400'}`}
+                    className={`h-2 rounded-full ${i === 0 ? 'bg-linear-to-r from-primary to-secondary' : 'bg-base-content/30'}`}
                     style={{ width: `${match.fit_score}%` }}
                   />
                 </div>
                 {match.indian_companies?.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">🏢 Top hiring companies in India</p>
+                    <p className="text-xs text-base-content/60 mb-2">🏢 Top hiring companies in India</p>
                     <div className="flex flex-wrap gap-2">
                       {match.indian_companies.map((c, j) => (
-                        <span key={j} className="px-2 py-1 bg-white border border-gray-200 text-gray-700 rounded-full text-xs">
+                        <span key={j} className="px-2 py-1 bg-base-100 border border-base-300 text-base-content/80 rounded-full text-xs">
                           {c}
                         </span>
                       ))}
@@ -299,30 +299,30 @@ export function PsychometricTest() {
 
         {/* First Step */}
         {result.recommended_first_step && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+          <div className="bg-success/10 border border-success/30 rounded-xl p-5">
             <div className="flex items-start gap-3">
-              <ArrowRight className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <ArrowRight className="w-5 h-5 text-success shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-green-900 font-medium mb-1">Your recommended first step this week</h4>
-                <p className="text-sm text-green-800">{result.recommended_first_step}</p>
+                <h4 className="text-success font-medium mb-1">Your recommended first step this week</h4>
+                <p className="text-sm text-success">{result.recommended_first_step}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Learning Style */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-gray-900 mb-2">How You Learn Best</h3>
-          <p className="text-sm text-gray-700">{result.learning_style}</p>
+        <div className="bg-base-100 rounded-xl shadow-sm p-6">
+          <h3 className="text-base-content mb-2">How You Learn Best</h3>
+          <p className="text-sm text-base-content/80">{result.learning_style}</p>
         </div>
 
         {/* Roles to avoid */}
         {result.career_avoid?.length > 0 && (
-          <div className="bg-red-50 border border-red-100 rounded-xl p-5">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Roles that may not suit your style</h3>
+          <div className="bg-error/10 border border-error/20 rounded-xl p-5">
+            <h3 className="text-sm font-medium text-base-content mb-3">Roles that may not suit your style</h3>
             <div className="space-y-1">
               {result.career_avoid.map((role, i) => (
-                <p key={i} className="text-xs text-red-700">• {role}</p>
+                <p key={i} className="text-xs text-error">• {role}</p>
               ))}
             </div>
           </div>
@@ -330,7 +330,7 @@ export function PsychometricTest() {
 
         <button
           onClick={handleReset}
-          className="w-full py-3 border-2 border-purple-600 text-purple-600 rounded-xl hover:bg-purple-50 transition-all flex items-center justify-center gap-2"
+          className="w-full py-3 border-2 border-primary text-primary rounded-xl hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
         >
           <RotateCcw className="w-4 h-4" />
           Retake Assessment
@@ -344,14 +344,14 @@ export function PsychometricTest() {
     <div className="max-w-2xl mx-auto space-y-5">
 
       {/* Progress */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
+      <div className="bg-base-100 rounded-xl shadow-sm p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">Question {currentQ + 1} of {questions.length}</span>
-          <span className="text-sm text-purple-600 font-medium">{progress}% complete</span>
+          <span className="text-sm text-base-content/70">Question {currentQ + 1} of {questions.length}</span>
+          <span className="text-sm text-primary font-medium">{progress}% complete</span>
         </div>
-        <div className="w-full bg-gray-100 rounded-full h-2">
+        <div className="w-full bg-base-200 rounded-full h-2">
           <div
-            className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
+            className="bg-linear-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -363,10 +363,10 @@ export function PsychometricTest() {
               onClick={() => setCurrentQ(i)}
               className={`w-6 h-6 rounded-full text-xs transition-all ${
                 i === currentQ
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-primary text-white'
                   : answers[q.id]
-                  ? 'bg-green-400 text-white'
-                  : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                  ? 'bg-success text-white'
+                  : 'bg-base-300 text-base-content/60 hover:bg-base-300'
               }`}
             >
               {i + 1}
@@ -377,12 +377,12 @@ export function PsychometricTest() {
 
       {/* Question Card */}
       {questions[currentQ] && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-base-100 rounded-xl shadow-sm p-6">
           <div className="flex items-start gap-3 mb-6">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-purple-700 font-medium text-sm">{currentQ + 1}</span>
+            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+              <span className="text-primary font-medium text-sm">{currentQ + 1}</span>
             </div>
-            <h3 className="text-gray-900 text-lg leading-snug pt-1">
+            <h3 className="text-base-content text-lg leading-snug pt-1">
               {questions[currentQ].question}
             </h3>
           </div>
@@ -398,14 +398,14 @@ export function PsychometricTest() {
                     className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all text-sm ${
                       isSelected
                         ? SELECTED_COLORS[i]
-                        : `border-gray-200 text-gray-700 ${OPTION_COLORS[i]}`
+                        : `border-base-300 text-base-content/80 ${OPTION_COLORS[i]}`
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center font-medium text-xs ${
+                      <div className={`w-7 h-7 rounded-full border-2 shrink-0 flex items-center justify-center font-medium text-xs ${
                         isSelected
                           ? 'border-current bg-current text-white'
-                          : 'border-gray-300 text-gray-500'
+                          : 'border-base-300 text-base-content/60'
                       }`}>
                         {option.id}
                       </div>
@@ -421,7 +421,7 @@ export function PsychometricTest() {
                         placeholder="Type your custom answer here..."
                         value={(currentAnswered || '').replace('E: ', '')}
                         onChange={(e) => handleCustomTextChange(questions[currentQ].id, e.target.value)}
-                        className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 bg-white shadow-sm text-sm"
+                        className="w-full px-4 py-2 border border-primary/40 rounded-lg focus:outline-none focus:border-primary bg-base-100 shadow-sm text-sm"
                         autoFocus
                       />
                     </div>
@@ -438,7 +438,7 @@ export function PsychometricTest() {
         <button
           onClick={() => setCurrentQ(prev => Math.max(0, prev - 1))}
           disabled={currentQ === 0}
-          className="flex items-center gap-2 px-5 py-3 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-5 py-3 border border-base-300 text-base-content/70 rounded-xl hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
@@ -448,7 +448,7 @@ export function PsychometricTest() {
           <button
             onClick={() => setCurrentQ(prev => prev + 1)}
             disabled={!currentAnswered || currentAnswered === 'E: '}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next <ChevronRight className="w-4 h-4" />
           </button>
@@ -456,7 +456,7 @@ export function PsychometricTest() {
           <button
             onClick={handleSubmit}
             disabled={answeredCount < 20 || currentAnswered === 'E: ' || isLoading}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing your profile...</>
@@ -467,12 +467,12 @@ export function PsychometricTest() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="p-3 bg-error/10 border border-error/30 rounded-xl text-sm text-error">
           ⚠️ {error}
         </div>
       )}
 
-      <p className="text-center text-xs text-gray-400">
+      <p className="text-center text-xs text-base-content/50">
         {answeredCount} of {questions.length} answered
         {answeredCount < 20 && ` · Answer all 20 to submit`}
       </p>

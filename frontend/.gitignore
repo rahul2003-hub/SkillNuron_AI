@@ -126,3 +126,14 @@ dist
 
 skills-lock.json
 .agents
+
+# Local environment and OS files
+.env.*
+!.env.example
+*.local
+.DS_Store
+Thumbs.db
+
+# production
+/build
+/dist

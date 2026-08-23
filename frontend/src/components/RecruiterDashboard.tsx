@@ -74,21 +74,21 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-base-200">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-40 shadow-sm">
+      <header className="bg-base-100 border-b border-base-300 sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Brain className="w-8 h-8 text-purple-600" />
-            <span className="text-2xl font-bold text-purple-900">SkillNuron AI</span>
-            <span className="hidden sm:inline px-3 py-1 bg-pink-100 text-pink-700 text-sm rounded-full font-medium ml-2">Recruiter</span>
+            <Brain className="w-8 h-8 text-primary" />
+            <span className="text-2xl font-bold text-primary">SkillNuron AI</span>
+            <span className="hidden sm:inline px-3 py-1 bg-secondary/20 text-secondary text-sm rounded-full font-medium ml-2">Recruiter</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm text-gray-500">Welcome back,</p>
-              <p className="text-gray-900 font-semibold">{userName}</p>
+              <p className="text-sm text-base-content/60">Welcome back,</p>
+              <p className="text-base-content font-semibold">{userName}</p>
             </div>
-            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-base-content/70 hover:bg-base-200 rounded-lg transition-colors">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
             </button>
@@ -100,32 +100,32 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
 
         {/* Analytics KPI Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-3 bg-purple-100 rounded-lg text-purple-600"><Briefcase className="w-6 h-6" /></div>
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-lg text-primary"><Briefcase className="w-6 h-6" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Total Jobs</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.total_jobs}</p>
+              <p className="text-sm text-base-content/60 font-medium">Total Jobs</p>
+              <p className="text-2xl font-bold text-base-content">{analytics.total_jobs}</p>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-lg text-blue-600"><Users className="w-6 h-6" /></div>
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+            <div className="p-3 bg-info/10 rounded-lg text-info"><Users className="w-6 h-6" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Talent Pool</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.total_candidates}</p>
+              <p className="text-sm text-base-content/60 font-medium">Talent Pool</p>
+              <p className="text-2xl font-bold text-base-content">{analytics.total_candidates}</p>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-lg text-green-600"><FileText className="w-6 h-6" /></div>
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+            <div className="p-3 bg-success/10 rounded-lg text-success"><FileText className="w-6 h-6" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Avg Resume Score</p>
-              <p className="text-2xl font-bold text-gray-900">{analytics.average_resume_score || 0}%</p>
+              <p className="text-sm text-base-content/60 font-medium">Avg Resume Score</p>
+              <p className="text-2xl font-bold text-base-content">{analytics.average_resume_score || 0}%</p>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-            <div className="p-3 bg-pink-100 rounded-lg text-pink-600"><TrendingUp className="w-6 h-6" /></div>
+          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+            <div className="p-3 bg-secondary/10 rounded-lg text-secondary"><TrendingUp className="w-6 h-6" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Top Skill</p>
-              <p className="text-lg font-bold text-gray-900 line-clamp-1">
+              <p className="text-sm text-base-content/60 font-medium">Top Skill</p>
+              <p className="text-lg font-bold text-base-content line-clamp-1">
                 {analytics.top_skills.length > 0 ? analytics.top_skills[0].skill : 'N/A'}
               </p>
             </div>
@@ -133,15 +133,15 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-sm mb-8 p-2 border border-gray-100">
+        <div className="bg-base-100 rounded-xl shadow-sm mb-8 p-2 border border-base-300">
           <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'posted-jobs' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>
+            <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'posted-jobs' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">My Jobs</span>
             </button>
-            <button onClick={() => setActiveTab('create-job')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'create-job' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>
+            <button onClick={() => setActiveTab('create-job')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'create-job' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Post New Job</span>
             </button>
-            <button onClick={() => setActiveTab('candidates')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'candidates' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}>
+            <button onClick={() => setActiveTab('candidates')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'candidates' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Star className="w-4 h-4" /> <span className="hidden sm:inline">AI Matches</span>
             </button>
           </div>
@@ -151,7 +151,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
         <div>
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : (
             <>

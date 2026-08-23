@@ -137,7 +137,7 @@ function App() {
 
   if (userType === 'recruiter') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-base-200">
         <RecruiterDashboard
           userName={userName}
           userId={userId}

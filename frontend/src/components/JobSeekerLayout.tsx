@@ -67,27 +67,27 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
   ];
 
   return (
-    <div className="fixed inset-0 flex bg-[#F8F9FA] font-sans overflow-hidden">
+    <div className="fixed inset-0 flex bg-base-200 font-sans overflow-hidden">
       
       <aside 
-        className={`h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out relative z-20 flex-shrink-0 ${
+        className={`h-full bg-base-100 border-r border-base-300 flex flex-col transition-all duration-300 ease-in-out relative z-20 shrink-0 ${
           isSidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
-        <div className={`h-16 flex items-center border-b border-gray-100 flex-shrink-0 transition-all duration-300 ${
+        <div className={`h-16 flex items-center border-b border-base-300 shrink-0 transition-all duration-300 ${
           isSidebarOpen ? 'justify-between px-4' : 'justify-center'
         }`}>
           {isSidebarOpen && (
             <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
-              <Brain className="w-8 h-8 text-purple-600 flex-shrink-0" />
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
-                SkillNuron <span className="text-purple-600">AI</span>
+              <Brain className="w-8 h-8 text-primary shrink-0" />
+              <span className="text-xl font-bold text-base-content tracking-tight">
+                SkillNuron <span className="text-primary">AI</span>
               </span>
             </div>
           )}
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors flex-shrink-0 outline-none"
+            className="p-2 rounded-lg hover:bg-base-200 text-base-content/50 transition-colors shrink-0 outline-none"
           >
             {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -102,8 +102,8 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
                 onClick={() => setActiveTab(id as Tab)}
                 className={`flex items-center transition-all duration-200 group ${
                   isActive
-                    ? 'bg-purple-50 text-purple-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'text-base-content/60 hover:bg-base-200 hover:text-base-content'
                 } ${
                   isSidebarOpen 
                     ? 'w-full px-4 py-3 rounded-xl justify-start' 
@@ -111,8 +111,8 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
                 }`}
                 title={!isSidebarOpen ? label : ''}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                  isActive ? 'text-purple-600' : 'text-gray-400 group-hover:text-gray-600'
+                <Icon className={`w-5 h-5 shrink-0 transition-colors ${
+                  isActive ? 'text-primary' : 'text-base-content/40 group-hover:text-base-content/60'
                 }`} />
                 {isSidebarOpen && <span className="ml-3 truncate whitespace-nowrap">{label}</span>}
               </button>
@@ -120,36 +120,36 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-100 flex-shrink-0 bg-white">
+        <div className="p-4 border-t border-base-300 shrink-0 bg-base-100">
           <button
             onClick={onLogout}
-            className={`flex items-center transition-all duration-200 group text-gray-600 hover:bg-red-50 hover:text-red-600 ${
+            className={`flex items-center transition-all duration-200 group text-base-content/60 hover:bg-error/10 hover:text-error ${
               isSidebarOpen 
                 ? 'w-full px-4 py-3 rounded-xl justify-start' 
                 : 'w-12 h-12 justify-center rounded-xl mx-auto'
             }`}
             title={!isSidebarOpen ? "Logout" : ""}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0 text-gray-400 group-hover:text-red-500 transition-colors" />
+            <LogOut className="w-5 h-5 shrink-0 text-base-content/40 group-hover:text-error transition-colors" />
             {isSidebarOpen && <span className="ml-3 font-medium whitespace-nowrap">Logout</span>}
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 h-full flex flex-col min-w-0 overflow-hidden relative z-10 bg-[#F8F9FA]">
+      <main className="flex-1 h-full flex flex-col min-w-0 overflow-hidden relative z-10 bg-base-200">
         
-        <header className="flex-none h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-10 z-10">
+        <header className="flex-none h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-6 lg:px-10 z-10">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-gray-800 capitalize tracking-tight">
+            <h1 className="text-xl font-semibold text-base-content capitalize tracking-tight">
               {activeTab.replace('-', ' ')}
             </h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Welcome back</p>
-              <p className="text-sm font-bold text-gray-900">{userName}</p>
+              <p className="text-xs text-base-content/50 font-medium uppercase tracking-wider">Welcome back</p>
+              <p className="text-sm font-bold text-base-content">{userName}</p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-full flex items-center justify-center text-white font-bold shadow-md border-2 border-white">
+            <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-primary-content font-bold shadow-md border-2 border-base-100">
               {userName.charAt(0).toUpperCase()}
             </div>
           </div>

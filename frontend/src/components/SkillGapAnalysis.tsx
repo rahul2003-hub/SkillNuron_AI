@@ -23,10 +23,10 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-700';
-      case 'medium': return 'bg-yellow-100 text-yellow-700';
-      case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'high': return 'bg-error/20 text-error';
+      case 'medium': return 'bg-warning/10 text-warning';
+      case 'low': return 'bg-success/20 text-success';
+      default: return 'bg-base-200 text-base-content/80';
     }
   };
 
@@ -58,9 +58,9 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-6 shadow-lg">
+      <div className="bg-linear-to-r from-primary to-secondary text-white rounded-xl p-6 shadow-lg">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-base-100/20 rounded-lg flex items-center justify-center shrink-0">
             <Brain className="w-6 h-6" />
           </div>
           <div>
@@ -73,16 +73,16 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
       </div>
 
       {/* Current Skills Summary */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-gray-900 mb-3">Your Current Skills ({skills.length})</h3>
+      <div className="bg-base-100 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base-content mb-3">Your Current Skills ({skills.length})</h3>
         {skills.length === 0 ? (
-          <p className="text-sm text-orange-600 bg-orange-50 p-3 rounded-lg">
+          <p className="text-sm text-warning bg-warning/10 p-3 rounded-lg">
             ⚠️ No skills added yet. Go to the <strong>Profile</strong> tab and add your skills first.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {skills.map(skill => (
-              <span key={skill.name} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+              <span key={skill.name} className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm">
                 {skill.name} · {skill.level}%
               </span>
             ))}
@@ -91,18 +91,18 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
       </div>
 
       {/* Feature Purpose Banner */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-start gap-3">
-        <Target className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+      <div className="bg-info/10 border border-info/30 rounded-xl p-4 flex items-start gap-3">
+        <Target className="w-5 h-5 text-info shrink-0 mt-0.5" />
         <div>
-          <h4 className="text-indigo-900 font-medium text-sm">Tool Purpose: The Skills Audit</h4>
-          <p className="text-indigo-800 text-sm mt-1">This tool compares your current skills directly against role requirements to find exactly what you're missing. (For timeline and salary, use Career Path).</p>
+          <h4 className="text-info font-medium text-sm">Tool Purpose: The Skills Audit</h4>
+          <p className="text-info text-sm mt-1">This tool compares your current skills directly against role requirements to find exactly what you're missing. (For timeline and salary, use Career Path).</p>
         </div>
       </div>
 
       {/* Target Role Input */}
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-gray-900 mb-1">What role are you targeting?</h3>
-        {savedRole && <p className="text-xs text-purple-600 mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Auto-loaded from your profile</p>}
+      <div className="bg-base-100 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base-content mb-1">What role are you targeting?</h3>
+        {savedRole && <p className="text-xs text-primary mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Auto-loaded from your profile</p>}
         <div className="flex gap-3">
           <input
             type="text"
@@ -110,12 +110,12 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
             value={targetRole}
             onChange={e => setTargetRole(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-400"
+            className="flex-1 px-4 py-3 border border-base-300 rounded-lg focus:outline-none focus:border-primary"
           />
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isLoading ? (
               <>
@@ -133,14 +133,14 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
 
         {/* Error */}
         {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mt-3 p-3 bg-error/10 border border-error/30 rounded-lg text-sm text-error">
             ⚠️ {error}
           </div>
         )}
 
         {/* Loading State */}
         {isLoading && (
-          <div className="mt-4 flex items-center gap-3 text-purple-600">
+          <div className="mt-4 flex items-center gap-3 text-primary">
             <Sparkles className="w-5 h-5 animate-pulse" />
             <span className="text-sm">Groq AI is analyzing your skill gap... this takes 3–5 seconds</span>
           </div>
@@ -151,42 +151,42 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
       {result && (
         <>
           {/* Summary */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <div className="bg-info/10 border border-info/30 rounded-xl p-5">
             <div className="flex items-start gap-3">
-              <Brain className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <Brain className="w-5 h-5 text-info shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-blue-900 mb-1">AI Summary</h4>
-                <p className="text-sm text-blue-800">{result.summary}</p>
+                <h4 className="text-info mb-1">AI Summary</h4>
+                <p className="text-sm text-info">{result.summary}</p>
               </div>
             </div>
           </div>
 
           {/* Stats */}
           <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-base-100 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <span className="text-gray-600">Critical Gaps</span>
+                <AlertCircle className="w-5 h-5 text-error" />
+                <span className="text-base-content/70">Critical Gaps</span>
               </div>
-              <p className="text-3xl text-gray-900">
+              <p className="text-3xl text-base-content">
                 {result.missing_skills?.filter((g: any) => g.priority === 'high').length || 0}
               </p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-base-100 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <TrendingUp className="w-5 h-5 text-yellow-600" />
-                <span className="text-gray-600">Growth Areas</span>
+                <TrendingUp className="w-5 h-5 text-warning" />
+                <span className="text-base-content/70">Growth Areas</span>
               </div>
-              <p className="text-3xl text-gray-900">
+              <p className="text-3xl text-base-content">
                 {result.missing_skills?.filter((g: any) => g.priority === 'medium').length || 0}
               </p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-base-100 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-2">
-                <BookOpen className="w-5 h-5 text-blue-600" />
-                <span className="text-gray-600">Resources Found</span>
+                <BookOpen className="w-5 h-5 text-info" />
+                <span className="text-base-content/70">Resources Found</span>
               </div>
-              <p className="text-3xl text-gray-900">
+              <p className="text-3xl text-base-content">
                 {result.learning_resources?.length || 0}
               </p>
             </div>
@@ -194,31 +194,31 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
 
           {/* Skill Gaps */}
           {result.missing_skills?.length > 0 && (
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="text-xl text-gray-900 mb-6">Identified Skill Gaps</h3>
+            <div className="bg-base-100 rounded-xl p-6 shadow-sm">
+              <h3 className="text-xl text-base-content mb-6">Identified Skill Gaps</h3>
               <div className="space-y-4">
                 {result.missing_skills.map((gap: any, index: number) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="text-lg text-gray-900">{gap.skill}</h4>
+                          <h4 className="text-lg text-base-content">{gap.skill}</h4>
                           <span className={`px-3 py-1 text-xs rounded-full ${getPriorityColor(gap.priority)}`}>
                             {gap.priority?.toUpperCase()} PRIORITY
                           </span>
                         </div>
-                        <p className="text-gray-600 text-sm mb-3">{gap.recommendation}</p>
+                        <p className="text-base-content/70 text-sm mb-3">{gap.recommendation}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center justify-between text-sm mb-1">
-                          <span className="text-gray-600">Current: {gap.currentLevel}%</span>
-                          <span className="text-gray-600">Target: {gap.targetLevel}%</span>
+                          <span className="text-base-content/70">Current: {gap.currentLevel}%</span>
+                          <span className="text-base-content/70">Target: {gap.targetLevel}%</span>
                         </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-2 bg-base-300 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                            className="h-full bg-linear-to-r from-primary to-secondary"
                             style={{ width: `${gap.currentLevel}%` }}
                           />
                         </div>
@@ -232,20 +232,20 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
 
           {/* Learning Resources */}
           {result.learning_resources?.length > 0 && (
-            <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="bg-base-100 rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
-                <BookOpen className="w-6 h-6 text-purple-600" />
-                <h3 className="text-xl text-gray-900">Recommended Learning Resources</h3>
+                <BookOpen className="w-6 h-6 text-primary" />
+                <h3 className="text-xl text-base-content">Recommended Learning Resources</h3>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 {result.learning_resources.map((resource: any, index: number) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:border-primary/40 transition-colors">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-gray-900">{resource.title}</h4>
-                      <CheckCircle className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                      <h4 className="text-base-content">{resource.title}</h4>
+                      <CheckCircle className="w-5 h-5 text-base-content/40 shrink-0" />
                     </div>
-                    <p className="text-sm text-purple-600 mb-2">{resource.skill}</p>
-                    <div className="flex items-center justify-between text-sm text-gray-600">
+                    <p className="text-sm text-primary mb-2">{resource.skill}</p>
+                    <div className="flex items-center justify-between text-sm text-base-content/70">
                       <span>{resource.platform}</span>
                       <span>{resource.duration}</span>
                     </div>
@@ -256,12 +256,12 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
           )}
 
           {/* Nudge to Career Path */}
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 text-center mb-6">
-            <h3 className="text-purple-900 font-medium mb-2">Ready to see your long-term roadmap?</h3>
-            <p className="text-purple-700 text-sm mb-4">Now that you know your gaps, plot your salary and timeline.</p>
+          <div className="bg-primary/10 border border-primary/30 rounded-xl p-6 text-center mb-6">
+            <h3 className="text-primary font-medium mb-2">Ready to see your long-term roadmap?</h3>
+            <p className="text-primary text-sm mb-4">Now that you know your gaps, plot your salary and timeline.</p>
             <button 
               onClick={() => setActiveTab && setActiveTab('career-path')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors text-sm font-medium"
             >
               Go to Career Path →
             </button>
@@ -269,15 +269,15 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
 
           {/* Action Plan */}
           {result.action_plan?.length > 0 && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
-              <h3 className="text-xl text-gray-900 mb-4">Your AI Learning Action Plan</h3>
+            <div className="bg-linear-to-r from-info/10 to-primary/10 rounded-xl p-6 border border-info/30">
+              <h3 className="text-xl text-base-content mb-4">Your AI Learning Action Plan</h3>
               <div className="space-y-3">
                 {result.action_plan.map((step: string, index: number) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center flex-shrink-0 text-sm">
+                    <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shrink-0 text-sm">
                       {index + 1}
                     </div>
-                    <p className="text-gray-700">{step}</p>
+                    <p className="text-base-content/80">{step}</p>
                   </div>
                 ))}
               </div>

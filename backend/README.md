@@ -1,4 +1,4 @@
-# SkillNeuron AI — Backend
+# SkillNuron AI — Backend
 
 > AI-powered Skill Gap Analyzer and Career Path Recommender System  
 > MCA Final Year Project | Built with FastAPI + PostgreSQL + Groq AI
@@ -201,7 +201,7 @@ All AI features use **Groq API with qwen/qwen3.6-27b** model:
 ## 👨‍💻 Author
 
 **Rahul Panchal**  
-MCA Final Year | Skillneuron AI  
+MCA Final Year | SkillNuron AI  
 GitHub: [github.com/rahul2025-hub](https://github.com/rahul2025-hub)
 
 ---

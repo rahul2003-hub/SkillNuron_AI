@@ -1,4 +1,4 @@
-# SkillNeuron AI — Frontend
+# SkillNuron AI — Frontend
 
 > AI-powered Skill Gap Analyzer and Career Path Recommender System  
 > MCA Final Year Project | Built with React + TypeScript + Vite
@@ -205,7 +205,7 @@ Fetches real jobs from Adzuna India API via backend. Dropdown for role + city. A
 ## 👨‍💻 Author
 
 **Rahul Panchal**  
-MCA Final Year | Skillneuron AI  
+MCA Final Year | SkillNuron AI  
 GitHub: [github.com/rahul2025-hub](https://github.com/rahul2025-hub)
 
 ---

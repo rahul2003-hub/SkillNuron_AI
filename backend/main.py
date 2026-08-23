@@ -23,7 +23,7 @@ from routes.applications import router as applications_router
 from routes.recruiter_analytics import router as recruiter_analytics_router
 
 app = FastAPI(
-    title="SkillNeuron AI API",
+    title="SkillNuron AI API",
     description="AI-powered Skill Gap Analyzer and Career Path Recommender",
     version="1.0.0"
 )
@@ -34,7 +34,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
-        "https://skillneuron-frontend.onrender.com",
+        "http://localhost:3001",
+        "https://skillnuron-ai.vercel.app",
+        "https://skillnuron-ai-git-main-rahulpanchal5003-1733s-projects.vercel.app",
+        "https://skillnuron-8llptdhqr-rahulpanchal5003-1733s-projects.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -54,7 +57,7 @@ app.include_router(recruiter_analytics_router)
 
 @app.get("/")
 def root():
-    return {"message": "SkillNeuron AI backend is running! 🚀"}
+    return {"message": "SkillNuron AI backend is running! 🚀"}
 
 @app.get("/health")
 def health_check():

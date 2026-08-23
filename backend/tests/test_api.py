@@ -17,7 +17,7 @@ test_data = {
     "user_id": None,
     "token": None,
     "job_id": None,
-    "email": "testuser_pytest@skillneuron.com"
+    "email": "testuser_pytest@SkillNuron.com"
 }
 
 # ============================================================
@@ -35,7 +35,7 @@ def cleanup_test_user():
     try:
         # Delete test user's skills first (foreign key)
         test_user = db.query(User).filter(
-            User.email == "testuser_pytest@skillneuron.com"
+            User.email == "testuser_pytest@SkillNuron.com"
         ).first()
 
         if test_user:

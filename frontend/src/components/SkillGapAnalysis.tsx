@@ -83,7 +83,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
           <div className="flex flex-wrap gap-2">
             {skills.map(skill => (
               <span key={skill.name} className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm">
-                {skill.name} · {skill.level}%
+                {skill.name} · {skill.level}
               </span>
             ))}
           </div>

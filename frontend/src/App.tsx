@@ -9,7 +9,7 @@ export type UserType = 'jobseeker' | 'recruiter' | null;
 
 export interface Skill {
   name: string;
-  level: number;
+  level: string;
   category: string;
 }
 

@@ -19,14 +19,19 @@ interface JobSeekerLayoutProps {
   onLogout: () => void;
 }
 
-const defaultSkills: Skill[] = [
-  { name: 'JavaScript', level: 85, category: 'Programming' },
-  { name: 'React', level: 80, category: 'Frontend' },
-  { name: 'Python', level: 70, category: 'Programming' },
-  { name: 'SQL', level: 65, category: 'Database' },
-  { name: 'Git', level: 75, category: 'Tools' },
-  { name: 'HTML/CSS', level: 90, category: 'Frontend' },
-];
+const defaultSkills: Skill[] = [];
+
+const deduplicateSkills = (skillList: Skill[]): Skill[] => {
+  const map = new Map<string, Skill>();
+  for (const s of skillList) {
+    if (!s?.name) continue;
+    const key = s.name.trim().toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, s);
+    }
+  }
+  return Array.from(map.values());
+};
 
 // Renamed function to JobSeekerLayout to fix the App.tsx import error
 export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSeekerLayoutProps) {
@@ -39,8 +44,8 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
     if (userId) {
       getSkills(userId)
         .then(data => {
-          if (data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
-            setSkills(data.skills);
+          if (data.skills && Array.isArray(data.skills)) {
+            setSkills(deduplicateSkills(data.skills));
           }
         })
         .catch(err => console.error("Failed to load saved skills:", err));

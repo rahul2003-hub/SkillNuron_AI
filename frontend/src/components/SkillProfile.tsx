@@ -23,6 +23,8 @@ const TARGET_ROLES = [
   "Android Developer", "iOS Developer", "Cybersecurity Analyst"
 ];
 
+
+
 export function SkillProfile({ skills, setSkills, userId, userName, userEmail }: SkillProfileProps) {
   const [activeSection, setActiveSection] = useState<'info' | 'skills'>('info');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -33,7 +35,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-  const [newSkill, setNewSkill] = useState({ name: '', level: 50, category: 'Programming' });
+  const [newSkill, setNewSkill] = useState({ name: '', level: 'Beginner', category: 'Programming' });
 
   const [profileInfo, setProfileInfo] = useState({
     education: '',
@@ -56,6 +58,24 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       setIsLoadingProfile(false); // Add this line to prevent infinite loading
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (!skills || skills.length === 0) return;
+    const map = new Map<string, Skill>();
+    let hasDupes = false;
+    for (const s of skills) {
+      if (!s?.name) continue;
+      const key = s.name.trim().toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, s);
+      } else {
+        hasDupes = true;
+      }
+    }
+    if (hasDupes) {
+      setSkills(Array.from(map.values()));
+    }
+  }, [skills]);
 
   const loadProfile = async () => {
     setIsLoadingProfile(true);
@@ -109,11 +129,26 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   };
 
   const handleAddSkill = () => {
-    if (newSkill.name.trim()) {
-      setSkills([...skills, { ...newSkill, name: newSkill.name.trim() }]);
-      setNewSkill({ name: '', level: 50, category: 'Programming' });
-      setShowAddSkill(false);
+    const trimmedName = newSkill.name.trim();
+    if (!trimmedName) return;
+
+    const existingIdx = skills.findIndex(
+      s => s.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (existingIdx >= 0) {
+      const updated = [...skills];
+      updated[existingIdx] = { ...skills[existingIdx], level: newSkill.level, category: newSkill.category };
+      setSkills(updated);
+    } else {
+      setSkills([...skills, { ...newSkill, name: trimmedName }]);
     }
+    setNewSkill({ name: '', level: 'Beginner', category: 'Programming' });
+    setShowAddSkill(false);
+  };
+
+  const handleUpdateSkillLevel = (skillName: string, newLevel: string) => {
+    setSkills(skills.map(s => s.name.trim().toLowerCase() === skillName.trim().toLowerCase() ? { ...s, level: newLevel } : s));
   };
 
   const categories = Array.from(new Set(skills.map(s => s.category)));
@@ -149,22 +184,20 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       <div className="bg-base-100 rounded-xl shadow-sm p-1 flex gap-1">
         <button
           onClick={() => setActiveSection('info')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${
-            activeSection === 'info'
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'info'
               ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
               : 'text-base-content/60 hover:bg-base-200'
-          }`}
+            }`}
         >
           <User className="w-4 h-4" />
           Basic Information
         </button>
         <button
           onClick={() => setActiveSection('skills')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${
-            activeSection === 'skills'
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'skills'
               ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
               : 'text-base-content/60 hover:bg-base-200'
-          }`}
+            }`}
         >
           <Award className="w-4 h-4" />
           Skills ({skills.length})
@@ -345,7 +378,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     {(profileInfo.target_roles || []).map((role, idx) => (
                       <div key={idx} className="flex items-center gap-2 bg-base-200 p-2 rounded-lg border border-base-300">
                         <span className="flex-1 text-sm text-base-content/70 px-2">{role}</span>
-                        
+
                         {/* Primary Badge or Button */}
                         {profileInfo.primary_role === role ? (
                           <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">Primary</span>
@@ -357,7 +390,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                             Make Primary
                           </button>
                         )}
-                        
+
                         {/* Remove Button */}
                         <button
                           onClick={() => {
@@ -381,10 +414,10 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                           if (!selected) return;
                           const currentRoles = profileInfo.target_roles || [];
                           if (currentRoles.includes(selected)) return;
-                          
+
                           const newRoles = [...currentRoles, selected];
                           const newPrimary = profileInfo.primary_role ? profileInfo.primary_role : selected;
-                          
+
                           setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
                         }}
                         className="w-full px-4 py-2.5 border border-dashed border-primary/40 text-primary rounded-lg focus:outline-none focus:border-primary text-sm bg-primary/5 cursor-pointer"
@@ -400,11 +433,10 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   <div className="flex flex-wrap gap-2">
                     {(profileInfo.target_roles || []).length > 0 ? (
                       profileInfo.target_roles.map((role, idx) => (
-                        <div key={idx} className={`px-4 py-2 rounded-xl text-sm border flex items-center gap-2 ${
-                          profileInfo.primary_role === role
+                        <div key={idx} className={`px-4 py-2 rounded-xl text-sm border flex items-center gap-2 ${profileInfo.primary_role === role
                             ? 'bg-primary/10 border-primary/30 text-primary font-medium shadow-sm'
                             : 'bg-base-200 border-base-300 text-base-content/60'
-                        }`}>
+                          }`}>
                           {profileInfo.primary_role === role && <span className="text-base leading-none">⭐</span>}
                           {role}
                         </div>
@@ -492,17 +524,24 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     <p className="text-xs text-base-content/50 mb-1">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {(skillList as string[]).slice(0, 6).map(s => {
-                        const alreadyAdded = skills.some(sk => sk.name === s);
+                        const alreadyAdded = skills.some(sk => sk.name.trim().toLowerCase() === s.trim().toLowerCase());
                         return (
                           <button
                             key={s}
                             disabled={alreadyAdded}
-                            onClick={() => !alreadyAdded && setSkills([...skills, { name: s, level: 70, category: cat }])}
-                            className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
-                              alreadyAdded
+                            onClick={() => {
+                              if (!alreadyAdded) {
+                                const trimmedName = s.trim();
+                                const existingIdx = skills.findIndex(sk => sk.name.trim().toLowerCase() === trimmedName.toLowerCase());
+                                if (existingIdx < 0) {
+                                  setSkills([...skills, { name: trimmedName, level: 'Beginner', category: cat }]);
+                                }
+                              }
+                            }}
+                            className={`px-2.5 py-1 text-xs rounded-full border transition-all ${alreadyAdded
                                 ? 'bg-success/10 border-success/30 text-success cursor-default'
                                 : 'border-base-300 text-base-content/60 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
-                            }`}
+                              }`}
                           >
                             {alreadyAdded ? '✓ ' : '+ '}{s}
                           </button>
@@ -526,25 +565,27 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
               </div>
               <div className="space-y-3">
                 {skills.filter(s => s.category === category).map(skill => (
-                  <div key={skill.name} className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-base-content/70">{skill.name}</span>
-                        <span className="text-xs text-base-content/50">{skill.level}%</span>
-                      </div>
-                      <div className="h-1.5 bg-base-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-linear-to-r from-primary to-secondary rounded-full"
-                          style={{ width: `${skill.level}%` }}
-                        />
-                      </div>
+                  <div key={skill.name} className="flex items-center justify-between py-2 border-b border-base-200 last:border-b-0">
+                    <span className="text-sm font-medium text-base-content/80">{skill.name}</span>
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={skill.level || 'Beginner'}
+                        onChange={e => handleUpdateSkillLevel(skill.name, e.target.value)}
+                        className="text-xs font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 focus:outline-none cursor-pointer hover:bg-primary/20 transition-colors"
+                      >
+                        <option value="Beginner" className="bg-base-100 text-base-content">Beginner</option>
+                        <option value="Intermediate" className="bg-base-100 text-base-content">Intermediate</option>
+                        <option value="Advanced" className="bg-base-100 text-base-content">Advanced</option>
+                        <option value="Expert" className="bg-base-100 text-base-content">Expert</option>
+                      </select>
+                      <button
+                        onClick={() => setSkills(skills.filter(s => s.name.trim().toLowerCase() !== skill.name.trim().toLowerCase()))}
+                        className="text-base-content/30 hover:text-error transition-colors p-1"
+                        title="Remove skill"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setSkills(skills.filter(s => s.name !== skill.name))}
-                      className="text-base-content/30 hover:text-error transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
                   </div>
                 ))}
               </div>
@@ -568,13 +609,17 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-base-content/50 mb-1">Proficiency: {newSkill.level}%</label>
-                  <input
-                    type="range" min="0" max="100"
+                  <label className="block text-xs text-base-content/50 mb-1">Proficiency Level</label>
+                  <select
                     value={newSkill.level}
-                    onChange={e => setNewSkill({ ...newSkill, level: Number(e.target.value) })}
-                    className="w-full accent-primary"
-                  />
+                    onChange={e => setNewSkill({ ...newSkill, level: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Expert">Expert</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs text-base-content/50 mb-1">Category</label>
@@ -604,7 +649,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
               onClick={() => setShowAddSkill(true)}
               className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-primary/40 text-primary rounded-xl hover:border-primary hover:bg-primary/10 transition-all text-sm"
             >
-              <Plus className="w-4 h-4" /> Add Custom Skill
+              <Plus className="w-4 h-4" /> Add Skill
             </button>
           )}
         </div>

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+import enum
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSON
 from sqlalchemy.orm import relationship
 from database import Base
@@ -42,13 +43,22 @@ class UserProfile(Base):
 
     user = relationship("User", back_populates="profile")
 
+class SkillLevel(str, enum.Enum):
+    Beginner = "Beginner"
+    Intermediate = "Intermediate"
+    Advanced = "Advanced"
+    Expert = "Expert"
+
 class UserSkill(Base):
     __tablename__ = "user_skills"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     skill_name = Column(String, nullable=False)
-    level = Column(Integer, nullable=False, default=50)
+    level = Column( 
+        Enum(SkillLevel, name="skills_level", inherit_schema=True), 
+        nullable=False
+    )
     category = Column(String, nullable=False, default="Programming")
 
     user = relationship("User", back_populates="skills")
@@ -61,6 +71,8 @@ class ResumeAnalysis(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     overall_score = Column(Integer)
     analysis_json = Column(JSON)
+    resume_path = Column(String, nullable=True)      # Supabase Storage object path
+    filename = Column(String, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="resume_analyses")

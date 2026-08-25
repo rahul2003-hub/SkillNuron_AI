@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, X, Briefcase, Zap } from 'lucide-react';
+import { Plus, X, Briefcase, Zap, Sparkles, Loader2 } from 'lucide-react';
 import type { JobPosting } from '../App';
-import { createJob } from '../services/api';
+import { createJob, polishJobDescription } from '../services/api';
 
 interface CreateJobPostProps {
   onCreateJob: (job: JobPosting) => void;
@@ -19,6 +19,25 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
   });
   const [skills, setSkills] = useState<string[]>([]);
   const [currentSkill, setCurrentSkill] = useState('');
+  const [isPolishing, setIsPolishing] = useState(false);
+
+  const handlePolishDescription = async () => {
+    if (!formData.description.trim()) {
+      alert('Write a draft description first, then polish it.');
+      return;
+    }
+    setIsPolishing(true);
+    try {
+      const data = await polishJobDescription(formData.title, formData.description, skills);
+      if (data.polished_description) {
+        setFormData({ ...formData, description: data.polished_description });
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to polish description');
+    } finally {
+      setIsPolishing(false);
+    }
+  };
 
   const handleAddSkill = () => {
     if (currentSkill.trim() && !skills.includes(currentSkill.trim())) {
@@ -70,7 +89,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
         description: '',
       });
       setSkills([]);
-      
+
       alert('Job successfully posted and saved to database!');
 
     } catch (error) {
@@ -88,7 +107,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
             {/* AI Glow Background */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-base-100 opacity-5 rounded-full blur-3xl -mr-32 -mt-32"></div>
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary opacity-10 rounded-full blur-3xl -ml-32 -mb-32"></div>
-            
+
             <div className="flex items-center gap-4 mb-4 relative z-10">
               <div className="relative w-16 h-16">
                 {/* Glow effect */}
@@ -192,7 +211,18 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
               <div className="space-y-4">
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-semibold text-base-content/80 mb-3">Job Description</label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-semibold text-base-content/80">Job Description</label>
+                    <button
+                      type="button"
+                      onClick={handlePolishDescription}
+                      disabled={isPolishing}
+                      className="btn btn-xs btn-outline btn-primary gap-1"
+                    >
+                      {isPolishing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      {isPolishing ? 'Polishing...' : 'AI Polish'}
+                    </button>
+                  </div>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -264,11 +294,10 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                         setSkills([...skills, skill]);
                       }
                     }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      skills.includes(skill)
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${skills.includes(skill)
                         ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md'
                         : 'bg-base-100 text-primary border border-primary/30 hover:bg-primary/10'
-                    }`}
+                      }`}
                     disabled={skills.includes(skill)}
                   >
                     {skills.includes(skill) ? '✓ ' : '+ '}

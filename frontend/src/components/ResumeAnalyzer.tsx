@@ -1,8 +1,12 @@
-import { useState, useRef } from 'react';
-import { FileText, CheckCircle, AlertCircle, XCircle, TrendingUp, Award, Brain, Zap, Eye, FileCheck, AlertTriangle, Upload, X, Loader2, Sparkles } from 'lucide-react';
-import { analyzeResume, analyzeResumeFromText } from '../services/api';
+import { useState, useRef, useEffect } from 'react';
+import { FileText, CheckCircle, AlertCircle, XCircle, TrendingUp, Award, Brain, Zap, Eye, FileCheck, AlertTriangle, Upload, X, Loader2, Sparkles, Download, Clock } from 'lucide-react';
+import { analyzeResume, analyzeResumeFromText, saveResumeAnalysis, getResumeHistory, getResumeDownloadUrl } from '../services/api';
 
-export function ResumeAnalyzer() {
+interface ResumeAnalyzerProps {
+  userId?: string;
+}
+
+export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAnalyzed, setIsAnalyzed] = useState(false);
@@ -11,6 +15,11 @@ export function ResumeAnalyzer() {
   const [pastedText, setPastedText] = useState('');
   const [analysisData, setAnalysisData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [history, setHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (userId) getResumeHistory(userId).then(d => setHistory(d.analyses ?? [])).catch(() => {});
+  }, [userId, isAnalyzed]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,6 +45,9 @@ export function ResumeAnalyzer() {
       const data = await analyzeResume(file);
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
+      saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, data.resume_path, file.name).catch(
+        (e) => console.error('Failed to save resume analysis:', e)
+      );
     } catch (err: any) {
       // PDF text extraction failed — show paste fallback
       if (err.message === 'PDF_TEXT_EXTRACTION_FAILED') {
@@ -62,6 +74,9 @@ export function ResumeAnalyzer() {
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
       setShowTextFallback(false);
+      saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, null, 'pasted_text.txt').catch(
+        (e) => console.error('Failed to save resume analysis:', e)
+      );
     } catch (err: any) {
       setError(err.message || 'Analysis failed. Please try again.');
     } finally {
@@ -328,8 +343,8 @@ export function ResumeAnalyzer() {
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="text-sm font-medium text-base-content">{imp.title}</h4>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${imp.severity === 'high' ? 'bg-error/20 text-error' :
-                            imp.severity === 'medium' ? 'bg-warning/20 text-warning' :
-                              'bg-warning/10 text-warning'}`}>
+                          imp.severity === 'medium' ? 'bg-warning/20 text-warning' :
+                            'bg-warning/10 text-warning'}`}>
                           {imp.severity}
                         </span>
                       </div>
@@ -366,6 +381,30 @@ export function ResumeAnalyzer() {
             Analyze Another Resume
           </button>
         </>
+      )}
+
+      {/* Past Analyses */}
+      {history.length > 0 && (
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body">
+            <h3 className="card-title text-sm gap-2"><Clock className="w-4 h-4 text-base-content/50" />Past Analyses</h3>
+            <div className="divide-y divide-base-200">
+              {history.map((r: any) => (
+                <div key={r.id} className="flex items-center gap-3 py-2.5">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="flex-1 text-sm truncate">{r.filename || 'Resume'}</span>
+                  <span className="text-xs text-base-content/40">{new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  <div className={`badge badge-sm ${r.overall_score >= 80 ? 'badge-success' : r.overall_score >= 60 ? 'badge-warning' : 'badge-error'}`}>{r.overall_score}</div>
+                  {r.resume_path && (
+                    <button className="btn btn-ghost btn-xs btn-square" title="Download" onClick={async () => { try { const { url } = await getResumeDownloadUrl(r.resume_path); window.open(url, '_blank'); } catch {} }}>
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

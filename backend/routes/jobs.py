@@ -5,7 +5,7 @@ from database import get_db
 from models.job import JobPosting
 from models.user import User
 from deps import get_current_user, require_recruiter
-from services.ai_service import match_jobs_to_candidate
+from services.ai_service import match_jobs_to_candidate, polish_job_description
 import uuid
 import os
 import httpx
@@ -28,6 +28,12 @@ class JobPostingRequest(BaseModel):
 
 class JobMatchRequest(BaseModel):
     user_skills: list[str]
+
+
+class JDPolishRequest(BaseModel):
+    title: str = ""
+    description: str
+    required_skills: list[str] = []
 
 
 # --- Endpoints ---
@@ -99,6 +105,26 @@ async def create_job(
             "postedDate": str(new_job.created_at.date())
         }
     }
+
+
+@router.post("/polish-description")
+async def polish_description(
+    request: JDPolishRequest,
+    current_user: User = Depends(require_recruiter)
+):
+    """AI-polish a job description draft"""
+    if not request.description or not request.description.strip():
+        raise HTTPException(status_code=400, detail="Please provide a description to polish")
+
+    try:
+        result = polish_job_description(
+            description=request.description,
+            title=request.title,
+            required_skills=request.required_skills
+        )
+        return {"success": True, "polished_description": result.get("polished_description", "")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"JD polishing failed: {str(e)}")
 
 
 @router.delete("/{job_id}")

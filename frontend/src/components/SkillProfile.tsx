@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, Award, Sparkles, Save, CheckCircle, User, Edit3, Loader2 } from 'lucide-react';
-import { Skill } from '../App';
+import { Skill, SkillLevel } from '../App';
 import { saveSkills, getProfile, updateProfile, getSkillSuggestions } from '../services/api';
 
 interface SkillProfileProps {
@@ -23,7 +23,49 @@ const TARGET_ROLES = [
   "Android Developer", "iOS Developer", "Cybersecurity Analyst"
 ];
 
+// Smart Auto-Categorization: maps skill categories into 3 buckets recruiters scan for
+const CORE_CATEGORIES = new Set(['Programming', 'Frontend', 'Backend', 'Database']);
+const EMERGING_CATEGORIES = new Set(['AI & Data', 'DevOps & Cloud']);
+type Bucket = 'Core' | 'Secondary' | 'Emerging & Tools';
 
+function getBucket(category: string): Bucket {
+  if (CORE_CATEGORIES.has(category)) return 'Core';
+  if (EMERGING_CATEGORIES.has(category)) return 'Emerging & Tools';
+  return 'Secondary';
+}
+
+const BUCKET_ORDER: Bucket[] = ['Core', 'Secondary', 'Emerging & Tools'];
+const BUCKET_STYLE: Record<Bucket, string> = {
+  'Core': 'badge-primary',
+  'Secondary': 'badge-info',
+  'Emerging & Tools': 'badge-secondary',
+};
+
+const SKILL_LEVELS: SkillLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+
+// Auto-categorization: match typed skill name against SKILL_SUGGESTIONS (case-insensitive),
+// falling back to simple keyword rules so users never have to pick a category themselves.
+const KEYWORD_FALLBACKS: [RegExp, string][] = [
+  [/docker|kubernetes|aws|azure|gcp|google cloud|ci\/cd|terraform|nginx|linux|devops/i, 'DevOps & Cloud'],
+  [/machine learning|deep learning|tensorflow|pytorch|pandas|numpy|data (analysis|science)|nlp|llm|ai\b/i, 'AI & Data'],
+  [/sql|postgres|mysql|mongo|redis|database|firebase|supabase/i, 'Database'],
+  [/react|angular|vue|next\.?js|html|css|tailwind|figma|frontend|ui/i, 'Frontend'],
+  [/node|express|django|flask|fastapi|spring|backend|api|microservice/i, 'Backend'],
+  [/git|jira|postman|vs ?code|notion|slack|bash/i, 'Tools'],
+];
+
+function autoCategorize(skillName: string, suggestions: Record<string, string[]>): string {
+  const trimmed = skillName.trim().toLowerCase();
+  if (!trimmed) return 'Tools';
+
+  for (const [category, skillList] of Object.entries(suggestions)) {
+    if (skillList.some(s => s.toLowerCase() === trimmed)) return category;
+  }
+  for (const [pattern, category] of KEYWORD_FALLBACKS) {
+    if (pattern.test(trimmed)) return category;
+  }
+  return 'Other';
+}
 
 export function SkillProfile({ skills, setSkills, userId, userName, userEmail }: SkillProfileProps) {
   const [activeSection, setActiveSection] = useState<'info' | 'skills'>('info');
@@ -35,7 +77,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [showAddSkill, setShowAddSkill] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
-  const [newSkill, setNewSkill] = useState({ name: '', level: 'Beginner', category: 'Programming' });
+  const [newSkill, setNewSkill] = useState<{ name: string; level: SkillLevel | '' }>({ name: '', level: '' });
+  const [editingSkill, setEditingSkill] = useState<string | null>(null);
 
   const [profileInfo, setProfileInfo] = useState({
     education: '',
@@ -58,24 +101,6 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       setIsLoadingProfile(false); // Add this line to prevent infinite loading
     }
   }, [userId]);
-
-  useEffect(() => {
-    if (!skills || skills.length === 0) return;
-    const map = new Map<string, Skill>();
-    let hasDupes = false;
-    for (const s of skills) {
-      if (!s?.name) continue;
-      const key = s.name.trim().toLowerCase();
-      if (!map.has(key)) {
-        map.set(key, s);
-      } else {
-        hasDupes = true;
-      }
-    }
-    if (hasDupes) {
-      setSkills(Array.from(map.values()));
-    }
-  }, [skills]);
 
   const loadProfile = async () => {
     setIsLoadingProfile(true);
@@ -129,26 +154,22 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   };
 
   const handleAddSkill = () => {
-    const trimmedName = newSkill.name.trim();
-    if (!trimmedName) return;
+    const skillName = newSkill.name.trim();
+    if (!skillName || !newSkill.level) return;
 
-    const existingIdx = skills.findIndex(
-      s => s.name.trim().toLowerCase() === trimmedName.toLowerCase()
-    );
-
-    if (existingIdx >= 0) {
-      const updated = [...skills];
-      updated[existingIdx] = { ...skills[existingIdx], level: newSkill.level, category: newSkill.category };
-      setSkills(updated);
+    const existing = skills.find(s => s.name.trim().toLowerCase() === skillName.toLowerCase());
+    if (existing) {
+      setSkills(skills.map(s =>
+        s.name.trim().toLowerCase() === skillName.toLowerCase()
+          ? { ...s, level: newSkill.level as SkillLevel }
+          : s
+      ));
     } else {
-      setSkills([...skills, { ...newSkill, name: trimmedName }]);
+      const category = autoCategorize(skillName, suggestions);
+      setSkills([...skills, { name: skillName, level: newSkill.level as SkillLevel, category }]);
     }
-    setNewSkill({ name: '', level: 'Beginner', category: 'Programming' });
+    setNewSkill({ name: '', level: '' });
     setShowAddSkill(false);
-  };
-
-  const handleUpdateSkillLevel = (skillName: string, newLevel: string) => {
-    setSkills(skills.map(s => s.name.trim().toLowerCase() === skillName.trim().toLowerCase() ? { ...s, level: newLevel } : s));
   };
 
   const categories = Array.from(new Set(skills.map(s => s.category)));
@@ -185,8 +206,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
         <button
           onClick={() => setActiveSection('info')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'info'
-              ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
-              : 'text-base-content/60 hover:bg-base-200'
+            ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
+            : 'text-base-content/60 hover:bg-base-200'
             }`}
         >
           <User className="w-4 h-4" />
@@ -195,8 +216,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
         <button
           onClick={() => setActiveSection('skills')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'skills'
-              ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
-              : 'text-base-content/60 hover:bg-base-200'
+            ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
+            : 'text-base-content/60 hover:bg-base-200'
             }`}
         >
           <Award className="w-4 h-4" />
@@ -434,8 +455,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     {(profileInfo.target_roles || []).length > 0 ? (
                       profileInfo.target_roles.map((role, idx) => (
                         <div key={idx} className={`px-4 py-2 rounded-xl text-sm border flex items-center gap-2 ${profileInfo.primary_role === role
-                            ? 'bg-primary/10 border-primary/30 text-primary font-medium shadow-sm'
-                            : 'bg-base-200 border-base-300 text-base-content/60'
+                          ? 'bg-primary/10 border-primary/30 text-primary font-medium shadow-sm'
+                          : 'bg-base-200 border-base-300 text-base-content/60'
                           }`}>
                           {profileInfo.primary_role === role && <span className="text-base leading-none">⭐</span>}
                           {role}
@@ -524,23 +545,15 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     <p className="text-xs text-base-content/50 mb-1">{cat}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {(skillList as string[]).slice(0, 6).map(s => {
-                        const alreadyAdded = skills.some(sk => sk.name.trim().toLowerCase() === s.trim().toLowerCase());
+                        const alreadyAdded = skills.some(sk => sk.name === s);
                         return (
                           <button
                             key={s}
                             disabled={alreadyAdded}
-                            onClick={() => {
-                              if (!alreadyAdded) {
-                                const trimmedName = s.trim();
-                                const existingIdx = skills.findIndex(sk => sk.name.trim().toLowerCase() === trimmedName.toLowerCase());
-                                if (existingIdx < 0) {
-                                  setSkills([...skills, { name: trimmedName, level: 'Beginner', category: cat }]);
-                                }
-                              }
-                            }}
+                            onClick={() => { if (!alreadyAdded) { setNewSkill({ name: s, level: '' }); setShowAddSkill(true); } }}
                             className={`px-2.5 py-1 text-xs rounded-full border transition-all ${alreadyAdded
-                                ? 'bg-success/10 border-success/30 text-success cursor-default'
-                                : 'border-base-300 text-base-content/60 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
+                              ? 'bg-success/10 border-success/30 text-success cursor-default'
+                              : 'border-base-300 text-base-content/60 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
                               }`}
                           >
                             {alreadyAdded ? '✓ ' : '+ '}{s}
@@ -554,43 +567,71 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
             </div>
           )}
 
-          {/* Skills by category */}
-          {categories.map(category => (
-            <div key={category} className="bg-base-100 rounded-xl shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm font-medium text-primary">{category}</span>
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                  {skills.filter(s => s.category === category).length} skills
-                </span>
-              </div>
-              <div className="space-y-3">
-                {skills.filter(s => s.category === category).map(skill => (
-                  <div key={skill.name} className="flex items-center justify-between py-2 border-b border-base-200 last:border-b-0">
-                    <span className="text-sm font-medium text-base-content/80">{skill.name}</span>
-                    <div className="flex items-center gap-3">
-                      <select
-                        value={skill.level || 'Beginner'}
-                        onChange={e => handleUpdateSkillLevel(skill.name, e.target.value)}
-                        className="text-xs font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 focus:outline-none cursor-pointer hover:bg-primary/20 transition-colors"
-                      >
-                        <option value="Beginner" className="bg-base-100 text-base-content">Beginner</option>
-                        <option value="Intermediate" className="bg-base-100 text-base-content">Intermediate</option>
-                        <option value="Advanced" className="bg-base-100 text-base-content">Advanced</option>
-                        <option value="Expert" className="bg-base-100 text-base-content">Expert</option>
-                      </select>
-                      <button
-                        onClick={() => setSkills(skills.filter(s => s.name.trim().toLowerCase() !== skill.name.trim().toLowerCase()))}
-                        className="text-base-content/30 hover:text-error transition-colors p-1"
-                        title="Remove skill"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+          {/* Skills grouped by Core / Secondary / Emerging & Tools */}
+          {BUCKET_ORDER.map(bucket => {
+            const bucketCategories = categories.filter(c => getBucket(c) === bucket);
+            if (bucketCategories.length === 0) return null;
+            return (
+              <div key={bucket} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className={`badge ${BUCKET_STYLE[bucket]} badge-sm`}>{bucket}</span>
+                  <span className="text-xs text-base-content/40">
+                    {skills.filter(s => bucketCategories.includes(s.category)).length} skills
+                  </span>
+                </div>
+                {bucketCategories.map(category => (
+                  <div key={category} className="bg-base-100 rounded-xl shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-sm font-medium text-primary">{category}</span>
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {skills.filter(s => s.category === category).length} skills
+                      </span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {skills.filter(s => s.category === category).map(skill => (
+                        <div key={skill.name} className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-base-content/80">{skill.name}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {editingSkill === skill.name ? (
+                              <select
+                                value={skill.level}
+                                onChange={e => {
+                                  setSkills(skills.map(s => s.name === skill.name ? { ...s, level: e.target.value as SkillLevel } : s));
+                                  setEditingSkill(null);
+                                }}
+                                onBlur={() => setEditingSkill(null)}
+                                autoFocus
+                                className="select select-xs border-base-300 focus:outline-none bg-base-100 text-xs"
+                              >
+                                {SKILL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                              </select>
+                            ) : (
+                              <span
+                                onClick={() => setEditingSkill(skill.name)}
+                                className={`badge badge-sm cursor-pointer ${skill.level === 'Expert' ? 'badge-primary' :
+                                  skill.level === 'Advanced' ? 'badge-info' :
+                                    skill.level === 'Intermediate' ? 'badge-secondary' : 'badge-ghost'
+                                  }`}
+                                title="Click to edit level"
+                              >
+                                {skill.level}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => setSkills(skills.filter(s => s.name !== skill.name))}
+                              className="text-base-content/30 hover:text-error transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Add Skill Form */}
           {showAddSkill ? (
@@ -612,28 +653,14 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   <label className="block text-xs text-base-content/50 mb-1">Proficiency Level</label>
                   <select
                     value={newSkill.level}
-                    onChange={e => setNewSkill({ ...newSkill, level: e.target.value })}
+                    onChange={e => setNewSkill({ ...newSkill, level: e.target.value as SkillLevel })}
                     className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                   >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                    <option value="Expert">Expert</option>
+                    <option value="">Select level</option>
+                    {SKILL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs text-base-content/50 mb-1">Category</label>
-                  <select
-                    value={newSkill.category}
-                    onChange={e => setNewSkill({ ...newSkill, category: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
-                  >
-                    {Object.keys(suggestions).length > 0
-                      ? Object.keys(suggestions).map(c => <option key={c}>{c}</option>)
-                      : ['Programming', 'Frontend', 'Backend', 'Database', 'DevOps & Cloud', 'AI & Data', 'Tools'].map(c => <option key={c}>{c}</option>)
-                    }
-                  </select>
-                </div>
+                <p className="text-xs text-base-content/40">Category is auto-assigned based on the skill name.</p>
                 <div className="flex gap-2">
                   <button onClick={handleAddSkill} className="flex-1 bg-linear-to-r from-primary to-secondary text-primary-content py-2.5 rounded-lg text-sm hover:shadow-lg">
                     Add Skill
@@ -649,7 +676,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
               onClick={() => setShowAddSkill(true)}
               className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-primary/40 text-primary rounded-xl hover:border-primary hover:bg-primary/10 transition-all text-sm"
             >
-              <Plus className="w-4 h-4" /> Add Skill
+              <Plus className="w-4 h-4" /> Add Custom Skill
             </button>
           )}
         </div>

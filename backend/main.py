@@ -9,7 +9,7 @@ from database import engine, Base
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from models.skill import SkillCategory
 from models.job import JobPosting
-from models.application import JobApplication
+from models.application import JobApplication, Notification
 Base.metadata.create_all(bind=engine)
 
 from routes.auth import router as auth_router

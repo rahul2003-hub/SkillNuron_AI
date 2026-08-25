@@ -102,7 +102,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
       {/* Target Role Input */}
       <div className="bg-base-100 rounded-xl p-6 shadow-sm">
         <h3 className="text-base-content mb-1">What role are you targeting?</h3>
-        {savedRole && <p className="text-xs text-primary mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3"/> Auto-loaded from your profile</p>}
+        {savedRole && <p className="text-xs text-primary mb-4 flex items-center gap-1"><Sparkles className="w-3 h-3" /> Auto-loaded from your profile</p>}
         <div className="flex gap-3">
           <input
             type="text"
@@ -259,7 +259,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
           <div className="bg-primary/10 border border-primary/30 rounded-xl p-6 text-center mb-6">
             <h3 className="text-primary font-medium mb-2">Ready to see your long-term roadmap?</h3>
             <p className="text-primary text-sm mb-4">Now that you know your gaps, plot your salary and timeline.</p>
-            <button 
+            <button
               onClick={() => setActiveTab && setActiveTab('career-path')}
               className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors text-sm font-medium"
             >

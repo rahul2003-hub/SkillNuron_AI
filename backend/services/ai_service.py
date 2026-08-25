@@ -93,6 +93,28 @@ def analyze_skill_gap(user_skills: list, target_role: str) -> dict:
     return _chat_json(prompt, max_tokens=2000, temperature=0.3)
 
 
+def polish_job_description(description: str, title: str = "", required_skills: list | None = None) -> dict:
+    skills_line = f"Required skills: {', '.join(required_skills)}" if required_skills else ""
+    prompt = f"""
+    You are an expert technical recruiter and copywriter.
+
+    Job title: {title}
+    {skills_line}
+    Draft job description:
+    {description}
+
+    Rewrite this into a clear, professional, well-structured job description.
+    Respond in this exact JSON format:
+    {{
+        "polished_description": "the improved job description as plain text with line breaks"
+    }}
+
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
+    """
+
+    return _chat_json(prompt, max_tokens=1200, temperature=0.4)
+
+
 def analyze_resume(resume_text: str) -> dict:
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) specialist and resume reviewer.

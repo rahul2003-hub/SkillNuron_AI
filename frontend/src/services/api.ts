@@ -91,6 +91,31 @@ export async function analyzeResume(file: File) {
   return response.json();
 }
 
+export async function saveResumeAnalysis(overallScore: number, analysisJson: any, resumePath?: string | null, filename?: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/profile/resume/save`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ overall_score: overallScore, analysis_json: analysisJson, resume_path: resumePath, filename }),
+  });
+  if (!response.ok) throw new Error("Failed to save resume analysis");
+  return response.json();
+}
+
+export async function getResumeHistory(userId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/profile/resume/history/${userId}`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch resume history");
+  return response.json();
+}
+
+export async function getResumeDownloadUrl(resumePath: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/resume/download/${resumePath}`, { headers });
+  if (!response.ok) throw new Error("Failed to get download link");
+  return response.json();
+}
+
 // --- JOBS ---
 export async function getAllJobs() {
   const headers = await getHeaders();
@@ -226,5 +251,88 @@ export async function getCandidateMatches(jobId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches`, { headers });
   if (!response.ok) throw new Error("Failed to fetch candidate matches");
+  return response.json();
+}
+
+// --- APPLICATIONS ---
+export async function applyToJob(jobId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/apply/${jobId}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to apply");
+  }
+  return response.json();
+}
+
+export async function getMyApplications() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/my`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch applications");
+  return response.json();
+}
+
+export async function getJobApplications(jobId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/job/${jobId}`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch job applications");
+  return response.json();
+}
+
+export async function updateApplicationStatus(applicationId: string, status: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/${applicationId}/status`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to update status");
+  }
+  return response.json();
+}
+
+export async function getJobApplicationTimeseries(jobId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/job/${jobId}/timeseries`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch application timeseries");
+  return response.json();
+}
+
+// --- NOTIFICATIONS ---
+export async function getNotifications() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/notifications`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch notifications");
+  return response.json();
+}
+
+export async function markNotificationsRead() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/notifications/mark-read`, {
+    method: "POST",
+    headers,
+  });
+  if (!response.ok) throw new Error("Failed to mark notifications read");
+  return response.json();
+}
+
+// --- JD POLISHER ---
+export async function polishJobDescription(title: string, description: string, requiredSkills: string[]) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/jobs/polish-description`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ title, description, required_skills: requiredSkills }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to polish description");
+  }
   return response.json();
 }

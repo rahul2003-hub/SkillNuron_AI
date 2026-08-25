@@ -97,6 +97,9 @@ SkillNuron_AI/
 │       └── styles/                         # Style Assets
 │           └── globals.css
 │
+├── supabase/                                # Supabase CLI & database migrations
+│   └── migrations/                         # SQL schema migration scripts
+│
 └── README.md                                # Root Project Documentation
 ```
 
@@ -161,6 +164,24 @@ SkillNuron_AI/
    uv run uvicorn main:app --reload
    ```
    API Documentation available at: `http://localhost:8000/docs`
+
+### Database Migrations (Supabase CLI)
+ ```bash
+1. Install Supabase CLI globally (if not installed):
+   npm install -g supabase
+
+2. Log in to Supabase CLI:
+   supabase login
+
+3. Link project:
+   supabase link
+
+4. Push migrations to remote database:
+   supabase db push
+
+5. Create a new migration file:
+   supabase migration new <migration_name>
+   ```
 
 ### Frontend Setup
 

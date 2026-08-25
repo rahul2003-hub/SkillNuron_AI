@@ -1,0 +1,7 @@
+ALTER TABLE public.job_applications
+ADD COLUMN IF NOT EXISTS applied_at TIMESTAMPTZ DEFAULT now(),
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+ALTER TABLE public.resume_analyses
+ADD COLUMN IF NOT EXISTS resume_path TEXT,
+ADD COLUMN IF NOT EXISTS filename TEXT;

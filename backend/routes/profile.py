@@ -31,6 +31,8 @@ class SaveSkillsRequest(BaseModel):
 class SaveResumeAnalysisRequest(BaseModel):
     overall_score: int
     analysis_json: dict
+    resume_path: str | None = None
+    filename: str | None = None
 
 class UpdateProfileRequest(BaseModel):
     education: str = ""
@@ -140,31 +142,73 @@ async def get_skill_suggestions():
     from models.skill import SKILL_SUGGESTIONS
     return {"success": True, "suggestions": SKILL_SUGGESTIONS}
 
+VALID_SKILL_LEVELS = {"Beginner", "Intermediate", "Advanced", "Expert"}
+
 @router.post("/skills/save")
 async def save_skills(
     request: SaveSkillsRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Save user skills to PostgreSQL — replaces all existing skills for authenticated user"""
+    """Save user skills — one unique skill with one proficiency per user."""
     db.query(UserSkill).filter(UserSkill.user_id == current_user.id).delete()
 
+    unique_skills = {}
+
     for skill_data in request.skills:
+
+        skill_name = (
+            skill_data.get("skill_name")
+            or skill_data.get("name")
+            or ""
+        ).strip()
+
+        if not skill_name:
+            continue
+
+        # Case-insensitive unique key
+        normalized_name = skill_name.lower()
+
+        level = skill_data.get("level", "Intermediate")
+
+        if level not in VALID_SKILL_LEVELS:
+            level = "Intermediate"
+
+        category = (
+            skill_data.get("category")
+            or "Programming"
+        ).strip()
+
+        # Keep the first spelling, but update its proficiency
+        if normalized_name in unique_skills:
+            unique_skills[normalized_name]["level"] = level
+        else:
+            unique_skills[normalized_name] = {
+                "skill_name": skill_name,
+                "level": level,
+                "category": category
+            }
+
+    # ---------------------------------------------------------
+    # Insert only unique skills
+    # ---------------------------------------------------------
+    for skill_data in unique_skills.values():
+
         skill = UserSkill(
             user_id=current_user.id,
-            skill_name=skill_data.get("skill_name") or skill_data.get("name", ""),
-            level=skill_data.get("level", 50),
-            category=skill_data.get("category", "Programming")
+            skill_name=skill_data["skill_name"],
+            level=skill_data["level"],
+            category=skill_data["category"]
         )
+
         db.add(skill)
 
     db.commit()
 
     return {
         "success": True,
-        "message": f"{len(request.skills)} skills saved successfully"
+        "message": f"{len(unique_skills)} skills saved successfully"
     }
-
 
 @router.get("/skills/{user_id}")
 async def get_skills(
@@ -205,7 +249,9 @@ async def save_resume_analysis(
     analysis = ResumeAnalysis(
         user_id=current_user.id,
         overall_score=request.overall_score,
-        analysis_json=request.analysis_json
+        analysis_json=request.analysis_json,
+        resume_path=request.resume_path,
+        filename=request.filename
     )
 
     db.add(analysis)
@@ -237,7 +283,9 @@ async def get_resume_history(
                 "id": str(a.id),
                 "overall_score": a.overall_score,
                 "created_at": str(a.created_at),
-                "analysis": a.analysis_json
+                "analysis": a.analysis_json,
+                "resume_path": a.resume_path,
+                "filename": a.filename
             }
             for a in analyses
         ]

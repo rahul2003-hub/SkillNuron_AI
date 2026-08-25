@@ -1,9 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel
 from services.ai_service import analyze_resume
+from services.storage_service import upload_resume, get_resume_signed_url
 from models.user import User
 from deps import get_current_user
 import pymupdf as fitz
+import uuid as uuid_lib
 
 router = APIRouter(prefix="/api/resume", tags=["Resume"])
 
@@ -52,16 +54,26 @@ async def analyze_resume_endpoint(
 
     try:
         analysis = analyze_resume(resume_text)
-        return {
-            "success": True,
-            "filename": file.filename,
-            "analysis": analysis
-        }
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"AI analysis failed: {str(e)}"
         )
+
+    resume_path = None
+    try:
+        stored_filename = f"{uuid_lib.uuid4()}_{file.filename}"
+        resume_path = await upload_resume(str(current_user.id), stored_filename, file_bytes)
+    except Exception:
+        # Storage failure shouldn't block returning the analysis
+        resume_path = None
+
+    return {
+        "success": True,
+        "filename": file.filename,
+        "analysis": analysis,
+        "resume_path": resume_path
+    }
 
 
 class ResumeTextRequest(BaseModel):
@@ -93,3 +105,19 @@ async def analyze_resume_from_text(
             status_code=500,
             detail=f"AI analysis failed: {str(e)}"
         )
+
+
+@router.get("/download/{resume_path:path}")
+async def download_resume(
+    resume_path: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get a temporary signed URL to re-download a stored resume"""
+    if not resume_path.startswith(str(current_user.id)):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    try:
+        signed_url = await get_resume_signed_url(resume_path)
+        return {"success": True, "url": signed_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not generate download link: {str(e)}")

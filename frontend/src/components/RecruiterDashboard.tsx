@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, Star } from 'lucide-react';
+import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, Star, BarChart3 } from 'lucide-react';
 import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
 import { CandidateMatches } from './CandidateMatches';
+import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
+import { NotificationBell } from './NotificationBell';
 import { JobPosting } from '../App';
 import { getAllJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
@@ -12,7 +14,7 @@ interface RecruiterDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'posted-jobs' | 'create-job' | 'candidates';
+type Tab = 'posted-jobs' | 'create-job' | 'candidates' | 'analytics';
 
 export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('posted-jobs');
@@ -24,7 +26,9 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     total_jobs: 0,
     total_candidates: 0,
     average_resume_score: 0,
-    top_skills: [] as { skill: string, count: number }[]
+    top_skills: [] as { skill: string, count: number }[],
+    skill_demand: [] as { skill: string, count: number }[],
+    match_score_distribution: [] as { range: string, count: number }[]
   });
 
   useEffect(() => {
@@ -45,7 +49,9 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             total_jobs: analyticsData.total_jobs ?? 0,
             total_candidates: analyticsData.total_candidates ?? 0,
             average_resume_score: analyticsData.average_resume_score ?? 0,
-            top_skills: analyticsData.top_skills ?? []
+            top_skills: analyticsData.top_skills ?? [],
+            skill_demand: analyticsData.skill_demand ?? [],
+            match_score_distribution: analyticsData.match_score_distribution ?? []
           });
         }
       } catch (error) {
@@ -88,6 +94,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               <p className="text-sm text-base-content/60">Welcome back,</p>
               <p className="text-base-content font-semibold">{userName}</p>
             </div>
+            <NotificationBell />
             <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-base-content/70 hover:bg-base-200 rounded-lg transition-colors">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
@@ -134,7 +141,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
 
         {/* Navigation Tabs */}
         <div className="bg-base-100 rounded-xl shadow-sm mb-8 p-2 border border-base-300">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'posted-jobs' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">My Jobs</span>
             </button>
@@ -143,6 +150,9 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             </button>
             <button onClick={() => setActiveTab('candidates')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'candidates' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Star className="w-4 h-4" /> <span className="hidden sm:inline">AI Matches</span>
+            </button>
+            <button onClick={() => setActiveTab('analytics')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'analytics' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
+              <BarChart3 className="w-4 h-4" /> <span className="hidden sm:inline">Analytics</span>
             </button>
           </div>
         </div>
@@ -158,6 +168,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />}
               {activeTab === 'create-job' && <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />}
               {activeTab === 'candidates' && <CandidateMatches jobs={jobs} />}
+              {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} />}
             </>
           )}
         </div>

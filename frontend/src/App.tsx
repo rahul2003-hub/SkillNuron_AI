@@ -7,9 +7,11 @@ import { supabase } from './services/supabase';
 
 export type UserType = 'jobseeker' | 'recruiter' | null;
 
+export type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+
 export interface Skill {
   name: string;
-  level: string;
+  level: SkillLevel;
   category: string;
 }
 

@@ -28,20 +28,37 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow frontend to talk to backend
+# Allow frontend to talk to backend (including Vercel preview deployments)
+default_origins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://skillnuron-ai.vercel.app",
+    "https://skillnuron-ai-git-main-rahulpanchal5003-1733s-projects.vercel.app",
+    "https://skillnuron-8llptdhqr-rahulpanchal5003-1733s-projects.vercel.app",
+]
+
+env_origins = os.getenv("CORS_ORIGINS", "")
+allow_origin_regex = os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+
+if env_origins == "*":
+    allowed_origins = ["*"]
+    allow_origin_regex = r".*"
+elif env_origins:
+    extra_origins = [o.strip() for o in env_origins.split(",") if o.strip()]
+    allowed_origins = list(set(default_origins + extra_origins))
+else:
+    allowed_origins = default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://skillnuron-ai.vercel.app",
-        "https://skillnuron-ai-git-main-rahulpanchal5003-1733s-projects.vercel.app",
-        "https://skillnuron-8llptdhqr-rahulpanchal5003-1733s-projects.vercel.app",
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 #Regeister all routes

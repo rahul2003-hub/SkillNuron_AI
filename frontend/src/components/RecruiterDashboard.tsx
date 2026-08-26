@@ -6,7 +6,7 @@ import { CandidateMatches } from './CandidateMatches';
 import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
 import { NotificationBell } from './NotificationBell';
 import { JobPosting } from '../App';
-import { getAllJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
+import { getMyJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
 interface RecruiterDashboardProps {
   userName: string;
@@ -35,11 +35,12 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        // 1. Fetch Jobs for this recruiter
-        const jobsData = await getAllJobs();
+        // 1. Fetch jobs for this recruiter — filtered server-side by
+        // posted_by_id (stable FK), not by display name. Fixes the old
+        // bug where postedBy === userName broke on name collisions/renames.
+        const jobsData = await getMyJobs();
         if (jobsData.success && Array.isArray(jobsData.jobs)) {
-          const myJobs = jobsData.jobs.filter((job: JobPosting) => job.postedBy === userName);
-          setJobs(myJobs);
+          setJobs(jobsData.jobs);
         }
 
         // 2. Fetch Analytics
@@ -62,7 +63,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     };
 
     fetchDashboardData();
-  }, [userName]);
+  }, []);
 
   const handleCreateJob = (job: JobPosting) => {
     setJobs([job, ...jobs]);

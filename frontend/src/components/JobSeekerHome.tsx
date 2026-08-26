@@ -1,62 +1,50 @@
 import { useState, useEffect } from 'react';
 import { Award, FileText, Briefcase, Target, ArrowRight } from 'lucide-react';
-import { getProfile, getSkills, getResumeHistory, getMyApplications } from '../services/api';
-
+import { getDashboard } from '../services/api';
+ 
 interface JobSeekerHomeProps {
     userId: string;
     userName: string;
     setActiveTab: (tab: any) => void;
 }
-
+ 
 export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [skillsCount, setSkillsCount] = useState(0);
     const [latestResumeScore, setLatestResumeScore] = useState<number | null>(null);
     const [applicationsCount, setApplicationsCount] = useState(0);
     const [completeness, setCompleteness] = useState(0);
-
+ 
     useEffect(() => {
         if (!userId) { setIsLoading(false); return; }
-
+ 
         const load = async () => {
             setIsLoading(true);
             try {
-                const [profileData, skillsData, resumeData, applicationsData] = await Promise.all([
-                    getProfile(userId).catch(() => null),
-                    getSkills(userId).catch(() => null),
-                    getResumeHistory(userId).catch(() => null),
-                    getMyApplications().catch(() => null),
-                ]);
-
-                const skills = skillsData?.skills || [];
-                setSkillsCount(skills.length);
-
-                const analyses = resumeData?.analyses || [];
-                setLatestResumeScore(analyses.length > 0 ? analyses[0].overall_score : null);
-
-                setApplicationsCount(applicationsData?.total || 0);
-
-                const profile = profileData?.profile;
-                let score = 0;
-                if (skills.length > 0) score += 25;
-                if (profile?.primary_role) score += 25;
-                if (profile?.education && profile?.current_status) score += 25;
-                if (analyses.length > 0) score += 25;
-                setCompleteness(score);
+                // Single backend call — skill count, resume score, application
+                // count, and completeness % are all computed server-side in
+                // GET /api/profile/dashboard (see routes/profile.py).
+                const data = await getDashboard();
+                setSkillsCount(data.skills_count || 0);
+                setLatestResumeScore(data.latest_resume_score ?? null);
+                setApplicationsCount(data.applications_count || 0);
+                setCompleteness(data.profile_completeness || 0);
+            } catch (err) {
+                console.error('Failed to load dashboard:', err);
             } finally {
                 setIsLoading(false);
             }
         };
-
+ 
         load();
     }, [userId]);
-
+ 
     const cards = [
         { label: 'Skills Added', value: skillsCount, icon: Award, color: 'text-primary', bg: 'bg-primary/10', tab: 'profile' },
         { label: 'Latest Resume Score', value: latestResumeScore !== null ? `${latestResumeScore}%` : '—', icon: FileText, color: 'text-info', bg: 'bg-info/10', tab: 'resume-analyzer' },
         { label: 'Applications Sent', value: applicationsCount, icon: Briefcase, color: 'text-success', bg: 'bg-success/10', tab: 'my-applications' },
     ];
-
+ 
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-20">
@@ -64,7 +52,7 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
             </div>
         );
     }
-
+ 
     return (
         <div className="space-y-6">
             {/* Welcome */}
@@ -72,7 +60,7 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                 <h2 className="text-2xl font-bold">Welcome back, {userName} 👋</h2>
                 <p className="opacity-90 text-sm mt-1">Here's a snapshot of your job-search progress.</p>
             </div>
-
+ 
             {/* Profile Completeness Gauge + Summary Cards */}
             <div className="grid md:grid-cols-4 gap-4">
                 <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 flex flex-col items-center justify-center text-center">
@@ -91,7 +79,7 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                         </button>
                     )}
                 </div>
-
+ 
                 {cards.map(({ label, value, icon: Icon, color, bg, tab }) => (
                     <button
                         key={label}
@@ -106,7 +94,7 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                     </button>
                 ))}
             </div>
-
+ 
             {/* Quick Actions */}
             <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6">
                 <h3 className="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">

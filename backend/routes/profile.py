@@ -3,7 +3,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
-from services.ai_service import analyze_skill_gap, recommend_career_path
+from models.application import JobApplication
+from models.skill import SKILL_SUGGESTIONS
+from models.catalog import get_catalog, auto_categorize, get_bucket
 from deps import get_current_user
 import uuid
 from datetime import datetime, timezone
@@ -25,7 +27,7 @@ class CareerPathRequest(BaseModel):
 
 
 class SaveSkillsRequest(BaseModel):
-    skills: list[dict]  # [{"skill_name": "Python", "level": 80, "category": "Programming"}]
+    skills: list[dict]  # [{"skill_name": "Python", "level": "Advanced", "category": "Programming"}]
 
 
 class SaveResumeAnalysisRequest(BaseModel):
@@ -33,6 +35,7 @@ class SaveResumeAnalysisRequest(BaseModel):
     analysis_json: dict
     resume_path: str | None = None
     filename: str | None = None
+
 
 class UpdateProfileRequest(BaseModel):
     education: str = ""
@@ -46,6 +49,17 @@ class UpdateProfileRequest(BaseModel):
     linkedin: str = ""
     github: str = ""
 
+
+# --- Catalog Endpoint ---
+
+@router.get("/catalog")
+async def get_frontend_catalog():
+    """Single source for all dropdown/select data used across the frontend
+    (cities, roles, application statuses, education options, skill buckets).
+    """
+    return {"success": True, "catalog": get_catalog()}
+
+
 # --- Profile Endpoints ---
 
 @router.get("/info/{user_id}")
@@ -55,11 +69,10 @@ async def get_profile(
     current_user: User = Depends(get_current_user)
 ):
     """Get full profile info for a user"""
-    # Allow user to view their own profile or recruiter viewing candidates
     target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
     if target_uuid != current_user.id and current_user.user_type != "recruiter":
         raise HTTPException(status_code=403, detail="Access denied: cannot view another user's profile")
-    
+
     user = db.query(User).filter(User.id == target_uuid).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -82,8 +95,8 @@ async def get_profile(
             "education_status": profile.education_status if profile else "",
             "graduation_year": profile.graduation_year if profile else "",
             "current_status": profile.current_status if profile else "",
-            "target_roles": profile.target_roles if profile else [], # Changed this
-            "primary_role": profile.primary_role if profile else "",  # Added this
+            "target_roles": profile.target_roles if profile else [],
+            "primary_role": profile.primary_role if profile else "",
             "location": profile.location if profile else "",
             "phone": profile.phone if profile else "",
             "linkedin": profile.linkedin if profile else "",
@@ -108,23 +121,22 @@ async def update_profile(
         profile.education_status = request.education_status
         profile.graduation_year = request.graduation_year
         profile.current_status = request.current_status
-        profile.target_roles = request.target_roles      # Changed this
-        profile.primary_role = request.primary_role      # Added this
+        profile.target_roles = request.target_roles
+        profile.primary_role = request.primary_role
         profile.location = request.location
         profile.phone = request.phone
         profile.linkedin = request.linkedin
         profile.github = request.github
         profile.updated_at = datetime.now(timezone.utc)
     else:
-        # Create new profile
         profile = UserProfile(
             user_id=current_user.id,
             education=request.education,
             education_status=request.education_status,
             graduation_year=request.graduation_year,
             current_status=request.current_status,
-            target_roles=request.target_roles,           # Changed this
-            primary_role=request.primary_role,           # Added this
+            target_roles=request.target_roles,
+            primary_role=request.primary_role,
             location=request.location,
             phone=request.phone,
             linkedin=request.linkedin,
@@ -139,10 +151,11 @@ async def update_profile(
 @router.get("/skill-suggestions")
 async def get_skill_suggestions():
     """Return predefined skill suggestions for autocomplete"""
-    from models.skill import SKILL_SUGGESTIONS
     return {"success": True, "suggestions": SKILL_SUGGESTIONS}
 
+
 VALID_SKILL_LEVELS = {"Beginner", "Intermediate", "Advanced", "Expert"}
+
 
 @router.post("/skills/save")
 async def save_skills(
@@ -150,7 +163,9 @@ async def save_skills(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Save user skills — one unique skill with one proficiency per user."""
+    """Save user skills — one unique skill with one proficiency per user.
+    Category is auto-classified server-side when not explicitly provided.
+    """
     db.query(UserSkill).filter(UserSkill.user_id == current_user.id).delete()
 
     unique_skills = {}
@@ -166,20 +181,16 @@ async def save_skills(
         if not skill_name:
             continue
 
-        # Case-insensitive unique key
         normalized_name = skill_name.lower()
 
         level = skill_data.get("level", "Intermediate")
-
         if level not in VALID_SKILL_LEVELS:
             level = "Intermediate"
 
-        category = (
-            skill_data.get("category")
-            or "Programming"
-        ).strip()
+        category = (skill_data.get("category") or "").strip()
+        if not category:
+            category = auto_categorize(skill_name, SKILL_SUGGESTIONS)
 
-        # Keep the first spelling, but update its proficiency
         if normalized_name in unique_skills:
             unique_skills[normalized_name]["level"] = level
         else:
@@ -189,18 +200,13 @@ async def save_skills(
                 "category": category
             }
 
-    # ---------------------------------------------------------
-    # Insert only unique skills
-    # ---------------------------------------------------------
     for skill_data in unique_skills.values():
-
         skill = UserSkill(
             user_id=current_user.id,
             skill_name=skill_data["skill_name"],
             level=skill_data["level"],
             category=skill_data["category"]
         )
-
         db.add(skill)
 
     db.commit()
@@ -210,16 +216,27 @@ async def save_skills(
         "message": f"{len(unique_skills)} skills saved successfully"
     }
 
+
 @router.get("/skills/{user_id}")
 async def get_skills(
     user_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get saved skills for a user from PostgreSQL"""
-    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
-    if target_uuid != current_user.id and current_user.user_type != "recruiter":
-        raise HTTPException(status_code=403, detail="Access denied: cannot view another user's skills")
+    """Get saved skills for a user, including bucket classification.
+    Only the owning user or a recruiter may view another user's skills —
+    "me"/empty resolves to the caller, anything else is checked strictly.
+    """
+    if not user_id or user_id == "me":
+        target_uuid = current_user.id
+    else:
+        try:
+            target_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid user_id format")
+
+        if target_uuid != current_user.id and current_user.user_type != "recruiter":
+            raise HTTPException(status_code=403, detail="Access denied: cannot view another user's skills")
 
     skills = db.query(UserSkill).filter(UserSkill.user_id == target_uuid).all()
 
@@ -230,10 +247,59 @@ async def get_skills(
             {
                 "name": s.skill_name,
                 "level": s.level,
-                "category": s.category
+                "category": s.category,
+                "bucket": get_bucket(s.category)
             }
             for s in skills
         ]
+    }
+
+
+# --- Dashboard Endpoint ---
+
+@router.get("/dashboard")
+async def get_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """One-call summary for the jobseeker home screen: skill count, latest
+    resume score, application count, and profile completeness %.
+    """
+    profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
+
+    skills_count = db.query(UserSkill).filter(UserSkill.user_id == current_user.id).count()
+
+    latest_analysis = (
+        db.query(ResumeAnalysis)
+        .filter(ResumeAnalysis.user_id == current_user.id)
+        .order_by(ResumeAnalysis.created_at.desc())
+        .first()
+    )
+    latest_resume_score = latest_analysis.overall_score if latest_analysis else None
+    has_resume = latest_analysis is not None
+
+    applications_count = (
+        db.query(JobApplication)
+        .filter(JobApplication.candidate_id == current_user.id)
+        .count()
+    )
+
+    completeness = 0
+    if skills_count > 0:
+        completeness += 25
+    if profile and profile.primary_role:
+        completeness += 25
+    if profile and profile.education and profile.current_status:
+        completeness += 25
+    if has_resume:
+        completeness += 25
+
+    return {
+        "success": True,
+        "skills_count": skills_count,
+        "latest_resume_score": latest_resume_score,
+        "applications_count": applications_count,
+        "profile_completeness": completeness
     }
 
 
@@ -300,6 +366,7 @@ async def get_skill_gap(
     current_user: User = Depends(get_current_user)
 ):
     """Analyze skill gap between user skills and target role"""
+    from services.ai_service import analyze_skill_gap
 
     if not request.user_skills:
         raise HTTPException(status_code=400, detail="Please provide at least one skill")
@@ -328,6 +395,7 @@ async def get_career_path(
     current_user: User = Depends(get_current_user)
 ):
     """Get AI-powered career path recommendations"""
+    from services.ai_service import recommend_career_path
 
     if not request.user_skills:
         raise HTTPException(status_code=400, detail="Please provide at least one skill")

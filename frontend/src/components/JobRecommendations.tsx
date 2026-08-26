@@ -1,19 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Briefcase, TrendingUp, ExternalLink, Search, Loader2, RefreshCw, CheckCircle2, Send } from 'lucide-react';
-import { searchJobs, getAllJobs, applyToJob, getMyApplications } from '../services/api';
+import { searchJobs, getAllJobs, applyToJob, getMyApplications, getCatalog } from '../services/api';
 import type { JobPosting } from '../App';
 
-const INDIAN_CITIES = [
-  "Mumbai", "Pune", "Bangalore", "Hyderabad", "Delhi",
-  "Noida", "Chennai", "Navi Mumbai", "Kolkata", "Ahmedabad"
-];
-
-const TECH_ROLES = [
-  "Python Developer", "Full Stack Developer", "Frontend Developer",
-  "Backend Developer", "Data Scientist", "ML Engineer",
-  "DevOps Engineer", "React Developer", "Java Developer",
-  "Software Engineer", "Cloud Engineer", "QA Engineer"
-];
+// Cities + tech roles now come from GET /api/profile/catalog
+// (backend/models/catalog.py) instead of being hardcoded here and
+// separately in SkillProfile.tsx — single source, no drift.
 
 interface ExternalJob {
   id: string;
@@ -47,6 +39,17 @@ export function JobRecommendations() {
   const [keywords, setKeywords] = useState('Software Developer');
   const [location, setLocation] = useState('Mumbai');
   const [hasSearched, setHasSearched] = useState(false);
+
+  const [catalog, setCatalog] = useState<{ cities: string[]; tech_roles: string[] }>({
+    cities: [],
+    tech_roles: [],
+  });
+
+  useEffect(() => {
+    getCatalog()
+      .then(data => { if (data.catalog) setCatalog(data.catalog); })
+      .catch(err => console.error('Failed to load catalog:', err));
+  }, []);
 
   const loadInternalJobs = async () => {
     setIsLoadingInternal(true);
@@ -213,13 +216,13 @@ export function JobRecommendations() {
               <div className="flex-1">
                 <label className="block text-xs text-base-content/60 mb-1">Job Role</label>
                 <select value={keywords} onChange={(e) => setKeywords(e.target.value)} className="select select-bordered w-full">
-                  {TECH_ROLES.map((role) => <option key={role} value={role}>{role}</option>)}
+                  {catalog.tech_roles.map((role) => <option key={role} value={role}>{role}</option>)}
                 </select>
               </div>
               <div className="flex-1">
                 <label className="block text-xs text-base-content/60 mb-1">City</label>
                 <select value={location} onChange={(e) => setLocation(e.target.value)} className="select select-bordered w-full">
-                  {INDIAN_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}
+                  {catalog.cities.map((city) => <option key={city} value={city}>{city}</option>)}
                 </select>
               </div>
               <div className="flex items-end">

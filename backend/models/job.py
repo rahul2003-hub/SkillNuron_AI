@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from database import Base
 import uuid
 from datetime import datetime, timezone
-    
+
 
 class JobPosting(Base):
     __tablename__ = "job_postings"
@@ -16,5 +16,6 @@ class JobPosting(Base):
     salary = Column(String)
     required_skills = Column(ARRAY(String))
     description = Column(String)
-    posted_by = Column(String)
+    posted_by = Column(String)  # display name — kept for backward-compat display only
+    posted_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # stable owner FK
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

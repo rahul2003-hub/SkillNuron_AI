@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Plus, X, Award, Sparkles, Save, CheckCircle, User, Edit3, Loader2 } from 'lucide-react';
 import { Skill, SkillLevel } from '../App';
-import { saveSkills, getProfile, updateProfile, getSkillSuggestions } from '../services/api';
+import { saveSkills, getProfile, updateProfile, getSkillSuggestions, getSkills, getCatalog } from '../services/api';
 
 interface SkillProfileProps {
   skills: Skill[];
@@ -11,30 +12,11 @@ interface SkillProfileProps {
   userEmail: string;
 }
 
-const EDUCATION_OPTIONS = ["BCA", "MCA", "B.Tech", "M.Tech", "B.Sc", "M.Sc", "BBA", "MBA", "B.Com", "Diploma", "Other"];
-const STATUS_OPTIONS = ["Student", "Fresher", "Working Professional", "Freelancer"];
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 10 }, (_, i) => String(CURRENT_YEAR + 2 - i));
-const CITY_OPTIONS = ["Mumbai", "Pune", "Navi Mumbai", "Bangalore", "Hyderabad", "Noida", "Chennai", "Delhi", "Kolkata", "Ahmedabad", "Other"];
-const TARGET_ROLES = [
-  "Full Stack Developer", "Frontend Developer", "Backend Developer",
-  "Python Developer", "Data Scientist", "ML Engineer", "DevOps Engineer",
-  "Cloud Engineer", "UI/UX Designer", "Product Manager", "QA Engineer",
-  "Android Developer", "iOS Developer", "Cybersecurity Analyst"
-];
 
-// Smart Auto-Categorization: maps skill categories into 3 buckets recruiters scan for
-const CORE_CATEGORIES = new Set(['Programming', 'Frontend', 'Backend', 'Database']);
-const EMERGING_CATEGORIES = new Set(['AI & Data', 'DevOps & Cloud']);
 type Bucket = 'Core' | 'Secondary' | 'Emerging & Tools';
 
-function getBucket(category: string): Bucket {
-  if (CORE_CATEGORIES.has(category)) return 'Core';
-  if (EMERGING_CATEGORIES.has(category)) return 'Emerging & Tools';
-  return 'Secondary';
-}
-
-const BUCKET_ORDER: Bucket[] = ['Core', 'Secondary', 'Emerging & Tools'];
 const BUCKET_STYLE: Record<Bucket, string> = {
   'Core': 'badge-primary',
   'Secondary': 'badge-info',
@@ -42,30 +24,6 @@ const BUCKET_STYLE: Record<Bucket, string> = {
 };
 
 const SKILL_LEVELS: SkillLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-
-// Auto-categorization: match typed skill name against SKILL_SUGGESTIONS (case-insensitive),
-// falling back to simple keyword rules so users never have to pick a category themselves.
-const KEYWORD_FALLBACKS: [RegExp, string][] = [
-  [/docker|kubernetes|aws|azure|gcp|google cloud|ci\/cd|terraform|nginx|linux|devops/i, 'DevOps & Cloud'],
-  [/machine learning|deep learning|tensorflow|pytorch|pandas|numpy|data (analysis|science)|nlp|llm|ai\b/i, 'AI & Data'],
-  [/sql|postgres|mysql|mongo|redis|database|firebase|supabase/i, 'Database'],
-  [/react|angular|vue|next\.?js|html|css|tailwind|figma|frontend|ui/i, 'Frontend'],
-  [/node|express|django|flask|fastapi|spring|backend|api|microservice/i, 'Backend'],
-  [/git|jira|postman|vs ?code|notion|slack|bash/i, 'Tools'],
-];
-
-function autoCategorize(skillName: string, suggestions: Record<string, string[]>): string {
-  const trimmed = skillName.trim().toLowerCase();
-  if (!trimmed) return 'Tools';
-
-  for (const [category, skillList] of Object.entries(suggestions)) {
-    if (skillList.some(s => s.toLowerCase() === trimmed)) return category;
-  }
-  for (const [pattern, category] of KEYWORD_FALLBACKS) {
-    if (pattern.test(trimmed)) return category;
-  }
-  return 'Other';
-}
 
 export function SkillProfile({ skills, setSkills, userId, userName, userEmail }: SkillProfileProps) {
   const [activeSection, setActiveSection] = useState<'info' | 'skills'>('info');
@@ -79,6 +37,23 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   const [suggestions, setSuggestions] = useState<Record<string, string[]>>({});
   const [newSkill, setNewSkill] = useState<{ name: string; level: SkillLevel | '' }>({ name: '', level: '' });
   const [editingSkill, setEditingSkill] = useState<string | null>(null);
+
+  // Catalog: dropdown options + category->bucket map, sourced entirely from
+  // GET /api/profile/catalog (backend/models/catalog.py) instead of
+  // hardcoded TS constants.
+  const [catalog, setCatalog] = useState<{
+    education_levels: string[];
+    current_statuses: string[];
+    cities: string[];
+    target_roles: string[];
+    category_bucket_map: Record<string, Bucket>;
+  }>({
+    education_levels: [],
+    current_statuses: [],
+    cities: [],
+    target_roles: [],
+    category_bucket_map: {},
+  });
 
   const [profileInfo, setProfileInfo] = useState({
     education: '',
@@ -94,13 +69,25 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   });
 
   useEffect(() => {
+    loadCatalog();
     if (userId) {
       loadProfile();
       loadSuggestions();
     } else {
-      setIsLoadingProfile(false); // Add this line to prevent infinite loading
+      setIsLoadingProfile(false);
     }
   }, [userId]);
+
+  const loadCatalog = async () => {
+    try {
+      const data = await getCatalog();
+      if (data.catalog) {
+        setCatalog(data.catalog);
+      }
+    } catch (err) {
+      console.error('Failed to load catalog:', err);
+    }
+  };
 
   const loadProfile = async () => {
     setIsLoadingProfile(true);
@@ -144,6 +131,12 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     setIsSavingSkills(true);
     try {
       await saveSkills(userId, skills);
+      // Backend assigns/normalizes category + bucket on save — refresh
+      // local state from the server so display matches what was persisted.
+      const refreshed = await getSkills(userId);
+      if (refreshed.skills) {
+        setSkills(refreshed.skills);
+      }
       setSaveSkillSuccess(true);
       setTimeout(() => setSaveSkillSuccess(false), 3000);
     } catch (err) {
@@ -165,14 +158,29 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
           : s
       ));
     } else {
-      const category = autoCategorize(skillName, suggestions);
+      // Exact-name match against fetched suggestions only, for instant UI
+      // feedback. Final category/bucket is authoritative from the backend
+      // (auto_categorize in models/catalog.py) once Save Skills is clicked.
+      const trimmed = skillName.toLowerCase();
+      let category = 'Uncategorized';
+      for (const [cat, list] of Object.entries(suggestions)) {
+        if (list.some(s => s.toLowerCase() === trimmed)) {
+          category = cat;
+          break;
+        }
+      }
       setSkills([...skills, { name: skillName, level: newSkill.level as SkillLevel, category }]);
     }
     setNewSkill({ name: '', level: '' });
     setShowAddSkill(false);
   };
 
+  const getBucketForCategory = (category: string): Bucket => {
+    return catalog.category_bucket_map[category] || 'Secondary';
+  };
+
   const categories = Array.from(new Set(skills.map(s => s.category)));
+  const bucketOrder: Bucket[] = ['Core', 'Secondary', 'Emerging & Tools'];
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -294,7 +302,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                         className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         <option value="">Select education</option>
-                        {EDUCATION_OPTIONS.map(e => <option key={e}>{e}</option>)}
+                        {catalog.education_levels.map(e => <option key={e}>{e}</option>)}
                       </select>
                     ) : (
                       <input value={profileInfo.education || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
@@ -343,7 +351,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                         onChange={e => setProfileInfo({ ...profileInfo, current_status: e.target.value })}
                         className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
-                        {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                        {catalog.current_statuses.map(s => <option key={s}>{s}</option>)}
                       </select>
                     ) : (
                       <input value={profileInfo.current_status || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
@@ -360,7 +368,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                         className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
                       >
                         <option value="">Select city</option>
-                        {CITY_OPTIONS.map(c => <option key={c}>{c}</option>)}
+                        {catalog.cities.map(c => <option key={c}>{c}</option>)}
                       </select>
                     ) : (
                       <input value={profileInfo.location || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
@@ -444,7 +452,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                         className="w-full px-4 py-2.5 border border-dashed border-primary/40 text-primary rounded-lg focus:outline-none focus:border-primary text-sm bg-primary/5 cursor-pointer"
                       >
                         <option value="">+ Add a target role</option>
-                        {TARGET_ROLES.filter(r => !(profileInfo.target_roles || []).includes(r)).map(r => (
+                        {catalog.target_roles.filter(r => !(profileInfo.target_roles || []).includes(r)).map(r => (
                           <option key={r} value={r}>{r}</option>
                         ))}
                       </select>
@@ -568,8 +576,8 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
           )}
 
           {/* Skills grouped by Core / Secondary / Emerging & Tools */}
-          {BUCKET_ORDER.map(bucket => {
-            const bucketCategories = categories.filter(c => getBucket(c) === bucket);
+          {bucketOrder.map(bucket => {
+            const bucketCategories = categories.filter(c => getBucketForCategory(c) === bucket);
             if (bucketCategories.length === 0) return null;
             return (
               <div key={bucket} className="space-y-3">

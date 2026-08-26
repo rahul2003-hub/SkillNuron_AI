@@ -1,7 +1,9 @@
+// Save as: frontend/src/components/PostedJobs.tsx (replaces existing file)
+
 import { useState, useEffect } from 'react';
 import { MapPin, Briefcase, IndianRupee, Trash2, Building, Users, X, Loader2 } from 'lucide-react';
 import { JobPosting } from "../App";
-import { getJobApplications, updateApplicationStatus } from '../services/api';
+import { getJobApplications, updateApplicationStatus, getCatalog } from '../services/api';
 
 interface PostedJobsProps {
   jobs: JobPosting[];
@@ -16,13 +18,27 @@ interface Applicant {
   status: string;
 }
 
-const STATUS_OPTIONS = ['applied', 'shortlisted', 'rejected', 'hired'];
+// Fallback only used if the catalog fetch hasn't resolved yet — the
+// authoritative list is ALLOWED_STATUSES in backend/models/application.py,
+// served via GET /api/profile/catalog.
+const FALLBACK_STATUS_OPTIONS = ['applied', 'shortlisted', 'rejected', 'hired'];
 
 export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [applicantsModalJob, setApplicantsModalJob] = useState<JobPosting | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [statusOptions, setStatusOptions] = useState<string[]>(FALLBACK_STATUS_OPTIONS);
+
+  useEffect(() => {
+    getCatalog()
+      .then(data => {
+        if (data.catalog?.application_statuses) {
+          setStatusOptions(data.catalog.application_statuses);
+        }
+      })
+      .catch(err => console.error('Failed to load catalog:', err));
+  }, []);
 
   useEffect(() => {
     if (!applicantsModalJob) return;
@@ -33,13 +49,22 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       .finally(() => setIsLoadingApplicants(false));
   }, [applicantsModalJob]);
 
-  const handleStatusChange = async (applicationId: string, status: string) => {
+  const handleStatusChange = async (applicationId: string, newStatus: string) => {
+    const previous = applicants.find(a => a.application_id === applicationId)?.status;
+
+    // Optimistic update
+    setApplicants(prev => prev.map(a => a.application_id === applicationId ? { ...a, status: newStatus } : a));
     setUpdatingId(applicationId);
+
     try {
-      await updateApplicationStatus(applicationId, status);
-      setApplicants(prev => prev.map(a => a.application_id === applicationId ? { ...a, status } : a));
+      await updateApplicationStatus(applicationId, newStatus);
     } catch (err: any) {
-      alert(err.message || 'Failed to update status');
+      // Roll back to the previous status on failure — UI must not silently
+      // desync from the backend.
+      if (previous) {
+        setApplicants(prev => prev.map(a => a.application_id === applicationId ? { ...a, status: previous } : a));
+      }
+      alert(err.message || 'Failed to update status. Reverted.');
     } finally {
       setUpdatingId(null);
     }
@@ -153,7 +178,7 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                             onChange={(e) => handleStatusChange(a.application_id, e.target.value)}
                             className="select select-bordered select-xs capitalize"
                           >
-                            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                            {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </td>
                       </tr>

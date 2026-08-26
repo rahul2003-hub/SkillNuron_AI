@@ -1,3 +1,5 @@
+// Save as: frontend/src/services/api.ts (replaces existing file)
+
 import { supabase } from './supabase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -124,6 +126,13 @@ export async function getAllJobs() {
   return response.json();
 }
 
+export async function getMyJobs() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/jobs/mine`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch your jobs");
+  return response.json();
+}
+
 export async function createJob(job: any) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/api/jobs/`, {
@@ -221,14 +230,20 @@ export async function getSkillSuggestions() {
   return response.json();
 }
 
-// --- RECRUITER DASHBOARD & ANALYTICS ---
-export async function getRecruiterDashboard() {
-  const headers = await getHeaders();
-  const response = await fetch(`${BASE_URL}/recruiter/dashboard`, { headers });
-  if (!response.ok) throw new Error("Failed to fetch recruiter dashboard");
+export async function getCatalog() {
+  const response = await fetch(`${BASE_URL}/api/profile/catalog`);
+  if (!response.ok) throw new Error("Failed to fetch catalog");
   return response.json();
 }
 
+export async function getDashboard() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/profile/dashboard`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch dashboard");
+  return response.json();
+}
+
+// --- RECRUITER DASHBOARD & ANALYTICS ---
 export async function getRecruiterAnalytics() {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/recruiter/analytics`, { headers });
@@ -237,16 +252,6 @@ export async function getRecruiterAnalytics() {
 }
 
 // --- TALENT POOL & MATCHING ---
-export async function getCandidates(skill?: string) {
-  const headers = await getHeaders();
-  const url = skill
-    ? `${BASE_URL}/recruiter/candidates?skill=${skill}`
-    : `${BASE_URL}/recruiter/candidates`;
-  const response = await fetch(url, { headers });
-  if (!response.ok) throw new Error("Failed to fetch candidates");
-  return response.json();
-}
-
 export async function getCandidateMatches(jobId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches`, { headers });

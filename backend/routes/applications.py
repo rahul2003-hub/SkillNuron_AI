@@ -19,9 +19,6 @@ class ApplicationRequest(BaseModel):
 class StatusUpdateRequest(BaseModel):
     status: str
 
-# ---------------------------
-# Candidate applies for job
-# ---------------------------
 @router.post("/apply/{job_id}")
 def apply_for_job(
     job_id: str,
@@ -64,9 +61,6 @@ def apply_for_job(
     }
 
 
-# ---------------------------------
-# Recruiter view job applications
-# ---------------------------------
 @router.get("/job/{job_id}")
 def get_job_applications(
     job_id: str,
@@ -101,9 +95,6 @@ def get_job_applications(
     }
 
 
-# ---------------------------------
-# Recruiter updates application status
-# ---------------------------------
 @router.patch("/{application_id}/status")
 def update_application_status(
     application_id: str,
@@ -124,7 +115,10 @@ def update_application_status(
         raise HTTPException(status_code=404, detail="Application not found")
 
     job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first()
-    if not job or job.posted_by != current_user.name:
+
+    # Strict ownership check via posted_by_id FK. A job with no
+    # posted_by_id recorded is NOT implicitly open to any recruiter.
+    if not job or job.posted_by_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only update applications for your own job postings")
 
     application.status = req.status
@@ -142,9 +136,6 @@ def update_application_status(
     return {"success": True, "application_id": str(application.id), "status": application.status}
 
 
-# ---------------------------------
-# Jobseeker views own applications
-# ---------------------------------
 @router.get("/my")
 def get_my_applications(
     db: Session = Depends(get_db),
@@ -169,9 +160,6 @@ def get_my_applications(
     return {"success": True, "total": len(results), "applications": results}
 
 
-# ---------------------------------
-# Applications-over-time for a job (recruiter analytics)
-# ---------------------------------
 @router.get("/job/{job_id}/timeseries")
 def get_job_application_timeseries(
     job_id: str,
@@ -198,9 +186,6 @@ def get_job_application_timeseries(
     }
 
 
-# ---------------------------------
-# Notifications
-# ---------------------------------
 @router.get("/notifications")
 def get_notifications(
     db: Session = Depends(get_db),
@@ -210,14 +195,17 @@ def get_notifications(
         Notification.user_id == current_user.id
     ).order_by(Notification.created_at.desc()).limit(30).all()
 
+    def is_read(value):
+        return value is True or value == "true" or value == 1
+
     return {
         "success": True,
-        "unread_count": sum(1 for n in notifications if n.is_read == "false"),
+        "unread_count": sum(1 for n in notifications if not is_read(n.is_read)),
         "notifications": [
             {
                 "id": str(n.id),
                 "message": n.message,
-                "is_read": n.is_read == "true",
+                "is_read": is_read(n.is_read),
                 "created_at": str(n.created_at)
             }
             for n in notifications

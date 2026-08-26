@@ -15,6 +15,7 @@ dependencies = [
     "passlib>=1.7.4",
     "psycopg2-binary>=2.9.12",
     "pymupdf>=1.28.2",
+    "pytest>=9.1.1",
     "python-dotenv>=1.2.3",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.32",

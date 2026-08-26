@@ -10,28 +10,26 @@ import { PsychometricTest } from './PsychometricTest';
 import { NotificationBell } from './NotificationBell';
 import { JobSeekerHome } from './JobSeekerHome';
 import { MyApplications } from './MyApplications';
-
+ 
 import { getProfile, getSkills } from '../services/api';
-
+ 
 type Tab = 'home' | 'profile' | 'assessment' | 'resume-analyzer' | 'gap-analysis' | 'career-path' | 'job-recommendations' | 'my-applications';
-
-// Renamed interface to match the layout expected by App.tsx
+ 
 interface JobSeekerLayoutProps {
   userName: string;
   userId: string;
   userEmail: string;
   onLogout: () => void;
 }
-
+ 
 const defaultSkills: Skill[] = [];
-
-// Renamed function to JobSeekerLayout to fix the App.tsx import error
+ 
 export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSeekerLayoutProps) {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [skills, setSkills] = useState<Skill[]>(defaultSkills);
   const [primaryRole, setPrimaryRole] = useState<string>('');
-
+ 
   useEffect(() => {
     if (userId) {
       getSkills(userId)
@@ -43,7 +41,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
         .catch(err => console.error("Failed to load saved skills:", err));
     }
   }, [userId]);
-
+ 
   useEffect(() => {
     if (activeTab === 'gap-analysis' || activeTab === 'career-path') {
       getProfile(userId).then(data => {
@@ -53,22 +51,22 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
       }).catch(console.error);
     }
   }, [activeTab, userId]);
-
+ 
   const navItems = [
     { id: 'home', icon: LayoutDashboard, label: 'Home' },
     { id: 'profile', icon: User, label: 'Profile' },
     { id: 'assessment', icon: Brain, label: 'Assessment' },
     { id: 'resume-analyzer', icon: FileSearch, label: 'Resume Analyzer' },
-
+ 
     { id: 'gap-analysis', icon: Target, label: 'Gap Analysis' },
     { id: 'career-path', icon: TrendingUp, label: 'Career Path' },
     { id: 'job-recommendations', icon: Briefcase, label: 'Jobs' },
     { id: 'my-applications', icon: ClipboardList, label: 'My Applications' },
   ];
-
+ 
   return (
     <div className="fixed inset-0 flex bg-base-200 font-sans overflow-hidden">
-
+ 
       <aside
         className={`h-full bg-base-100 border-r border-base-300 flex flex-col transition-all duration-300 ease-in-out relative z-20 shrink-0 ${isSidebarOpen ? 'w-64' : 'w-20'
           }`}
@@ -90,7 +88,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
             {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-
+ 
         <nav className="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-2">
           {navItems.map(({ id, icon: Icon, label }) => {
             const isActive = activeTab === id;
@@ -114,7 +112,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
             );
           })}
         </nav>
-
+ 
         <div className="p-4 border-t border-base-300 shrink-0 bg-base-100">
           <button
             onClick={onLogout}
@@ -129,9 +127,11 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
           </button>
         </div>
       </aside>
-
+ 
       <main className="flex-1 h-full flex flex-col min-w-0 overflow-hidden relative z-10 bg-base-200">
-
+ 
+        {/* Notification bell sits top-right, before the profile-initial
+            avatar, per product spec. */}
         <header className="flex-none h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-6 lg:px-10 z-10">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold text-base-content capitalize tracking-tight">
@@ -149,7 +149,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
             </div>
           </div>
         </header>
-
+ 
         <div className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
           <div className="max-w-6xl mx-auto pb-8">
             {activeTab === 'home' && (
@@ -171,7 +171,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
           </div>
         </div>
       </main>
-
+ 
     </div>
   );
 }

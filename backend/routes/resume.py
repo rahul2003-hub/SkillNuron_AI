@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from pydantic import BaseModel
 from services.ai_service import analyze_resume
 from services.storage_service import upload_resume, get_resume_signed_url
@@ -25,14 +25,17 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 @router.post("/analyze")
 async def analyze_resume_endpoint(
     file: UploadFile = File(...),
+    target_role: str = Form(""),
+    job_description: str = Form(""),
     current_user: User = Depends(get_current_user)
 ):
-    """Upload resume PDF and get full AI analysis"""
+    """Upload a PDF or TXT resume and get full AI analysis."""
 
-    if not file.filename.lower().endswith(".pdf"):
+    filename = file.filename or "resume"
+    if not filename.lower().endswith((".pdf", ".txt")):
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported. Please upload a .pdf file."
+            detail="Only PDF and TXT files are supported."
         )
 
     file_bytes = await file.read()
@@ -43,7 +46,14 @@ async def analyze_resume_endpoint(
             detail="File too large. Maximum size is 10MB."
         )
 
-    resume_text = extract_text_from_pdf(file_bytes)
+    try:
+        resume_text = (
+            extract_text_from_pdf(file_bytes)
+            if filename.lower().endswith(".pdf")
+            else file_bytes.decode("utf-8")
+        )
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="TXT files must use UTF-8 encoding.")
 
     # If PDF text extraction failed, return specific error code
     if not resume_text or len(resume_text) < 30:
@@ -53,7 +63,7 @@ async def analyze_resume_endpoint(
         )
 
     try:
-        analysis = analyze_resume(resume_text)
+        analysis = analyze_resume(resume_text, target_role, job_description)
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -62,7 +72,7 @@ async def analyze_resume_endpoint(
 
     resume_path = None
     try:
-        stored_filename = f"{uuid_lib.uuid4()}_{file.filename}"
+        stored_filename = f"{uuid_lib.uuid4()}_{filename}"
         resume_path = await upload_resume(str(current_user.id), stored_filename, file_bytes)
     except Exception:
         # Storage failure shouldn't block returning the analysis
@@ -70,7 +80,7 @@ async def analyze_resume_endpoint(
 
     return {
         "success": True,
-        "filename": file.filename,
+        "filename": filename,
         "analysis": analysis,
         "resume_path": resume_path
     }
@@ -78,6 +88,8 @@ async def analyze_resume_endpoint(
 
 class ResumeTextRequest(BaseModel):
     resume_text: str
+    target_role: str = ""
+    job_description: str = ""
 
 
 @router.post("/analyze-text")
@@ -94,7 +106,7 @@ async def analyze_resume_from_text(
         )
 
     try:
-        analysis = analyze_resume(request.resume_text)
+        analysis = analyze_resume(request.resume_text, request.target_role, request.job_description)
         return {
             "success": True,
             "filename": "pasted_text",

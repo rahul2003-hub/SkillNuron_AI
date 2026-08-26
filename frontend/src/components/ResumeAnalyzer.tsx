@@ -37,6 +37,8 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
   const [error, setError] = useState('');
   const [showTextFallback, setShowTextFallback] = useState(false);
   const [pastedText, setPastedText] = useState('');
+  const [targetRole, setTargetRole] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const [analysisData, setAnalysisData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
  
@@ -64,7 +66,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
  
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) { setUploadedFile(file); processResume(file); }
+    if (file) setUploadedFile(file);
   };
  
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
@@ -72,7 +74,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     const file = e.dataTransfer.files[0];
-    if (file) { setUploadedFile(file); processResume(file); }
+    if (file) setUploadedFile(file);
   };
  
   const processResume = async (file: File) => {
@@ -83,7 +85,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
     setShowTextFallback(false);
  
     try {
-      const data = await analyzeResume(file);
+      const data = await analyzeResume(file, targetRole, jobDescription);
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
       saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, data.resume_path, file.name).catch(
@@ -111,7 +113,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
     setIsProcessing(true);
     setError('');
     try {
-      const data = await analyzeResumeFromText(pastedText);
+      const data = await analyzeResumeFromText(pastedText, targetRole, jobDescription);
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
       setShowTextFallback(false);
@@ -133,6 +135,8 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
     setError('');
     setShowTextFallback(false);
     setPastedText('');
+    setTargetRole('');
+    setJobDescription('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
  
@@ -177,7 +181,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
               </div>
               <h2 className="text-2xl text-base-content">AI Resume Analyzer</h2>
             </div>
-            <p className="text-base-content/70">Upload your PDF resume and get real AI-powered scores, keyword analysis and improvement tips.</p>
+            <p className="text-base-content/70">Upload a resume and tailor the analysis to a target role or job description.</p>
           </div>
  
           {/* Tab Toggle */}
@@ -217,14 +221,14 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
             </div>
           )}
  
-          {/* Upload Area */}
+          {/* Input dashboard */}
           {!uploadedFile && !isProcessing && !showTextFallback && !isAnalyzed && (
-            <div className="bg-base-100 rounded-xl shadow-sm p-8">
+            <div className="bg-base-100 rounded-xl shadow-sm p-6 grid lg:grid-cols-2 gap-6">
               <div
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-base-300 rounded-xl p-12 text-center hover:border-primary transition-colors cursor-pointer"
+                className="border-2 border-dashed border-base-300 rounded-xl p-10 text-center hover:border-primary transition-colors cursor-pointer"
               >
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
@@ -232,14 +236,32 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                   </div>
                   <h3 className="text-xl text-base-content mb-2">Drop your resume here</h3>
                   <p className="text-base-content/70 mb-4">or click to browse</p>
-                  <button type="button" className="bg-linear-to-r from-primary to-secondary text-white px-6 py-2 rounded-lg hover:shadow-lg transition-all">
-                    Choose PDF File
+                  <button type="button" className="btn btn-primary">
+                    Choose Resume
                   </button>
-                  <p className="text-sm text-base-content/60 mt-4">PDF · Max 10MB</p>
+                  <p className="text-sm text-base-content/60 mt-4">PDF or TXT · Max 10MB</p>
                 </div>
               </div>
-              <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
+              <input ref={fileInputRef} type="file" accept=".pdf,.txt,text/plain,application/pdf" onChange={handleFileSelect} className="hidden" />
+              <div className="space-y-4">
+                <div>
+                  <label className="label"><span className="label-text font-medium">Target job title</span><span className="label-text-alt">Optional</span></label>
+                  <input value={targetRole} onChange={e => setTargetRole(e.target.value)} className="input input-bordered w-full" placeholder="e.g. Python Backend Developer" />
+                </div>
+                <div>
+                  <label className="label"><span className="label-text font-medium">Job description</span><span className="label-text-alt">Optional</span></label>
+                  <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} className="textarea textarea-bordered w-full h-36" placeholder="Paste the role requirements to tailor keywords and recommendations..." />
+                </div>
+              </div>
             </div>
+          )}
+
+          {uploadedFile && !isProcessing && !isAnalyzed && (
+            <div className="card bg-base-100 shadow-sm"><div className="card-body gap-4">
+              <div className="flex items-center justify-between gap-3"><span className="font-medium truncate">{uploadedFile.name}</span><button onClick={handleReset} className="btn btn-ghost btn-sm">Remove</button></div>
+              <div className="grid lg:grid-cols-2 gap-4"><input value={targetRole} onChange={e => setTargetRole(e.target.value)} className="input input-bordered w-full" placeholder="Target job title (optional)" /><textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} className="textarea textarea-bordered w-full h-24" placeholder="Job description (optional)" /></div>
+              <button onClick={() => processResume(uploadedFile)} className="btn btn-primary self-start"><Sparkles className="w-4 h-4" /> Analyze resume</button>
+            </div></div>
           )}
  
           {/* Processing State */}

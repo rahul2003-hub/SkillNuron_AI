@@ -70,11 +70,13 @@ export async function getCareerPath(
 }
 
 // --- RESUME ANALYZER ---
-export async function analyzeResume(file: File) {
+export async function analyzeResume(file: File, targetRole = "", jobDescription = "") {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("target_role", targetRole);
+  formData.append("job_description", jobDescription);
 
   const headers: Record<string, string> = {};
   if (token) {
@@ -158,12 +160,12 @@ export async function deleteJob(jobId: string) {
 }
 
 // --- RESUME ANALYZE FROM PASTED TEXT ---
-export async function analyzeResumeFromText(resumeText: string) {
+export async function analyzeResumeFromText(resumeText: string, targetRole = "", jobDescription = "") {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/api/resume/analyze-text`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ resume_text: resumeText }),
+    body: JSON.stringify({ resume_text: resumeText, target_role: targetRole, job_description: jobDescription }),
   });
   if (!response.ok) {
     const error = await response.json();

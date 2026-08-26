@@ -206,3 +206,51 @@ SkillNuron_AI/
    npm run dev
    ```
    Application will be running at `http://localhost:5173`.
+
+
+---
+
+## Recent additions
+
+- **Application tracking & notifications**: Job seekers can apply to posted jobs, monitor application statuses, and receive in-app notifications when recruiters update a status.
+- **Recruiter workflow upgrades**: Recruiters can access analytics, view candidate matches, and use AI to polish job-description drafts before posting.
+- **Resume continuity**: Resume analyses are saved as history; uploaded PDFs can be stored in Supabase Storage and retrieved through temporary signed links.
+- **Centralized catalog data**: The backend provides shared cities, roles, education fields, application statuses, and skill buckets for frontend selectors.
+
+---
+
+## Recent additions backend
+
+### Application tracking and notifications
+
+- `POST /applications/apply/{job_id}` applies to a posted job.
+- `GET /applications/my` returns the current user's applications.
+- `GET /applications/job/{job_id}` and `PATCH /applications/{application_id}/status` support recruiter application management.
+- Statuses are `applied`, `shortlisted`, `rejected`, and `hired`; updating one creates a candidate notification.
+- `GET /applications/notifications` and `POST /applications/notifications/mark-read` manage in-app notifications.
+
+### Recruiter, catalog, and resume enhancements
+
+- `GET /recruiter/analytics` exposes recruiter dashboard metrics and chart data; recruiter candidate matches remain available at `GET /recruiter/job/{job_id}/matches`.
+- `POST /api/jobs/polish-description` uses AI to polish a job-description draft, and `GET /api/jobs/mine` returns only the authenticated recruiter's job postings.
+- `GET /api/profile/catalog` provides shared cities, roles, education fields, application statuses, and skill buckets. `GET /api/profile/dashboard` provides the job-seeker dashboard summary.
+- `GET /api/profile/resume/history/{user_id}` returns saved resume analyses. When Supabase Storage is configured, PDF uploads are retained and can be accessed with `GET /api/resume/download/{resume_path}`.
+- To enable PDF storage, add `SUPABASE_SERVICE_KEY=your_supabase_service_role_key` and optionally `SUPABASE_RESUME_BUCKET=resumes` to `.env`.
+- Job ownership uses the authenticated recruiter's user-ID foreign key, preventing another recruiter from managing a job or its application statuses.
+
+---
+
+## Recent additions frontend
+
+- The job-seeker dashboard now includes a home overview, **My Applications** status tracking, and an in-app notification bell for recruiter status updates.
+- Recruiters now have analytics charts, AI job-description polishing, and job lists scoped to the authenticated recruiter.
+- The frontend uses backend-provided catalog values for shared selector data, including roles, cities, education fields, and skill buckets.
+- Resume analysis history is available alongside optional stored-PDF download links when backend storage is configured.
+
+---
+
+# Running Tests in backend directory
+```bash
+  cd backend
+  pytest tests/test_applications.py tests/test_profile_dashboard.py -v
+```

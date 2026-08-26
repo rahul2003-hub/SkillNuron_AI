@@ -115,11 +115,19 @@ def polish_job_description(description: str, title: str = "", required_skills: l
     return _chat_json(prompt, max_tokens=1200, temperature=0.4)
 
 
-def analyze_resume(resume_text: str) -> dict:
+def analyze_resume(resume_text: str, target_role: str = "", job_description: str = "") -> dict:
+    target_context = ""
+    if target_role or job_description:
+        target_context = f"""
+    Target job title: {target_role or 'Not provided'}
+    Target job description: {job_description[:2500] or 'Not provided'}
+    Prioritize the target's required skills and keywords when evaluating keyword fit.
+    """
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) specialist and resume reviewer.
     
     Analyze the resume text using these SPECIFIC ATS scoring criteria:
+    {target_context}
     
     ATS SCORING RULES (be strict and realistic):
     

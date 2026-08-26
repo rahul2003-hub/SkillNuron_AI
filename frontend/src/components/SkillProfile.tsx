@@ -45,13 +45,11 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     education_levels: string[];
     current_statuses: string[];
     cities: string[];
-    target_roles: string[];
     category_bucket_map: Record<string, Bucket>;
   }>({
     education_levels: [],
     current_statuses: [],
     cities: [],
-    target_roles: [],
     category_bucket_map: {},
   });
 
@@ -399,64 +397,21 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   <h3 className="text-base-content font-medium">🎯 Target Career Roles</h3>
                   <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">{profileInfo.target_roles?.length || 0}/3 Roles</span>
                 </div>
-                <p className="text-xs text-base-content/50 mb-4">Add up to 3 roles. Your primary role powers default AI recommendations.</p>
+                <p className="text-xs text-base-content/50 mb-4">Add up to 3 preferred roles. Your primary role powers default AI recommendations.</p>
 
                 {isEditingInfo ? (
                   <div className="space-y-3">
-                    {/* List existing roles */}
-                    {(profileInfo.target_roles || []).map((role, idx) => (
-                      <div key={idx} className="flex items-center gap-2 bg-base-200 p-2 rounded-lg border border-base-300">
-                        <span className="flex-1 text-sm text-base-content/70 px-2">{role}</span>
-
-                        {/* Primary Badge or Button */}
-                        {profileInfo.primary_role === role ? (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-medium">Primary</span>
-                        ) : (
-                          <button
-                            onClick={() => setProfileInfo(prev => ({ ...prev, primary_role: role }))}
-                            className="text-xs text-base-content/50 hover:text-primary px-2 transition-colors"
-                          >
-                            Make Primary
-                          </button>
-                        )}
-
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => {
-                            const newRoles = profileInfo.target_roles.filter(r => r !== role);
-                            const newPrimary = profileInfo.primary_role === role ? (newRoles[0] || "") : profileInfo.primary_role;
-                            setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
-                          }}
-                          className="text-base-content/40 hover:text-error p-1 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-
-                    {/* Add new role dropdown (hidden if user already has 3) */}
-                    {(profileInfo.target_roles || []).length < 3 && (
-                      <select
-                        value=""
-                        onChange={e => {
-                          const selected = e.target.value;
-                          if (!selected) return;
-                          const currentRoles = profileInfo.target_roles || [];
-                          if (currentRoles.includes(selected)) return;
-
-                          const newRoles = [...currentRoles, selected];
-                          const newPrimary = profileInfo.primary_role ? profileInfo.primary_role : selected;
-
-                          setProfileInfo(prev => ({ ...prev, target_roles: newRoles, primary_role: newPrimary }));
-                        }}
-                        className="w-full px-4 py-2.5 border border-dashed border-primary/40 text-primary rounded-lg focus:outline-none focus:border-primary text-sm bg-primary/5 cursor-pointer"
-                      >
-                        <option value="">+ Add a target role</option>
-                        {catalog.target_roles.filter(r => !(profileInfo.target_roles || []).includes(r)).map(r => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
-                      </select>
-                    )}
+                    {[0, 1, 2].map(idx => {
+                      const role = profileInfo.target_roles[idx] || '';
+                      return <div key={idx} className="flex gap-2">
+                        <input value={role} onChange={e => setProfileInfo(prev => {
+                          const roles = [...prev.target_roles];
+                          e.target.value ? roles[idx] = e.target.value : roles.splice(idx, 1);
+                          return { ...prev, target_roles: roles, primary_role: prev.primary_role === role ? e.target.value : prev.primary_role || e.target.value };
+                        })} className="input input-bordered input-sm flex-1" placeholder={`Preference ${idx + 1} (e.g. Backend Developer)`} />
+                        {role && <button onClick={() => setProfileInfo(prev => ({ ...prev, primary_role: role }))} className={`btn btn-sm ${profileInfo.primary_role === role ? 'btn-primary' : 'btn-ghost'}`}>{profileInfo.primary_role === role ? 'Primary' : 'Set primary'}</button>}
+                      </div>;
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -472,7 +427,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                       ))
                     ) : (
                       <div className="px-4 py-3 rounded-xl text-sm bg-base-200 border border-base-300 text-base-content/50 w-full">
-                        Not set — click Edit to choose up to 3 roles
+                        Not set — click Edit to add up to 3 roles
                       </div>
                     )}
                   </div>

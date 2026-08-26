@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
@@ -48,6 +48,14 @@ class UpdateProfileRequest(BaseModel):
     phone: str = ""
     linkedin: str = ""
     github: str = ""
+
+    @field_validator("target_roles")
+    @classmethod
+    def validate_target_roles(cls, roles: list[str]) -> list[str]:
+        roles = list(dict.fromkeys(role.strip() for role in roles if role.strip()))
+        if len(roles) > 3:
+            raise ValueError("You can save up to 3 target roles")
+        return roles
 
 
 # --- Catalog Endpoint ---

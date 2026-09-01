@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models.job import JobPosting
-from models.user import User
+from models.user import User, UserSkill
+from models.application import JobApplication
 from deps import get_current_user, require_recruiter
 from services.ai_service import match_jobs_to_candidate, polish_job_description
 import uuid
@@ -211,11 +212,139 @@ async def match_jobs(
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY")
 
+CITY_MAP = {
+    "Mumbai": "mumbai", "Pune": "pune", "Bangalore": "bangalore",
+    "Hyderabad": "hyderabad", "Delhi": "delhi", "Noida": "noida",
+    "Chennai": "chennai", "Navi Mumbai": "navi-mumbai",
+    "Kolkata": "kolkata", "Ahmedabad": "ahmedabad"
+}
+
+
+async def _fetch_external_jobs(
+    technology: str = "",
+    location: str = "",
+    results: int = 10,
+) -> list[dict]:
+    if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
+        return []
+
+    params = {
+        "app_id": ADZUNA_APP_ID,
+        "app_key": ADZUNA_APP_KEY,
+        "results_per_page": results,
+        "content-type": "application/json",
+    }
+    if technology.strip():
+        params["what"] = technology.strip()
+    if location.strip():
+        params["where"] = CITY_MAP.get(location, location.lower())
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(
+            "https://api.adzuna.com/v1/api/jobs/in/search/1",
+            params=params,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    jobs = []
+    for job in data.get("results", []):
+        salary_min = job.get("salary_min")
+        salary_max = job.get("salary_max")
+        salary = (
+            f"₹{int(salary_min):,} - ₹{int(salary_max):,} per annum"
+            if salary_min and salary_max else "Salary not disclosed"
+        )
+        jobs.append({
+            "id": str(job.get("id", "")),
+            "title": job.get("title", ""),
+            "company": job.get("company", {}).get("display_name", "Company"),
+            "location": job.get("location", {}).get("display_name", location),
+            "salary": salary,
+            "description": job.get("description", "")[:300] + "...",
+            "type": "Full-time", "requiredSkills": [],
+            "postedLabel": job.get("created", "")[:10],
+            "source": "external", "sourceLabel": "External",
+            "url": job.get("redirect_url", ""), "applied": False,
+        })
+    return jobs
+
+
+@router.get("/recommendations")
+async def get_job_recommendations(
+    source: str = "all",
+    search: str = "",
+    technology: str = "",
+    job_type: str = "",
+    location: str = "",
+    company: str = "",
+    status: str = "",
+    match_profile: bool = False,
+    results: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return one normalized and filtered SkillNuron + external jobs feed."""
+    if source not in {"all", "internal", "external"}:
+        raise HTTPException(status_code=400, detail="Invalid job source")
+
+    applied_ids = {
+        str(job_id) for (job_id,) in db.query(JobApplication.job_id)
+        .filter(JobApplication.candidate_id == current_user.id).all()
+    }
+    internal_jobs = []
+    if source != "external":
+        internal_jobs = [{
+            "id": str(job.id), "title": job.title, "company": job.company,
+            "location": job.location or "Remote", "salary": job.salary or "Not specified",
+            "description": job.description or "", "type": job.type or "",
+            "requiredSkills": job.required_skills or [],
+            "postedLabel": str(job.created_at.date()) if job.created_at else "",
+            "source": "internal", "sourceLabel": "SkillNuron", "url": None,
+            "applied": str(job.id) in applied_ids,
+        } for job in db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()]
+
+    external_jobs = []
+    if source != "internal":
+        try:
+            external_jobs = await _fetch_external_jobs(technology, location, results)
+        except (httpx.HTTPError, ValueError):
+            pass
+
+    profile_skills = [
+        name for (name,) in db.query(UserSkill.skill_name)
+        .filter(UserSkill.user_id == current_user.id).all()
+    ]
+    all_jobs = internal_jobs + external_jobs
+    lower = lambda value: value.strip().lower()
+
+    def matches(job: dict) -> bool:
+        text = lower(" ".join([job["title"], job["company"], job["description"], *job["requiredSkills"]]))
+        return (
+            (not search or lower(search) in text)
+            and (not technology or lower(technology) in text)
+            and (not location or lower(location) in lower(job["location"]))
+            and (not company or lower(company) in lower(job["company"]))
+            and (not job_type or lower(job_type) == lower(job["type"]))
+            and (not status or (status == "applied") == job["applied"])
+            and (not match_profile or any(lower(skill) in text for skill in profile_skills))
+        )
+
+    unique = lambda values: sorted({value for value in values if value}, key=str.lower)
+    return {
+        "success": True, "total": len(all_jobs),
+        "jobs": [job for job in all_jobs if matches(job)],
+        "options": {
+            "types": unique([job["type"] for job in all_jobs]),
+            "canMatchProfile": bool(profile_skills),
+        },
+    }
+
 
 @router.get("/search")
 async def search_jobs_adzuna(
-    keywords: str = "software developer",
-    location: str = "Mumbai",
+    keywords: str = "",
+    location: str = "",
     results: int = 10
 ):
     """Search real Indian jobs from Adzuna API"""
@@ -233,21 +362,23 @@ async def search_jobs_adzuna(
         "Ahmedabad": "ahmedabad"
     }
 
-    adzuna_location = city_map.get(location, location.lower())
-
-    url = (
-        f"https://api.adzuna.com/v1/api/jobs/in/search/1"
-        f"?app_id={ADZUNA_APP_ID}"
-        f"&app_key={ADZUNA_APP_KEY}"
-        f"&results_per_page={results}"
-        f"&what={keywords}"
-        f"&where={adzuna_location}"
-        f"&content-type=application/json"
-    )
+    params = {
+        "app_id": ADZUNA_APP_ID,
+        "app_key": ADZUNA_APP_KEY,
+        "results_per_page": results,
+        "content-type": "application/json",
+    }
+    if keywords.strip():
+        params["what"] = keywords.strip()
+    if location.strip():
+        params["where"] = city_map.get(location, location.lower())
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url)
+            response = await client.get(
+                "https://api.adzuna.com/v1/api/jobs/in/search/1",
+                params=params,
+            )
             data = response.json()
 
         if "results" not in data:

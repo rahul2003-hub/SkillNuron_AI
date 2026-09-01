@@ -121,6 +121,33 @@ export async function getResumeDownloadUrl(resumePath: string) {
 }
 
 // --- JOBS ---
+export interface RecommendedJob {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary: string;
+  description: string;
+  type: string;
+  requiredSkills: string[];
+  postedLabel: string;
+  source: "internal" | "external";
+  sourceLabel: string;
+  url?: string;
+  applied: boolean;
+}
+
+export async function getJobRecommendations(filters: Record<string, string | boolean>) {
+  const headers = await getHeaders();
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== "" && value !== false) params.set(key, String(value));
+  });
+  const response = await fetch(`${BASE_URL}/api/jobs/recommendations?${params}`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch job recommendations");
+  return response.json();
+}
+
 export async function getAllJobs() {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/api/jobs/`, { headers });
@@ -193,14 +220,6 @@ export async function getSkills(userId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/api/profile/skills/${userId}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch skills");
-  return response.json();
-}
-
-// --- ADZUNA REAL INDIAN JOBS ---
-export async function searchJobs(keywords: string = "software developer", location: string = "Mumbai", results: number = 10) {
-  const params = new URLSearchParams({ keywords, location, results: results.toString() });
-  const response = await fetch(`${BASE_URL}/api/jobs/search?${params}`);
-  if (!response.ok) throw new Error("Failed to fetch jobs from Adzuna");
   return response.json();
 }
 

@@ -188,14 +188,14 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
           <div className="bg-base-200 rounded-lg p-1 flex gap-1 shrink-0">
             <button
               onClick={() => setViewTab('analyze')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewTab === 'analyze' ? 'bg-base-100 text-primary shadow-sm' : 'text-base-content/60 hover:text-base-content'
+              className={`px-4 py-2 rounded-md text-sm font-medium  ${viewTab === 'analyze' ? 'bg-base-100 text-primary shadow-sm' : 'text-base-content/60 hover:text-base-content'
                 }`}
             >
               Analyze
             </button>
             <button
               onClick={() => setViewTab('history')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${viewTab === 'history' ? 'bg-base-100 text-primary shadow-sm' : 'text-base-content/60 hover:text-base-content'
+              className={`px-4 py-2 rounded-md text-sm font-medium  ${viewTab === 'history' ? 'bg-base-100 text-primary shadow-sm' : 'text-base-content/60 hover:text-base-content'
                 }`}
             >
               My Resumes {resumes.length > 0 && `(${resumes.length})`}
@@ -228,7 +228,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-base-300 rounded-xl p-10 text-center hover:border-primary transition-colors cursor-pointer"
+                className="border-2 border-dashed border-base-300 rounded-xl p-10 text-center hover:border-primary  cursor-pointer"
               >
                 <div className="flex flex-col items-center">
                   <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
@@ -305,7 +305,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                   <p className="text-xs text-base-content/60 mb-3">Use a PDF created from MS Word or Google Docs (File → Download as PDF)</p>
                   <button
                     onClick={handleReset}
-                    className="px-4 py-2 bg-base-200 text-base-content/80 rounded-lg hover:bg-base-300 transition-colors text-sm"
+                    className="px-4 py-2 bg-base-200 text-base-content/80 rounded-lg hover:bg-base-300  text-sm"
                   >
                     Upload New File
                   </button>
@@ -327,7 +327,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                     <button
                       onClick={processFromText}
                       disabled={pastedText.length < 30}
-                      className="px-6 py-2 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                      className="px-6 py-2 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg  disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                     >
                       <Sparkles className="w-4 h-4" />
                       Analyze Text
@@ -355,7 +355,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleReset} className="text-base-content/50 hover:text-error transition-colors">
+                  <button onClick={handleReset} className="text-base-content/50 hover:text-error ">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -482,7 +482,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                 </div>
               </div>
  
-              <button onClick={handleReset} className="w-full border-2 border-primary text-primary py-3 rounded-lg hover:bg-primary/10 transition-all">
+              <button onClick={handleReset} className="w-full border-2 border-primary text-primary py-3 rounded-lg hover:bg-primary/10 ">
                 Analyze Another Resume
               </button>
             </>
@@ -551,7 +551,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                   <div key={r.id} className="card bg-base-100 shadow-sm">
                     {/* Summary Row */}
                     <div
-                      className="card-body flex-row items-center gap-4 cursor-pointer hover:bg-base-200/50 transition-colors"
+                      className="card-body flex-row items-center gap-4 cursor-pointer hover:bg-base-200/50 "
                       onClick={() => setExpandedId(expanded ? null : r.id)}
                     >
                       <div className="w-11 h-11 bg-primary/10 rounded-lg grid place-items-center shrink-0">

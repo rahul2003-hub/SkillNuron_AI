@@ -5,6 +5,14 @@ import { RecruiterDashboard } from './components/RecruiterDashboard';
 import { JobSeekerLayout } from './components/JobSeekerLayout';
 import { supabase } from './services/supabase';
 
+export const isDarkTheme = () => localStorage.getItem('theme') === 'dark';
+
+export const setTheme = (isDark: boolean) => {
+  const theme = isDark ? 'dark' : 'corporate';
+  document.documentElement.dataset.theme = theme;
+  localStorage.setItem('theme', theme);
+};
+
 export type UserType = 'jobseeker' | 'recruiter' | null;
 
 export type SkillLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';

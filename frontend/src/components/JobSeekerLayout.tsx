@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Brain, LogOut, User, TrendingUp, Target, Briefcase, FileSearch, Menu, ChevronLeft, LayoutDashboard, ClipboardList } from 'lucide-react';
+import { Brain, LogOut, User, TrendingUp, Target, Briefcase, FileSearch, Menu, ChevronLeft, LayoutDashboard, ClipboardList, Sun, Moon } from 'lucide-react';
 import { SkillProfile } from './SkillProfile';
 import { SkillGapAnalysis } from './SkillGapAnalysis';
 import { CareerPathView } from './CareerPathView';
 import { JobRecommendations } from './JobRecommendations';
 import { ResumeAnalyzer } from './ResumeAnalyzer';
-import { Skill } from '../App';
+import { Skill, isDarkTheme, setTheme } from '../App';
 import { PsychometricTest } from './PsychometricTest';
 import { NotificationBell } from './NotificationBell';
 import { JobSeekerHome } from './JobSeekerHome';
@@ -68,10 +68,10 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
     <div className="fixed inset-0 flex bg-base-200 font-sans overflow-hidden">
  
       <aside
-        className={`h-full bg-base-100 border-r border-base-300 flex flex-col transition-all duration-300 ease-in-out relative z-20 shrink-0 ${isSidebarOpen ? 'w-64' : 'w-20'
+        className={`h-full bg-base-100 border-r border-base-300 flex flex-col    relative z-20 shrink-0 ${isSidebarOpen ? 'w-64' : 'w-20'
           }`}
       >
-        <div className={`h-16 flex items-center border-b border-base-300 shrink-0 transition-all duration-300 ${isSidebarOpen ? 'justify-between px-4' : 'justify-center'
+        <div className={`h-16 flex items-center border-b border-base-300 shrink-0   ${isSidebarOpen ? 'justify-between px-4' : 'justify-center'
           }`}>
           {isSidebarOpen && (
             <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
@@ -83,7 +83,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
           )}
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-lg hover:bg-base-200 text-base-content/50 transition-colors shrink-0 outline-none"
+            className="p-2 rounded-lg hover:bg-base-200 text-base-content/50  shrink-0 outline-none"
           >
             {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -96,7 +96,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
               <button
                 key={id}
                 onClick={() => setActiveTab(id as Tab)}
-                className={`flex items-center transition-all duration-200 group ${isActive
+                className={`flex items-center   group ${isActive
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'text-base-content/60 hover:bg-base-200 hover:text-base-content'
                   } ${isSidebarOpen
@@ -105,7 +105,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
                   }`}
                 title={!isSidebarOpen ? label : ''}
               >
-                <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-base-content/40 group-hover:text-base-content/60'
+                <Icon className={`w-5 h-5 shrink-0  ${isActive ? 'text-primary' : 'text-base-content/40 group-hover:text-base-content/60'
                   }`} />
                 {isSidebarOpen && <span className="ml-3 truncate whitespace-nowrap">{label}</span>}
               </button>
@@ -116,13 +116,13 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
         <div className="p-4 border-t border-base-300 shrink-0 bg-base-100">
           <button
             onClick={onLogout}
-            className={`flex items-center transition-all duration-200 group text-base-content/60 hover:bg-error/10 hover:text-error ${isSidebarOpen
+            className={`flex items-center   group text-base-content/60 hover:bg-error/10 hover:text-error ${isSidebarOpen
               ? 'w-full px-4 py-3 rounded-xl justify-start'
               : 'w-12 h-12 justify-center rounded-xl mx-auto'
               }`}
             title={!isSidebarOpen ? "Logout" : ""}
           >
-            <LogOut className="w-5 h-5 shrink-0 text-base-content/40 group-hover:text-error transition-colors" />
+            <LogOut className="w-5 h-5 shrink-0 text-base-content/40 group-hover:text-error " />
             {isSidebarOpen && <span className="ml-3 font-medium whitespace-nowrap">Logout</span>}
           </button>
         </div>
@@ -143,6 +143,21 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
               <p className="text-xs text-base-content/50 font-medium uppercase tracking-wider">Welcome back</p>
               <p className="text-sm font-bold text-base-content">{userName}</p>
             </div>
+
+            {/* Theme Controller Button */}
+            <label className="swap btn btn-ghost btn-circle" title="Toggle dark mode">
+              <input
+                type="checkbox"
+                className="theme-controller"
+                value="dark"
+                defaultChecked={isDarkTheme()}
+                onChange={(e) => setTheme(e.currentTarget.checked)}
+                aria-label="Toggle dark mode"
+              />
+              <Sun className="swap-off w-5 h-5" aria-hidden="true" />
+              <Moon className="swap-on w-5 h-5" aria-hidden="true" />
+            </label>
+
             <NotificationBell />
             <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center text-primary-content font-bold shadow-md border-2 border-base-100">
               {userName.charAt(0).toUpperCase()}

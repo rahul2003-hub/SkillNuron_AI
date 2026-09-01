@@ -161,7 +161,7 @@ export function CareerPathView({ skills, savedRole }: CareerPathViewProps) {
           <button
             onClick={handleGetCareerPath}
             disabled={isLoading}
-            className="w-full py-3 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg  disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -217,7 +217,7 @@ export function CareerPathView({ skills, savedRole }: CareerPathViewProps) {
               <div className="space-y-4">
                 {result.career_paths.map((path: any, index: number) => (
                   <div key={index}>
-                    <div className="border border-base-300 rounded-xl p-5 hover:shadow-md transition-shadow">
+                    <div className="border border-base-300 rounded-xl p-5 hover:shadow-md ">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">

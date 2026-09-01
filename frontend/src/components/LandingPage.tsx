@@ -1,6 +1,6 @@
 import React from 'react';
-import { Brain, Briefcase, Users, TrendingUp, Target, Sparkles } from 'lucide-react';
-import { UserType } from '../App';
+import { Brain, Briefcase, Users, TrendingUp, Target, Sparkles, Sun, Moon } from 'lucide-react';
+import { UserType, isDarkTheme, setTheme } from '../App';
 
 interface LandingPageProps {
   onUserTypeSelect: (type: UserType, name: string) => void;
@@ -64,6 +64,14 @@ return (
                 Get Started
               </a>
             </nav>
+
+            {/* Theme Controller Button */}
+            <label className="swap btn btn-ghost btn-circle" title="Toggle dark mode">
+              <input type="checkbox" className="theme-controller" value="dark" defaultChecked={isDarkTheme()} onChange={(e) => setTheme(e.currentTarget.checked)} aria-label="Toggle dark mode" />
+              <Sun className="swap-off w-5 h-5" aria-hidden="true" />
+              <Moon className="swap-on w-5 h-5" aria-hidden="true" />
+            </label>
+
           </div>
         </div>
       </header>

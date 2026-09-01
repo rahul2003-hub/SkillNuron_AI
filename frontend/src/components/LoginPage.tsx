@@ -111,7 +111,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
         {/* Back button */}
         <button
           onClick={onBackToLanding}
-          className="flex items-center gap-2 text-base-content/60 hover:text-base-content mb-6 transition-colors"
+          className="flex items-center gap-2 text-base-content/60 hover:text-base-content mb-6 "
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
@@ -128,7 +128,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
           <div className="flex gap-2 mb-6 p-1 bg-base-200 rounded-xl">
             <button
               onClick={() => setUserType('jobseeker')}
-              className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'jobseeker'
+              className={`flex-1 py-2 rounded-lg text-sm  ${userType === 'jobseeker'
                   ? 'bg-base-100 shadow text-primary font-medium'
                   : 'text-base-content/60'
                 }`}
@@ -137,7 +137,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             </button>
             <button
               onClick={() => setUserType('recruiter')}
-              className={`flex-1 py-2 rounded-lg text-sm transition-all ${userType === 'recruiter'
+              className={`flex-1 py-2 rounded-lg text-sm  ${userType === 'recruiter'
                   ? 'bg-base-100 shadow text-primary font-medium'
                   : 'text-base-content/60'
                 }`}
@@ -219,7 +219,7 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full py-3 bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl hover:shadow-lg  disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>

@@ -182,7 +182,7 @@ export function PsychometricTest() {
 
         <button
           onClick={() => setStarted(true)}
-          className="w-full py-4 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all text-lg flex items-center justify-center gap-2"
+          className="w-full py-4 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg  text-lg flex items-center justify-center gap-2"
         >
           <Sparkles className="w-5 h-5" />
           Start Assessment
@@ -330,7 +330,7 @@ export function PsychometricTest() {
 
         <button
           onClick={handleReset}
-          className="w-full py-3 border-2 border-primary text-primary rounded-xl hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
+          className="w-full py-3 border-2 border-primary text-primary rounded-xl hover:bg-primary/10  flex items-center justify-center gap-2"
         >
           <RotateCcw className="w-4 h-4" />
           Retake Assessment
@@ -351,7 +351,7 @@ export function PsychometricTest() {
         </div>
         <div className="w-full bg-base-200 rounded-full h-2">
           <div
-            className="bg-linear-to-r from-primary to-secondary h-2 rounded-full transition-all duration-500"
+            className="bg-linear-to-r from-primary to-secondary h-2 rounded-full  "
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -361,7 +361,7 @@ export function PsychometricTest() {
             <button
               key={q.id}
               onClick={() => setCurrentQ(i)}
-              className={`w-6 h-6 rounded-full text-xs transition-all ${
+              className={`w-6 h-6 rounded-full text-xs  ${
                 i === currentQ
                   ? 'bg-primary text-white'
                   : answers[q.id]
@@ -395,7 +395,7 @@ export function PsychometricTest() {
                 <div key={option.id} className="flex flex-col gap-2">
                   <button
                     onClick={() => handleOptionSelect(questions[currentQ].id, option.id)}
-                    className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all text-sm ${
+                    className={`w-full text-left px-4 py-3 rounded-xl border-2  text-sm ${
                       isSelected
                         ? SELECTED_COLORS[i]
                         : `border-base-300 text-base-content/80 ${OPTION_COLORS[i]}`
@@ -438,7 +438,7 @@ export function PsychometricTest() {
         <button
           onClick={() => setCurrentQ(prev => Math.max(0, prev - 1))}
           disabled={currentQ === 0}
-          className="flex items-center gap-2 px-5 py-3 border border-base-300 text-base-content/70 rounded-xl hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-5 py-3 border border-base-300 text-base-content/70 rounded-xl hover:bg-base-200 disabled:opacity-40 disabled:cursor-not-allowed "
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
@@ -448,7 +448,7 @@ export function PsychometricTest() {
           <button
             onClick={() => setCurrentQ(prev => prev + 1)}
             disabled={!currentAnswered || currentAnswered === 'E: '}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg  disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Next <ChevronRight className="w-4 h-4" />
           </button>
@@ -456,7 +456,7 @@ export function PsychometricTest() {
           <button
             onClick={handleSubmit}
             disabled={answeredCount < 20 || currentAnswered === 'E: ' || isLoading}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg  disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isLoading
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing your profile...</>

@@ -211,7 +211,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       <div className="bg-base-100 rounded-xl shadow-sm p-1 flex gap-1">
         <button
           onClick={() => setActiveSection('info')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'info'
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm  ${activeSection === 'info'
             ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
             : 'text-base-content/60 hover:bg-base-200'
             }`}
@@ -221,7 +221,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
         </button>
         <button
           onClick={() => setActiveSection('skills')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm transition-all ${activeSection === 'skills'
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm  ${activeSection === 'skills'
             ? 'bg-linear-to-r from-primary to-secondary text-primary-content'
             : 'text-base-content/60 hover:bg-base-200'
             }`}
@@ -514,7 +514,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                             key={s}
                             disabled={alreadyAdded}
                             onClick={() => { if (!alreadyAdded) { setNewSkill({ name: s, level: '' }); setShowAddSkill(true); } }}
-                            className={`px-2.5 py-1 text-xs rounded-full border transition-all ${alreadyAdded
+                            className={`px-2.5 py-1 text-xs rounded-full border  ${alreadyAdded
                               ? 'bg-success/10 border-success/30 text-success cursor-default'
                               : 'border-base-300 text-base-content/60 hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
                               }`}
@@ -582,7 +582,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                             )}
                             <button
                               onClick={() => setSkills(skills.filter(s => s.name !== skill.name))}
-                              className="text-base-content/30 hover:text-error transition-colors"
+                              className="text-base-content/30 hover:text-error "
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -637,7 +637,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
           ) : (
             <button
               onClick={() => setShowAddSkill(true)}
-              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-primary/40 text-primary rounded-xl hover:border-primary hover:bg-primary/10 transition-all text-sm"
+              className="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed border-primary/40 text-primary rounded-xl hover:border-primary hover:bg-primary/10  text-sm"
             >
               <Plus className="w-4 h-4" /> Add Custom Skill
             </button>

@@ -74,7 +74,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
       ) : (
         <div className="space-y-4">
           {matches.map((candidate, index) => (
-            <div key={candidate.candidate_id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md transition-shadow">
+            <div key={candidate.candidate_id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md ">
               <div className="flex flex-col md:flex-row gap-6">
 
                 {/* Left Column: Candidate Info */}

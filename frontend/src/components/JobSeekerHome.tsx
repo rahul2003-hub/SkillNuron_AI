@@ -84,7 +84,7 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                     <button
                         key={label}
                         onClick={() => setActiveTab(tab)}
-                        className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 flex flex-col items-start text-left hover:shadow-md hover:border-primary/40 transition-all"
+                        className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 flex flex-col items-start text-left hover:shadow-md hover:border-primary/40 "
                     >
                         <div className={`p-3 rounded-lg ${bg} ${color} mb-3`}>
                             <Icon className="w-6 h-6" />

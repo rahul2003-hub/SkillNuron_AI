@@ -157,7 +157,7 @@ export function JobRecommendations() {
               {internalJobs.map(job => {
                 const alreadyApplied = appliedJobIds.has(job.id);
                 return (
-                  <div key={job.id} className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md transition-all">
+                  <div key={job.id} className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md ">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base-content font-medium truncate">{job.title}</h3>
@@ -268,7 +268,7 @@ export function JobRecommendations() {
               {jobs.map((job) => (
                 <div
                   key={job.id}
-                  className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
+                  className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md hover:border-primary/40  cursor-pointer"
                   onClick={() => setSelectedJob(job)}
                 >
                   <div className="flex items-start justify-between mb-3">

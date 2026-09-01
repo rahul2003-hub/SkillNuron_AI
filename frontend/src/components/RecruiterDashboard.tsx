@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, Star, BarChart3 } from 'lucide-react';
+import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, Star, BarChart3, Sun, Moon } from 'lucide-react';
 import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
 import { CandidateMatches } from './CandidateMatches';
 import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
 import { NotificationBell } from './NotificationBell';
-import { JobPosting } from '../App';
+import { JobPosting, isDarkTheme, setTheme } from '../App';
 import { getMyJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
 interface RecruiterDashboardProps {
@@ -95,8 +95,16 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               <p className="text-sm text-base-content/60">Welcome back,</p>
               <p className="text-base-content font-semibold">{userName}</p>
             </div>
+
+            {/* Theme Controller Button */}
+            <label className="swap btn btn-ghost btn-circle" title="Toggle dark mode">
+              <input type="checkbox" className="theme-controller" value="dark" defaultChecked={isDarkTheme()} onChange={(e) => setTheme(e.currentTarget.checked)} aria-label="Toggle dark mode" />
+              <Sun className="swap-off w-5 h-5" aria-hidden="true" />
+              <Moon className="swap-on w-5 h-5" aria-hidden="true" />
+            </label>
+
             <NotificationBell />
-            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-base-content/70 hover:bg-base-200 rounded-lg transition-colors">
+            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-base-content/70 hover:bg-base-200 rounded-lg ">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
             </button>
@@ -143,16 +151,16 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
         {/* Navigation Tabs */}
         <div className="bg-base-100 rounded-xl shadow-sm mb-8 p-2 border border-base-300">
           <div className="grid grid-cols-4 gap-2">
-            <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'posted-jobs' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
+            <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg  font-medium ${activeTab === 'posted-jobs' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">My Jobs</span>
             </button>
-            <button onClick={() => setActiveTab('create-job')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'create-job' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
+            <button onClick={() => setActiveTab('create-job')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg  font-medium ${activeTab === 'create-job' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Post New Job</span>
             </button>
-            <button onClick={() => setActiveTab('candidates')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'candidates' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
+            <button onClick={() => setActiveTab('candidates')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg  font-medium ${activeTab === 'candidates' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <Star className="w-4 h-4" /> <span className="hidden sm:inline">AI Matches</span>
             </button>
-            <button onClick={() => setActiveTab('analytics')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium ${activeTab === 'analytics' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
+            <button onClick={() => setActiveTab('analytics')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg  font-medium ${activeTab === 'analytics' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
               <BarChart3 className="w-4 h-4" /> <span className="hidden sm:inline">Analytics</span>
             </button>
           </div>

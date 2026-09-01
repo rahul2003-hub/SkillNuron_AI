@@ -84,11 +84,11 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
     <>
       <div className="grid md:grid-cols-2 gap-6">
         {jobs.map((job) => (
-          <div key={job.id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md transition-shadow relative">
+          <div key={job.id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md  relative">
 
             <button
               onClick={() => onDeleteJob(job.id)}
-              className="absolute top-4 right-4 p-2 text-base-content/40 hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+              className="absolute top-4 right-4 p-2 text-base-content/40 hover:text-error hover:bg-error/10 rounded-lg "
               title="Delete Job"
             >
               <Trash2 className="w-5 h-5" />

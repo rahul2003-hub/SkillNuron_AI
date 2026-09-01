@@ -115,7 +115,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className="px-6 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-linear-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg  disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isLoading ? (
               <>
@@ -198,7 +198,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
               <h3 className="text-xl text-base-content mb-6">Identified Skill Gaps</h3>
               <div className="space-y-4">
                 {result.missing_skills.map((gap: any, index: number) => (
-                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:shadow-md ">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -239,7 +239,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 {result.learning_resources.map((resource: any, index: number) => (
-                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:border-primary/40 transition-colors">
+                  <div key={index} className="border border-base-300 rounded-lg p-4 hover:border-primary/40 ">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="text-base-content">{resource.title}</h4>
                       <CheckCircle className="w-5 h-5 text-base-content/40 shrink-0" />
@@ -261,7 +261,7 @@ export function SkillGapAnalysis({ skills, savedRole, setActiveTab }: SkillGapAn
             <p className="text-primary text-sm mb-4">Now that you know your gaps, plot your salary and timeline.</p>
             <button
               onClick={() => setActiveTab && setActiveTab('career-path')}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors text-sm font-medium"
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80  text-sm font-medium"
             >
               Go to Career Path →
             </button>

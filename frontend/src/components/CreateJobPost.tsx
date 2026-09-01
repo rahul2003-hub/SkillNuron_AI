@@ -144,7 +144,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g. Senior Full Stack Developer"
-                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     required
                   />
                 </div>
@@ -159,7 +159,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="e.g. TechCorp Inc."
-                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     required
                   />
                 </div>
@@ -173,7 +173,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       placeholder="e.g. Remote, San Francisco, CA"
-                      className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     />
                   </div>
                   <div>
@@ -181,7 +181,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     >
                       <option value="Full-time">Full-time</option>
                       <option value="Part-time">Part-time</option>
@@ -199,7 +199,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     value={formData.salary}
                     onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
                     placeholder="e.g. ₹5,00,000 - ₹8,00,000"
-                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                   />
                 </div>
               </div>
@@ -228,7 +228,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Describe the role, responsibilities, and requirements..."
                     rows={7}
-                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+                    className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent  resize-none"
                   />
                 </div>
 
@@ -244,12 +244,12 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                       onChange={(e) => setCurrentSkill(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
                       placeholder="Enter a skill and press Add"
-                      className="flex-1 px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                      className="flex-1 px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     />
                     <button
                       type="button"
                       onClick={handleAddSkill}
-                      className="px-6 py-3 bg-primary text-primary-content rounded-lg hover:opacity-90 transition-all font-semibold flex items-center gap-2 shadow-md"
+                      className="px-6 py-3 bg-primary text-primary-content rounded-lg hover:opacity-90  font-semibold flex items-center gap-2 shadow-md"
                     >
                       <Plus className="w-4 h-4" />
                       Add
@@ -294,7 +294,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                         setSkills([...skills, skill]);
                       }
                     }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${skills.includes(skill)
+                    className={`px-4 py-2 rounded-full text-sm font-medium  ${skills.includes(skill)
                         ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md'
                         : 'bg-base-100 text-primary border border-primary/30 hover:bg-primary/10'
                       }`}
@@ -310,7 +310,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-4 bg-linear-to-r from-primary to-secondary text-primary-content font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200"
+              className="w-full py-4 bg-linear-to-r from-primary to-secondary text-primary-content font-bold text-lg rounded-lg hover:shadow-lg hover:scale-105  "
             >
               Post new job
             </button>

@@ -46,7 +46,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
       <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-base-content">AI Candidate Matching</h2>
-          <p className="text-base-content/60 text-sm mt-1">Select a job to view qwen3.6 ranked candidates.</p>
+          <p className="text-base-content/60 text-sm mt-1">Select a job to view qwen3.8 ranked candidates.</p>
         </div>
         <select
           value={selectedJobId}

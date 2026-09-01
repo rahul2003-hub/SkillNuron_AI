@@ -11,7 +11,7 @@
 |-------|-----------|
 | Framework | FastAPI (Python) |
 | Package Manager | `uv` workspace manager |
-| AI Engine | Groq API — qwen/qwen3.6-27b |
+| AI Engine | Groq API — qwen/qwen3.8-27b |
 | Database | PostgreSQL (Supabase) + SQLAlchemy |
 | Authentication | Supabase Auth (JWT Bearer Token verification) |
 | PDF Parsing | PyMuPDF (fitz) |
@@ -177,7 +177,7 @@ Expected: **16 passed, 0 warnings**
 
 ## 🤖 AI Features
 
-All AI features use **Groq API with qwen/qwen3.6-27b** model:
+All AI features use **Groq API with qwen/qwen3.8-27b** model:
 
 - **Skill Gap Analysis** — compares user skills vs target role, returns missing skills with priority, learning resources, action plan
 - **Career Path** — builds step-by-step roadmap with ₹ Indian salaries and city demand

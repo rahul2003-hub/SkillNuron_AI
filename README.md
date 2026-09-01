@@ -44,7 +44,7 @@ SkillNuron_AI/
 │   │
 │   ├── services/                           # Business Logic & AI Services
 │   │   ├── __init__.py
-│   │   ├── ai_service.py                  # Groq AI integration (qwen/qwen3.6-27b)
+│   │   ├── ai_service.py                  # Groq AI integration (qwen/qwen3.8-27b)
 │   │   ├── auth_services.py               # Authentication helpers
 │   │   └── match_services.py              # Candidate & job matching algorithm
 │   │
@@ -108,7 +108,7 @@ SkillNuron_AI/
 ## 💡 Key Features
 
 - 🔐 **Authentication & Authorization**: Supabase Auth integration with FastAPI dependency checks and role-based access control (`deps.py`, `supabase.ts`).
-- 🤖 **AI-Powered Skill Gap Analysis**: Uses Groq API (`qwen/qwen3.6-27b`) to evaluate user skills against industry standards (`profile.py`, `ai_service.py`).
+- 🤖 **AI-Powered Skill Gap Analysis**: Uses Groq API (`qwen/qwen3.8-27b`) to evaluate user skills against industry standards (`profile.py`, `ai_service.py`).
 - 🗺️ **Career Path Recommendations**: Generates tailored career roadmaps with salary estimates and required competencies (`CareerPathView.tsx`).
 - 📄 **ATS Resume Analyzer**: Parses PDF resumes using PyMuPDF and scores ATS compatibility with AI suggestions (`resume.py`, `ResumeAnalyzer.tsx`).
 - 🧠 **Psychometric Career Assessment**: 15-question personality assessment to map career strengths and roles (`psychometric.py`).
@@ -123,7 +123,7 @@ SkillNuron_AI/
 - **Backend**: Python 3.11.9+, FastAPI, SQLAlchemy, PostgreSQL (Supabase), Uvicorn, `uv` workspace manager
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React
 - **Authentication**: Supabase Auth
-- **AI/ML Engine**: Groq API (`qwen/qwen3.6-27b`)
+- **AI/ML Engine**: Groq API (`qwen/qwen3.8-27b`)
 - **PDF & Document Parsing**: PyMuPDF (`fitz`)
 - **External Data**: Adzuna Job Search API
 

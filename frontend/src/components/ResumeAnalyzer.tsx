@@ -277,7 +277,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                 </div>
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="w-4 h-4 animate-pulse" />
-                  <span className="text-sm">AI powered by qwen3.6</span>
+                  <span className="text-sm">AI powered by qwen3.8</span>
                 </div>
               </div>
             </div>

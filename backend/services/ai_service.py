@@ -115,6 +115,40 @@ def polish_job_description(description: str, title: str = "", required_skills: l
     return _chat_json(prompt, max_tokens=1200, temperature=0.4)
 
 
+def recommend_skills_for_role(job_title: str) -> list[str]:
+    """AI recommends relevant in-demand skills for a given job title/role."""
+    if not job_title or not job_title.strip():
+        return []
+
+    prompt = f"""
+    You are an expert technical recruiter and talent advisor.
+
+    Given the job title: "{job_title.strip()}"
+
+    Recommend the 6 to 8 most relevant and in-demand skills, tools, or technologies needed for this role.
+
+    Respond in this exact JSON format:
+    {{
+        "skills": ["Skill1", "Skill2", "Skill3", "Skill4", "Skill5", "Skill6"]
+    }}
+
+    Return ONLY the JSON object. No markdown, no code blocks, no extra text.
+    """
+
+    try:
+        data = _chat_json(prompt, max_tokens=300, temperature=0.3)
+        skills = data.get("skills", [])
+        if not isinstance(skills, list):
+            return []
+
+        return list(dict.fromkeys(
+            skill.strip() for skill in skills
+            if isinstance(skill, str) and skill.strip()
+        ))[:8]
+    except Exception:
+        return []
+
+
 def analyze_resume(resume_text: str, target_role: str = "", job_description: str = "") -> dict:
     target_context = ""
     if target_role or job_description:

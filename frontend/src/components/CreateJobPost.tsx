@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, X, Briefcase, Zap, Sparkles, Loader2 } from 'lucide-react';
 import type { JobPosting } from '../App';
-import { createJob, polishJobDescription } from '../services/api';
+import { createJob, polishJobDescription, getRecommendedSkillsForRole } from '../services/api';
 
 interface CreateJobPostProps {
   onCreateJob: (job: JobPosting) => void;
@@ -20,6 +20,13 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
   const [skills, setSkills] = useState<string[]>([]);
   const [currentSkill, setCurrentSkill] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
+  const [recommendedSkills, setRecommendedSkills] = useState<string[]>([]);
+
+  const fetchRoleSkills = async (role: string) => {
+    if (!role.trim()) return;
+    const res = await getRecommendedSkillsForRole(role.trim()).catch(() => null);
+    if (res?.skills?.length) setRecommendedSkills(res.skills);
+  };
 
   const handlePolishDescription = async () => {
     if (!formData.description.trim()) {
@@ -143,6 +150,7 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onBlur={() => fetchRoleSkills(formData.title)}
                     placeholder="e.g. Senior Full Stack Developer"
                     className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                     required
@@ -185,7 +193,6 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                     >
                       <option value="Full-time">Full-time</option>
                       <option value="Part-time">Part-time</option>
-                      <option value="Contract">Contract</option>
                       <option value="Internship">Internship</option>
                     </select>
                   </div>
@@ -282,10 +289,12 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                 Recommended Skills
               </h4>
               <p className="text-sm text-base-content/70 mb-4">
-                Based on the job title, these skills are commonly required:
+                {formData.title.trim()
+                  ? `Based on "${formData.title.trim()}", these skills are commonly required:`
+                  : 'Based on the job title, these skills are commonly required:'}
               </p>
               <div className="flex flex-wrap gap-3">
-                {['TypeScript', 'React', 'Node.js', 'Git', 'AWS', 'Docker'].map((skill) => (
+                {recommendedSkills.map((skill) => (
                   <button
                     key={skill}
                     type="button"
@@ -294,9 +303,9 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                         setSkills([...skills, skill]);
                       }
                     }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium  ${skills.includes(skill)
-                        ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md'
-                        : 'bg-base-100 text-primary border border-primary/30 hover:bg-primary/10'
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${skills.includes(skill)
+                      ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md'
+                      : 'bg-base-100 text-primary border border-primary/30 hover:bg-primary/10'
                       }`}
                     disabled={skills.includes(skill)}
                   >

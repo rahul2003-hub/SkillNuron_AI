@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import SessionLocal
 from models.job import JobPosting
+from models.user import User
 
 fake = Faker()
 
@@ -32,7 +33,7 @@ companies = [
     "TCS", "Infosys", "Wipro", "Capgemini", "Accenture", "Zoho", "Freshworks",
 ]
 
-job_types = ["Full-time", "Part-time", "Contract", "Remote"]
+job_types = ["Part-time"]
 
 def seed_jobs():
     db = SessionLocal()

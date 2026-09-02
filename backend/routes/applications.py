@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -10,19 +10,19 @@ from models.application import JobApplication, Notification, ALLOWED_STATUSES
 from models.job import JobPosting
 from models.user import User
 from deps import get_current_user, require_recruiter
+from services.storage_service import SUPABASE_SERVICE_KEY, upload_resume, get_resume_signed_url
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
-
-class ApplicationRequest(BaseModel):
-    candidate_id: str | None = None
 
 class StatusUpdateRequest(BaseModel):
     status: str
 
 @router.post("/apply/{job_id}")
-def apply_for_job(
+async def apply_for_job(
     job_id: str,
-    req: ApplicationRequest | None = None,
+    resume: UploadFile | None = File(None),
+    cover_letter: str = Form(""),
+    expected_salary: str = Form(""),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -45,18 +45,52 @@ def apply_for_job(
     if existing:
         raise HTTPException(status_code=400, detail="You have already applied for this job")
 
+    resume_path = None
+    resume_filename = None
+    if resume:
+        resume_filename = resume.filename or "resume"
+        if not resume_filename.lower().endswith((".pdf", ".doc", ".docx")):
+            raise HTTPException(status_code=400, detail="Resume must be a PDF, DOC, or DOCX file")
+        file_bytes = await resume.read()
+        if len(file_bytes) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Resume must be 5MB or smaller")
+        if not file_bytes:
+            raise HTTPException(status_code=400, detail="Resume file is empty")
+        try:
+            resume_path = await upload_resume(
+                str(current_user.id),
+                f"applications/{uuid.uuid4()}_{resume_filename}",
+                file_bytes,
+                resume.content_type or "application/octet-stream",
+            )
+        except Exception as exc:
+            detail = (
+                "Resume storage is not configured. Add SUPABASE_SERVICE_KEY to backend/.env."
+                if not SUPABASE_SERVICE_KEY else "Resume upload failed. Please try again."
+            )
+            raise HTTPException(status_code=502, detail=detail) from exc
+
     application = JobApplication(
         job_id=valid_job_id,
         candidate_id=valid_candidate_id,
-        status="applied"
+        status="applied",
+        cover_letter=cover_letter.strip(),
+        expected_salary=expected_salary.strip(),
+        resume_path=resume_path,
+        resume_filename=resume_filename,
     )
 
     db.add(application)
+    if job.posted_by_id:
+        db.add(Notification(
+            user_id=job.posted_by_id,
+            message=f"New application from {current_user.name} for '{job.title}'."
+        ))
     db.commit()
     db.refresh(application)
 
     return {
-        "message": "Application submitted successfully",
+        "message": "Applied successfully",
         "application_id": str(application.id)
     }
 
@@ -72,6 +106,10 @@ def get_job_applications(
     except ValueError:
         return {"job_id": job_id, "applications": []}
 
+    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not job or job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view applications for your own job postings")
+
     applications = db.query(JobApplication).filter(
         JobApplication.job_id == valid_job_id
     ).all()
@@ -86,13 +124,39 @@ def get_job_applications(
                 "candidate_id": str(user.id),
                 "name": user.name,
                 "email": user.email,
-                "status": app.status
+                "status": app.status,
+                "cover_letter": app.cover_letter or "",
+                "expected_salary": app.expected_salary or "",
+                "resume_filename": app.resume_filename,
+                "has_resume": bool(app.resume_path),
             })
 
     return {
         "job_id": job_id,
         "applications": results
     }
+
+
+@router.get("/{application_id}/resume")
+async def get_application_resume(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    """Return a short-lived resume URL only to the recruiter who owns the job."""
+    try:
+        valid_id = uuid.UUID(application_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application_id format")
+
+    application = db.query(JobApplication).filter(JobApplication.id == valid_id).first()
+    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first() if application else None
+    if not application or not job or job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    if not application.resume_path:
+        raise HTTPException(status_code=404, detail="No resume uploaded for this application")
+
+    return {"success": True, "url": await get_resume_signed_url(application.resume_path)}
 
 
 @router.patch("/{application_id}/status")

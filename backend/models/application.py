@@ -18,6 +18,10 @@ class JobApplication(Base):
     candidate_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))
 
     match_score = Column(Float)
+    cover_letter = Column(String, default="")
+    expected_salary = Column(String, default="")
+    resume_path = Column(String, nullable=True)
+    resume_filename = Column(String, nullable=True)
 
     status = Column(String, default="applied")
     applied_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

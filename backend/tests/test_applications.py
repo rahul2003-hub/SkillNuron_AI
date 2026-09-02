@@ -41,6 +41,32 @@ def test_apply_to_job_success(as_jobseeker, as_recruiter):
     uuid.UUID(data["application_id"])  # valid UUID
 
 
+def test_application_details_and_recruiter_notification(as_jobseeker, as_recruiter, monkeypatch):
+    job = _create_job(as_recruiter)
+
+    async def fake_upload_resume(user_id, filename, file_bytes, content_type):
+        assert user_id
+        assert filename.endswith("candidate.pdf")
+        assert content_type == "application/pdf"
+        return f"{user_id}/{filename}"
+
+    monkeypatch.setattr("routes.applications.upload_resume", fake_upload_resume)
+    response = as_jobseeker.post(
+        f"/applications/apply/{job['id']}",
+        data={"cover_letter": "I am excited to contribute.", "expected_salary": "₹50,000"},
+        files={"resume": ("candidate.pdf", b"a short test resume", "application/pdf")},
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["message"] == "Applied successfully"
+
+    applicants = as_recruiter.get(f"/applications/job/{job['id']}").json()["applications"]
+    assert applicants[0]["cover_letter"] == "I am excited to contribute."
+    assert applicants[0]["has_resume"] is True
+
+    notifications = as_recruiter.get("/applications/notifications").json()["notifications"]
+    assert any("New application" in item["message"] for item in notifications)
+
+
 def test_apply_duplicate_rejected(as_jobseeker, as_recruiter):
     job = _create_job(as_recruiter)
 

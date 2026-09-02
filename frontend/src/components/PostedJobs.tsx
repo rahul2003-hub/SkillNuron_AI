@@ -1,9 +1,9 @@
 // Save as: frontend/src/components/PostedJobs.tsx (replaces existing file)
 
 import { useState, useEffect } from 'react';
-import { MapPin, Briefcase, IndianRupee, Trash2, Building, Users, X, Loader2 } from 'lucide-react';
+import { MapPin, Briefcase, IndianRupee, Trash2, Building, Users, X, Loader2, Download } from 'lucide-react';
 import { JobPosting } from "../App";
-import { getJobApplications, updateApplicationStatus, getCatalog } from '../services/api';
+import { getJobApplications, updateApplicationStatus, getCatalog, getApplicationResumeUrl } from '../services/api';
 
 interface PostedJobsProps {
   jobs: JobPosting[];
@@ -16,6 +16,10 @@ interface Applicant {
   name: string;
   email: string;
   status: string;
+  cover_letter: string;
+  expected_salary: string;
+  resume_filename: string | null;
+  has_resume: boolean;
 }
 
 // Fallback only used if the catalog fetch hasn't resolved yet — the
@@ -28,6 +32,7 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [openingResumeId, setOpeningResumeId] = useState<string | null>(null);
   const [statusOptions, setStatusOptions] = useState<string[]>(FALLBACK_STATUS_OPTIONS);
 
   useEffect(() => {
@@ -67,6 +72,18 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       alert(err.message || 'Failed to update status. Reverted.');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleOpenResume = async (applicationId: string) => {
+    setOpeningResumeId(applicationId);
+    try {
+      const { url } = await getApplicationResumeUrl(applicationId);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      alert(err.message || 'Could not open the applicant resume.');
+    } finally {
+      setOpeningResumeId(null);
     }
   };
 
@@ -164,13 +181,13 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
               <div className="overflow-x-auto">
                 <table className="table">
                   <thead>
-                    <tr><th>Name</th><th>Email</th><th>Status</th></tr>
+                    <tr><th>Applicant</th><th>Application</th><th>Decision</th></tr>
                   </thead>
                   <tbody>
                     {applicants.map(a => (
                       <tr key={a.application_id}>
-                        <td className="font-medium text-base-content">{a.name}</td>
-                        <td className="text-base-content/70">{a.email}</td>
+                        <td><p className="font-medium text-base-content">{a.name}</p><p className="text-sm text-base-content/70">{a.email}</p></td>
+                        <td className="space-y-2"><button disabled={!a.has_resume || openingResumeId === a.application_id} onClick={() => handleOpenResume(a.application_id)} className="btn btn-ghost btn-xs text-primary"><Download className="w-3.5 h-3.5" /> {openingResumeId === a.application_id ? 'Opening…' : a.resume_filename || 'No resume'}</button>{a.cover_letter && <p className="text-xs text-base-content/70 max-w-56 line-clamp-3">{a.cover_letter}</p>}{a.expected_salary && <p className="text-xs text-base-content/60">Expected: {a.expected_salary}</p>}</td>
                         <td>
                           <select
                             value={a.status}

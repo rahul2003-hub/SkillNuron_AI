@@ -281,12 +281,16 @@ export async function getCandidateMatches(jobId: string) {
 }
 
 // --- APPLICATIONS ---
-export async function applyToJob(jobId: string) {
-  const headers = await getHeaders();
+export async function applyToJob(jobId: string, details: { resume?: File; coverLetter?: string; expectedSalary?: string } = {}) {
+  const { data } = await supabase.auth.getSession();
+  const formData = new FormData();
+  if (details.resume) formData.append("resume", details.resume);
+  formData.append("cover_letter", details.coverLetter || "");
+  formData.append("expected_salary", details.expectedSalary || "");
   const response = await fetch(`${BASE_URL}/applications/apply/${jobId}`, {
     method: "POST",
-    headers,
-    body: JSON.stringify({}),
+    headers: data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {},
+    body: formData,
   });
   if (!response.ok) {
     const error = await response.json();
@@ -306,6 +310,13 @@ export async function getJobApplications(jobId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/applications/job/${jobId}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch job applications");
+  return response.json();
+}
+
+export async function getApplicationResumeUrl(applicationId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/${applicationId}/resume`, { headers });
+  if (!response.ok) throw new Error("Failed to get applicant resume");
   return response.json();
 }
 

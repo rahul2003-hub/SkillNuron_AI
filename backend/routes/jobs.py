@@ -91,6 +91,21 @@ async def get_my_jobs(
     }
 
 
+@router.get("/top-recruiters")
+async def get_top_recruiters(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get top 5 matching recruiters/companies for the current job seeker"""
+    from routes.profile import calculate_top_recruiters_for_user
+    recruiters = calculate_top_recruiters_for_user(db, current_user)
+    return {
+        "success": True,
+        "total": len(recruiters),
+        "recruiters": recruiters
+    }
+
+
 @router.post("/")
 async def create_job(
     job: JobPostingRequest,

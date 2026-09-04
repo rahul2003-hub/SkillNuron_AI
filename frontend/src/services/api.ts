@@ -334,6 +334,19 @@ export async function updateApplicationStatus(applicationId: string, status: str
   return response.json();
 }
 
+export async function deleteApplication(applicationId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/${applicationId}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to delete application");
+  }
+  return response.json();
+}
+
 export async function getJobApplicationTimeseries(jobId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/applications/job/${jobId}/timeseries`, { headers });
@@ -387,3 +400,11 @@ export async function getRecommendedSkillsForRole(title: string) {
   }
   return response.json();
 }
+
+export async function getTopRecruiters() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/jobs/top-recruiters`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch top recruiters");
+  return response.json();
+}
+

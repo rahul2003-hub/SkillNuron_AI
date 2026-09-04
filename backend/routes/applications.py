@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 
 from models.application import JobApplication, Notification, ALLOWED_STATUSES
 from models.job import JobPosting
-from models.user import User
+from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from deps import get_current_user, require_recruiter
 from services.storage_service import SUPABASE_SERVICE_KEY, upload_resume, get_resume_signed_url
+from services.match_services import evaluate_location_fit, calculate_match_score, get_cached_ai_match
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
@@ -119,6 +120,28 @@ def get_job_applications(
     for app in applications:
         user = db.query(User).filter(User.id == app.candidate_id).first()
         if user:
+            profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+            cand_location = profile.location if profile else ""
+            skills = [s.skill_name for s in db.query(UserSkill).filter(UserSkill.user_id == user.id).all()]
+            resume = db.query(ResumeAnalysis).filter(ResumeAnalysis.user_id == user.id).first()
+
+            loc_eval = evaluate_location_fit(job.location, job.type, cand_location)
+            job_skills = job.required_skills or []
+            fast_skill_score = calculate_match_score(job_skills, skills)
+
+            try:
+                ai_eval = get_cached_ai_match(job_skills, skills)
+                skill_score = ai_eval.get("match_score", fast_skill_score)
+            except Exception as e:
+                ai_eval = {
+                    "match_score": fast_skill_score,
+                    "reason": "AI evaluation temporarily unavailable. Score based on keyword matching.",
+                    "missing_skills": []
+                }
+                skill_score = fast_skill_score
+
+            match_score = int(round(skill_score * loc_eval["multiplier"]))
+
             results.append({
                 "application_id": str(app.id),
                 "candidate_id": str(user.id),
@@ -129,6 +152,14 @@ def get_job_applications(
                 "expected_salary": app.expected_salary or "",
                 "resume_filename": app.resume_filename,
                 "has_resume": bool(app.resume_path),
+                "location": cand_location,
+                "location_fit": loc_eval,
+                "ats_score": resume.overall_score if resume else None,
+                "skill_match_score": skill_score,
+                "match_score": match_score,
+                "skills": skills,
+                "ai_evaluation": ai_eval,
+                "applied_at": str(app.applied_at.date()) if app.applied_at else "",
             })
 
     return {
@@ -198,6 +229,32 @@ def update_application_status(
     db.refresh(application)
 
     return {"success": True, "application_id": str(application.id), "status": application.status}
+
+
+@router.delete("/{application_id}")
+def delete_application(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter)
+):
+    """Allow recruiter to remove an application from their post."""
+    try:
+        valid_id = uuid.UUID(application_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application_id format")
+
+    application = db.query(JobApplication).filter(JobApplication.id == valid_id).first()
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first()
+    if not job or job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only delete applications for your own job postings")
+
+    db.delete(application)
+    db.commit()
+
+    return {"success": True, "message": "Application removed successfully"}
 
 
 @router.get("/my")

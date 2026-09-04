@@ -12,6 +12,8 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
   const [matches, setMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const selectedJob = jobs.find(j => j.id === selectedJobId);
+
   useEffect(() => {
     if (!selectedJobId) return;
 
@@ -40,13 +42,29 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
     );
   }
 
+  const isRemoteJob = selectedJob && (
+    selectedJob.location?.toLowerCase().includes('remote') ||
+    selectedJob.type?.toLowerCase().includes('remote')
+  );
+
   return (
     <div className="space-y-6">
       {/* Job Selector */}
       <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-base-content">AI Candidate Matching</h2>
-          <p className="text-base-content/60 text-sm mt-1">Select a job to view qwen3.8 ranked candidates.</p>
+          <p className="text-base-content/60 text-sm mt-1">Post-wise matching with local proximity preference.</p>
+          {selectedJob && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="badge badge-outline badge-sm">📍 {selectedJob.location || 'Location Not Specified'}</span>
+              <span className="badge badge-outline badge-sm">{selectedJob.type || 'Full-time'}</span>
+              {isRemoteJob ? (
+                <span className="badge badge-info badge-sm">Remote (Skills 100%)</span>
+              ) : (
+                <span className="badge badge-neutral badge-sm">On-site (Location Preferred)</span>
+              )}
+            </div>
+          )}
         </div>
         <select
           value={selectedJobId}
@@ -54,7 +72,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
           className="px-4 py-2 border border-base-300 rounded-lg focus:ring-2 focus:ring-primary outline-none min-w-62.5 font-medium bg-base-100"
         >
           {jobs.map(job => (
-            <option key={job.id} value={job.id}>{job.title}</option>
+            <option key={job.id} value={job.id}>{job.title} ({job.location || 'Remote'})</option>
           ))}
         </select>
       </div>
@@ -63,7 +81,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
       {isLoading ? (
         <div className="flex flex-col justify-center items-center py-20 bg-base-100 rounded-xl shadow-sm border border-base-300">
           <BrainCircuit className="w-12 h-12 text-primary animate-pulse mb-4" />
-          <p className="text-base-content/70 font-medium">AI is analyzing candidate profiles...</p>
+          <p className="text-base-content/70 font-medium">AI is analyzing post requirements and candidate fit...</p>
         </div>
       ) : matches.length === 0 ? (
         <div className="text-center py-20 bg-base-100 rounded-xl shadow-sm border border-base-300">
@@ -74,7 +92,7 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
       ) : (
         <div className="space-y-4">
           {matches.map((candidate, index) => (
-            <div key={candidate.candidate_id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md ">
+            <div key={candidate.candidate_id} className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 hover:shadow-md transition-all">
               <div className="flex flex-col md:flex-row gap-6">
 
                 {/* Left Column: Candidate Info */}
@@ -96,6 +114,28 @@ export function CandidateMatches({ jobs }: CandidateMatchesProps) {
                       <MapPin className="w-4 h-4 text-base-content/40 shrink-0" />
                       <span className="truncate">{candidate.location || 'Location not specified'}</span>
                     </div>
+
+                    {candidate.location_fit?.status === 'relocation' && (
+                      <div className="badge badge-warning badge-sm gap-1 font-semibold text-xs py-2 px-2.5">
+                        {candidate.location_fit.label}
+                      </div>
+                    )}
+                    {candidate.location_fit?.status === 'local' && (
+                      <div className="badge badge-success badge-sm gap-1 font-semibold text-xs py-2 px-2.5">
+                        📍 Local Candidate
+                      </div>
+                    )}
+                    {candidate.location_fit?.status === 'nearby' && (
+                      <div className="badge badge-info badge-sm gap-1 font-semibold text-xs py-2 px-2.5">
+                        🚗 Commutable
+                      </div>
+                    )}
+                    {candidate.location_fit?.status === 'remote' && (
+                      <div className="badge badge-ghost badge-sm gap-1 font-semibold text-xs py-2 px-2.5">
+                        🏠 Remote Eligible
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-base-content/40 shrink-0" />
                       ATS Score: <span className="font-semibold text-base-content">{candidate.resume_score || 'N/A'}</span>

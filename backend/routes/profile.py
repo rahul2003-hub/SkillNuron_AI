@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from models.application import JobApplication
+from models.job import JobPosting
 from models.skill import SKILL_SUGGESTIONS
 from models.catalog import get_catalog, auto_categorize, get_bucket
 from deps import get_current_user
@@ -263,6 +264,114 @@ async def get_skills(
     }
 
 
+def calculate_top_recruiters_for_user(db: Session, user: User) -> list[dict]:
+    """Calculate the top 5 matching recruiters/companies for a job seeker."""
+    # 1. Gather job seeker profile context
+    user_skills_rows = db.query(UserSkill.skill_name).filter(UserSkill.user_id == user.id).all()
+    user_skills = [s[0].strip() for s in user_skills_rows if s and s[0]]
+
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+    target_roles = []
+    preferred_location = ""
+    if profile:
+        if profile.primary_role and profile.primary_role.strip():
+            target_roles.append(profile.primary_role.strip())
+        if profile.target_roles:
+            target_roles.extend([r.strip() for r in profile.target_roles if r and r.strip() and r.strip() not in target_roles])
+        preferred_location = (profile.location or "").strip().lower()
+    target_roles_lower = [r.lower() for r in target_roles]
+
+    # 2. Get all jobs
+    jobs = db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()
+    if not jobs:
+        return []
+
+    # Group by company name
+    companies_map: dict[str, dict] = {}
+    for job in jobs:
+        company_name = (job.company or job.posted_by or "Company").strip()
+        if not company_name:
+            company_name = "Company"
+
+        if company_name not in companies_map:
+            companies_map[company_name] = {
+                "company": company_name,
+                "recruiter_name": (job.posted_by or company_name).strip(),
+                "jobs": [],
+                "skills_set": set(),
+                "locations": set(),
+                "roles": [],
+            }
+
+        entry = companies_map[company_name]
+        entry["jobs"].append(job)
+        if job.title and job.title.strip() and job.title.strip() not in entry["roles"]:
+            entry["roles"].append(job.title.strip())
+        if job.location and job.location.strip():
+            entry["locations"].add(job.location.strip())
+        if job.required_skills:
+            for s in job.required_skills:
+                if s and s.strip():
+                    entry["skills_set"].add(s.strip())
+
+    # 3. Score each company/recruiter
+    scored_recruiters = []
+    for company_name, data in companies_map.items():
+        company_jobs = data["jobs"]
+        job_count = len(company_jobs)
+        skills_set = data["skills_set"]
+
+        # Skill matching
+        matched_skills = [s for s in user_skills if s.lower() in {cs.lower() for cs in skills_set}]
+
+        # Role matching
+        role_matched = False
+        if target_roles_lower:
+            for role_name in data["roles"]:
+                role_lower = role_name.lower()
+                if any(tr in role_lower or role_lower in tr for tr in target_roles_lower):
+                    role_matched = True
+                    break
+
+        # Location matching
+        loc_matched = False
+        if preferred_location:
+            loc_matched = any(preferred_location in loc.lower() for loc in data["locations"])
+
+        # Calculate a realistic percentage match score (50-98%)
+        if user_skills or target_roles:
+            skill_ratio = len(matched_skills) / max(len(user_skills), 1) if user_skills else 0.4
+            role_bonus = 25 if role_matched else 5
+            skill_score = skill_ratio * 45
+            loc_bonus = 10 if loc_matched else 0
+            base_score = int(round(45 + skill_score + role_bonus + loc_bonus))
+            match_score = max(55, min(98, base_score))
+        else:
+            # New user with no profile yet: rank by activity
+            match_score = min(85, 65 + min(job_count * 5, 20))
+
+        scored_recruiters.append({
+            "company": company_name,
+            "recruiter_name": data["recruiter_name"],
+            "active_jobs_count": job_count,
+            "match_score": match_score,
+            "top_roles": data["roles"][:3],
+            "locations": list(data["locations"])[:2],
+            "matching_skills": matched_skills[:5] if matched_skills else list(skills_set)[:3],
+            "_sort_key": (match_score, len(matched_skills), job_count)
+        })
+
+    # Sort descending by match score and active jobs
+    scored_recruiters.sort(key=lambda x: x["_sort_key"], reverse=True)
+
+    # Take Top 5
+    top_5 = scored_recruiters[:5]
+    for item in top_5:
+        item.pop("_sort_key", None)
+
+    return top_5
+
+
 # --- Dashboard Endpoint ---
 
 @router.get("/dashboard")
@@ -271,7 +380,7 @@ async def get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """One-call summary for the jobseeker home screen: skill count, latest
-    resume score, application count, and profile completeness %.
+    resume score, application count, profile completeness %, and top 5 recruiters.
     """
     profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.id).first()
 
@@ -302,12 +411,15 @@ async def get_dashboard(
     if has_resume:
         completeness += 25
 
+    top_recruiters = calculate_top_recruiters_for_user(db, current_user)
+
     return {
         "success": True,
         "skills_count": skills_count,
         "latest_resume_score": latest_resume_score,
         "applications_count": applications_count,
-        "profile_completeness": completeness
+        "profile_completeness": completeness,
+        "top_recruiters": top_recruiters
     }
 
 

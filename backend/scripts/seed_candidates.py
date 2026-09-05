@@ -8,7 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import SessionLocal
-from models.user import User, UserProfile, UserSkill, ResumeAnalysis
+from models.user import User, UserProfile, UserSkill, ResumeAnalysis, SkillLevel
 
 fake = Faker()
 
@@ -22,7 +22,7 @@ skills_pool = [
 ]
 
 locations = [
-    "Mumbai", "Navi Mumbai" "Pune", "Bangalore", "Delhi", "Hyderabad", "Chennai",
+    "Mumbai", "Navi Mumbai", "Pune", "Bangalore", "Delhi", "Hyderabad", "Chennai",
 ]
 
 def seed_candidates():
@@ -60,11 +60,11 @@ def seed_candidates():
         candidate_skills = random.sample(skills_pool, random.randint(3, 6))
 
         for skill in candidate_skills:
-            # FIXED: Added 'level' for completeness
+            # `user_skills.level` is an enum, not a percentage score.
             skill_obj = UserSkill(
                 user_id=user.id,
                 skill_name=skill,
-                level=random.randint(50, 100)
+                level=random.choice(list(SkillLevel))
             )
             db.add(skill_obj)
 

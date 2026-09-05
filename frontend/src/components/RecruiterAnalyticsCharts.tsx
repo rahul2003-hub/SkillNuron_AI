@@ -29,10 +29,10 @@ export function RecruiterAnalyticsCharts({ jobs, skillDemand, matchScoreDistribu
     return (
         <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-                {/* Skill Demand Bar Chart */}
+                {/* Most Skills Available Bar Chart */}
                 <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6">
                     <h3 className="text-lg font-semibold text-base-content flex items-center gap-2 mb-4">
-                        <BarChart3 className="w-5 h-5 text-primary" /> Skill Demand
+                        <BarChart3 className="w-5 h-5 text-primary" /> Most Skills Available
                     </h3>
                     {skillDemand.length === 0 ? (
                         <p className="text-sm text-base-content/50 py-10 text-center">No skill data yet.</p>

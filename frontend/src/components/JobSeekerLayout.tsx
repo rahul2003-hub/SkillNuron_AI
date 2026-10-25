@@ -32,7 +32,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
  
   useEffect(() => {
     if (userId) {
-      getSkills(userId)
+      getSkills('me')
         .then(data => {
           if (data.skills && Array.isArray(data.skills) && data.skills.length > 0) {
             setSkills(data.skills);
@@ -44,7 +44,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
  
   useEffect(() => {
     if (activeTab === 'gap-analysis' || activeTab === 'career-path') {
-      getProfile(userId).then(data => {
+      getProfile('me').then(data => {
         if (data.profile && data.profile.primary_role) {
           setPrimaryRole(data.profile.primary_role);
         }
@@ -171,7 +171,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
               <JobSeekerHome userId={userId} userName={userName} setActiveTab={setActiveTab} />
             )}
             {activeTab === 'profile' && (
-              <SkillProfile skills={skills} setSkills={setSkills} userId={userId} userName={userName} userEmail={userEmail} />
+              <SkillProfile skills={skills} setSkills={setSkills} userId={userId} userName={userName} userEmail={userEmail} onAccountDeleted={onLogout} />
             )}
             {activeTab === 'resume-analyzer' && <ResumeAnalyzer userId={userId} />}
             {activeTab === 'gap-analysis' && (

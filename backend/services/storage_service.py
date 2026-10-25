@@ -58,3 +58,17 @@ async def get_resume_signed_url(object_path: str, expires_in: int = 3600) -> str
 
     signed_path = response.json().get("signedURL", "")
     return f"{SUPABASE_URL}/storage/v1{signed_path}"
+
+
+async def delete_resume(object_path: str) -> None:
+    """Permanently delete one resume object with the server-side key."""
+    if not object_path:
+        return
+    if not SUPABASE_SERVICE_KEY:
+        raise RuntimeError("SUPABASE_SERVICE_KEY is not configured")
+    url = f"{SUPABASE_URL}/storage/v1/object/{RESUME_BUCKET}/{object_path}"
+    headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}", "apikey": SUPABASE_SERVICE_KEY}
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.delete(url, headers=headers)
+    if response.status_code not in (200, 204, 404):
+        raise RuntimeError("Could not delete stored resume")

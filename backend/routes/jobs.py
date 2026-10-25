@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Header, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
@@ -11,8 +11,48 @@ import uuid
 import os
 import httpx
 import re
+import secrets
+from datetime import date
+from models.job_alert import JobAlertPreference
+from services.job_alerts import get_adzuna_matches, send_daily_job_alert_email
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
+
+
+@router.post("/job-alerts/daily-send")
+async def send_daily_job_alerts(
+    x_job_alert_secret: str | None = Header(default=None),
+    db: Session = Depends(get_db),
+):
+    """Cron-only endpoint: send each opted-in seeker at most one alert per day."""
+    configured_secret = os.getenv("JOB_ALERTS_CRON_SECRET")
+    if not configured_secret:
+        raise HTTPException(status_code=503, detail="Daily job alerts are not configured")
+    if not x_job_alert_secret or not secrets.compare_digest(x_job_alert_secret, configured_secret):
+        raise HTTPException(status_code=403, detail="Invalid job alert scheduler secret")
+
+    today = date.today()
+    preferences = db.query(JobAlertPreference).filter(
+        JobAlertPreference.enabled.is_(True),
+        (JobAlertPreference.last_sent_on.is_(None)) | (JobAlertPreference.last_sent_on != today),
+    ).all()
+    sent = skipped = 0
+    for preference in preferences:
+        user = db.query(User).filter(User.id == preference.user_id, User.user_type == "jobseeker").first()
+        profile = db.query(UserProfile).filter(UserProfile.user_id == preference.user_id).first()
+        if not user or not profile:
+            skipped += 1
+            continue
+        roles = [profile.primary_role, *(profile.target_roles or [])]
+        skills = [name for (name,) in db.query(UserSkill.skill_name).filter(UserSkill.user_id == user.id).all()]
+        jobs = await get_adzuna_matches(roles=roles, skills=skills, location=profile.location or "", limit=10)
+        if send_daily_job_alert_email(recipient_email=user.email, recipient_name=user.name, jobs=jobs):
+            preference.last_sent_on = today
+            sent += 1
+        else:
+            skipped += 1
+    db.commit()
+    return {"success": True, "sent": sent, "skipped": skipped, "max_jobs_per_email": 10}
 
 
 # --- Request Models ---

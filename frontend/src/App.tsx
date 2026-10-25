@@ -71,6 +71,9 @@ function App() {
     if (verificationRedirect) {
       // Confirmation links can create a temporary Supabase session. Clear it
       // so the user intentionally continues through the login screen.
+      // Remove the one-time URL marker as well; otherwise a later refresh
+      // repeats this verification flow and interrupts the signed-in session.
+      window.history.replaceState({}, document.title, window.location.pathname);
       supabase.auth.signOut();
       return;
     }
@@ -120,6 +123,7 @@ function App() {
   };
 
   const handleLogin = (type: UserType, name: string, email: string, id: string) => {
+    window.history.replaceState({}, document.title, window.location.pathname);
     setUserType(type);
     setUserName(name);
     setUserEmail(email);

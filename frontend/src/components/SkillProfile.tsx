@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Plus, X, Award, Sparkles, Save, CheckCircle, User, Edit3, Loader2 } from 'lucide-react';
 import { Skill, SkillLevel } from '../App';
 import { saveSkills, getProfile, updateProfile, getSkillSuggestions, getSkills, getCatalog } from '../services/api';
+import { DeleteAccountButton } from './DeleteAccountButton';
 
 interface SkillProfileProps {
   skills: Skill[];
@@ -10,6 +11,7 @@ interface SkillProfileProps {
   userId: string;
   userName: string;
   userEmail: string;
+  onAccountDeleted: () => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -25,7 +27,7 @@ const BUCKET_STYLE: Record<Bucket, string> = {
 
 const SKILL_LEVELS: SkillLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 
-export function SkillProfile({ skills, setSkills, userId, userName, userEmail }: SkillProfileProps) {
+export function SkillProfile({ skills, setSkills, userId, userName, userEmail, onAccountDeleted }: SkillProfileProps) {
   const [activeSection, setActiveSection] = useState<'info' | 'skills'>('info');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isSavingInfo, setIsSavingInfo] = useState(false);
@@ -65,6 +67,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     phone: '',
     linkedin: '',
     github: '',
+    job_alerts_enabled: false,
   });
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
   const loadProfile = async () => {
     setIsLoadingProfile(true);
     try {
-      const data = await getProfile(userId);
+      const data = await getProfile('me');
       if (data.profile) {
         setProfileInfo(prev => ({ ...prev, ...data.profile }));
       }
@@ -132,7 +135,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
       await saveSkills(userId, skills);
       // Backend assigns/normalizes category + bucket on save — refresh
       // local state from the server so display matches what was persisted.
-      const refreshed = await getSkills(userId);
+      const refreshed = await getSkills('me');
       if (refreshed.skills) {
         setSkills(refreshed.skills);
       }
@@ -378,14 +381,19 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                   <div>
                     <label className="block text-xs text-base-content/50 mb-1">Location</label>
                     {isEditingInfo ? (
-                      <select
+                      <>
+                      <input
+                        list="profile-city-suggestions"
+                        type="text"
                         value={profileInfo.location}
                         onChange={e => setProfileInfo({ ...profileInfo, location: e.target.value })}
+                        placeholder="Select or enter your city"
                         className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
-                      >
-                        <option value="">Select city</option>
-                        {catalog.cities.map(c => <option key={c}>{c}</option>)}
-                      </select>
+                      />
+                      <datalist id="profile-city-suggestions">
+                        {catalog.cities.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                      </>
                     ) : (
                       <input value={profileInfo.location || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
@@ -452,6 +460,19 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                 )}
               </div>
 
+              <div className="bg-base-100 rounded-xl shadow-sm p-6">
+                <h3 className="text-base-content font-medium mb-2">Daily job alerts</h3>
+                <p className="text-xs text-base-content/50 mb-4">Receive up to 10 matching Adzuna jobs each day, based on your roles, skills, and location.</p>
+                {isEditingInfo ? (
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" className="toggle toggle-primary" checked={profileInfo.job_alerts_enabled} onChange={e => setProfileInfo({ ...profileInfo, job_alerts_enabled: e.target.checked })} />
+                    <span className="text-sm">Email me daily job matches</span>
+                  </label>
+                ) : (
+                  <span className={`badge ${profileInfo.job_alerts_enabled ? 'badge-success' : 'badge-ghost'}`}>{profileInfo.job_alerts_enabled ? 'Enabled' : 'Disabled'}</span>
+                )}
+              </div>
+
               {/* Links Card */}
               <div className="bg-base-100 rounded-xl shadow-sm p-6">
                 <h3 className="text-base-content font-medium mb-4">🔗 Professional Links</h3>
@@ -489,6 +510,14 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                     )}
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-error/30 bg-error/5 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 className="font-medium text-error">Danger zone</h3>
+                  <p className="text-sm text-base-content/60 mt-1">Permanently delete your account and all associated data.</p>
+                </div>
+                <DeleteAccountButton accountType="jobseeker" onDeleted={onAccountDeleted} />
               </div>
             </>
           )}

@@ -6,6 +6,7 @@ import { CreateJobPost } from './CreateJobPost';
 import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
 import { RecruiterCandidates } from './RecruiterCandidates';
 import { NotificationBell } from './NotificationBell';
+import { DeleteAccountButton } from './DeleteAccountButton';
 import { JobPosting, isDarkTheme, setTheme } from '../App';
 import { getMyJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
@@ -114,6 +115,9 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             <LogOut className="w-5 h-5 shrink-0" />
             {isSidebarOpen && <span className="ml-3 font-medium max-sm:hidden">Logout</span>}
           </button>
+          <div className="mt-2 flex justify-center">
+            <DeleteAccountButton accountType="recruiter" onDeleted={onLogout} />
+          </div>
         </div>
       </aside>
 

@@ -7,6 +7,7 @@ from models.application import JobApplication
 from models.job import JobPosting
 from models.skill import SKILL_SUGGESTIONS
 from models.catalog import get_catalog, auto_categorize, get_bucket
+from models.job_alert import JobAlertPreference
 from deps import get_current_user
 import uuid
 from datetime import datetime, timezone
@@ -50,6 +51,7 @@ class UpdateProfileRequest(BaseModel):
     phone: str = ""
     linkedin: str = ""
     github: str = ""
+    job_alerts_enabled: bool = False
 
     @field_validator("target_roles")
     @classmethod
@@ -97,6 +99,9 @@ async def get_profile(
     profile = db.query(UserProfile).filter(
         UserProfile.user_id == target_uuid
     ).first()
+    alert_preference = db.query(JobAlertPreference).filter(
+        JobAlertPreference.user_id == target_uuid
+    ).first()
 
     return {
         "success": True,
@@ -119,6 +124,7 @@ async def get_profile(
             "phone": profile.phone if profile else "",
             "linkedin": profile.linkedin if profile else "",
             "github": profile.github if profile else "",
+            "job_alerts_enabled": alert_preference.enabled if alert_preference else False,
         }
     }
 
@@ -163,6 +169,14 @@ async def update_profile(
             github=request.github
         )
         db.add(profile)
+
+    alert_preference = db.query(JobAlertPreference).filter(
+        JobAlertPreference.user_id == current_user.id
+    ).first()
+    if not alert_preference:
+        alert_preference = JobAlertPreference(user_id=current_user.id)
+        db.add(alert_preference)
+    alert_preference.enabled = request.job_alerts_enabled
 
     db.commit()
     return {"success": True, "message": "Profile updated successfully"}

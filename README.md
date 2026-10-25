@@ -232,6 +232,18 @@ SkillNuron_AI/
 
 To enable email delivery, add `SMTP_HOST`, `SMTP_PORT` (defaults to `587`), `SMTP_FROM`, and optionally `SMTP_USERNAME`, `SMTP_PASSWORD`, and `SMTP_USE_TLS` (defaults to `true`) to `backend/.env`.
 
+Job seekers can opt in to one daily email containing up to 10 Adzuna matches. Configure `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and `JOB_ALERTS_CRON_SECRET`, then have your daily scheduler call `POST /api/jobs/job-alerts/daily-send` with the `X-Job-Alert-Secret` header.
+
+### Test daily job recommendations locally
+
+With the backend running on port 8000 and a job seeker opted in to daily alerts, trigger the delivery from a second PowerShell terminal:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/jobs/job-alerts/daily-send" -Headers @{ "X-Job-Alert-Secret" = "<your JOB_ALERTS_CRON_SECRET>" }
+```
+
+The value in the header must exactly match `JOB_ALERTS_CRON_SECRET` in `backend/.env`. A successful response reports the number of emails sent and confirms `max_jobs_per_email` is `10`.
+
 ### Recruiter, catalog, and resume enhancements
 
 - `GET /recruiter/analytics` exposes recruiter dashboard metrics and chart data; recruiter candidate matches remain available at `GET /recruiter/job/{job_id}/matches`.

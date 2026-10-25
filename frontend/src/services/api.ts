@@ -287,6 +287,20 @@ export async function getCandidateMatches(
   return response.json();
 }
 
+export async function deleteMyAccount() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/auth/account`, {
+    method: "DELETE",
+    headers,
+    body: JSON.stringify({ confirmation: "DELETE" }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Could not delete account");
+  }
+  return response.json();
+}
+
 export async function getCandidates(filters: { search?: string; location?: string; minExperience?: number } = {}) {
   const headers = await getHeaders();
   const params = new URLSearchParams();

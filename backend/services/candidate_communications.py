@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 STATUS_COPY = {
+    "screening": ("Application in screening", "The recruiter has moved your application to screening."),
+    "interview": ("Interview stage", "Great news — the recruiter has moved your application to the interview stage."),
+    "offer": ("Offer stage", "Great news — the recruiter has moved your application to the offer stage."),
     "shortlisted": ("You've been shortlisted", "Great news — the recruiter has shortlisted your application."),
     "rejected": ("Application update", "The recruiter has decided not to move forward with your application."),
     "hired": ("You've been hired", "Congratulations — the recruiter has marked your application as hired."),

@@ -20,7 +20,7 @@ def test_get_catalog(as_jobseeker):
     catalog = data["catalog"]
     assert "cities" in catalog
     assert "application_statuses" in catalog
-    assert set(catalog["application_statuses"]) == {"applied", "shortlisted", "rejected", "hired"}
+    assert set(catalog["application_statuses"]) == {"applied", "screening", "interview", "offer", "hired", "rejected"}
     assert "category_bucket_map" in catalog
     assert catalog["category_bucket_map"].get("Programming") == "Core"
 

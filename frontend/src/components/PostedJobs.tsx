@@ -6,7 +6,7 @@ import {
 import { JobPosting } from "../App";
 import { toast } from 'sonner';
 import { 
-  getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, 
+  getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, getApplicationHistory,
   getApplicationResumeUrl, getCandidateMatches 
 } from '../services/api';
 
@@ -42,7 +42,13 @@ interface Applicant {
   };
 }
 
-const FALLBACK_STATUS_OPTIONS = ['applied', 'shortlisted', 'rejected', 'hired'];
+const FALLBACK_STATUS_OPTIONS = ['applied', 'screening', 'interview', 'offer', 'hired', 'rejected'];
+const NEXT_STAGES: Record<string, string[]> = {
+  applied: ['screening', 'rejected'],
+  screening: ['interview', 'rejected'],
+  interview: ['offer', 'rejected'],
+  offer: ['hired', 'rejected'],
+};
 
 export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [applicantsModalJob, setApplicantsModalJob] = useState<JobPosting | null>(null);
@@ -56,6 +62,9 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [openingResumeId, setOpeningResumeId] = useState<string | null>(null);
   const [statusOptions, setStatusOptions] = useState<string[]>(FALLBACK_STATUS_OPTIONS);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [histories, setHistories] = useState<Record<string, Array<{ id: string; from_stage: string; to_stage: string; note: string; created_at: string; by_user_name?: string | null }>>>({});
+  const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
     getCatalog()
@@ -101,7 +110,10 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
     setUpdatingId(applicationId);
 
     try {
-      await updateApplicationStatus(applicationId, newStatus);
+      await updateApplicationStatus(applicationId, newStatus, notes[applicationId] || '');
+      setNotes(prev => ({ ...prev, [applicationId]: '' }));
+      const history = await getApplicationHistory(applicationId);
+      setHistories(prev => ({ ...prev, [applicationId]: history.events || [] }));
       toast.success('Application status updated');
     } catch (err: any) {
       if (previous) {
@@ -110,6 +122,22 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       toast.error(err.message || 'Failed to update status. Reverted.');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const toggleHistory = async (applicationId: string) => {
+    if (histories[applicationId]) {
+      setHistories(prev => { const next = { ...prev }; delete next[applicationId]; return next; });
+      return;
+    }
+    setLoadingHistoryId(applicationId);
+    try {
+      const history = await getApplicationHistory(applicationId);
+      setHistories(prev => ({ ...prev, [applicationId]: history.events || [] }));
+    } catch (err: any) {
+      toast.error(err.message || 'Could not load pipeline history.');
+    } finally {
+      setLoadingHistoryId(null);
     }
   };
 
@@ -360,15 +388,33 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                             </div>
 
                             {/* Decision Dropdown & Remove Button */}
-                            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
                               <select
                                 value={a.status}
                                 disabled={updatingId === a.application_id}
                                 onChange={(e) => handleStatusChange(a.application_id, e.target.value)}
                                 className="select select-bordered select-xs capitalize font-medium bg-base-100"
                               >
-                                {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                                {[a.status, ...(NEXT_STAGES[a.status] || [])]
+                                  .filter((stage, index, stages) => stages.indexOf(stage) === index && statusOptions.includes(stage))
+                                  .map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
+                              <input
+                                value={notes[a.application_id] || ''}
+                                onChange={(e) => setNotes(prev => ({ ...prev, [a.application_id]: e.target.value }))}
+                                maxLength={2000}
+                                placeholder="Transition note (optional)"
+                                className="input input-bordered input-xs w-48"
+                                aria-label={`Note for ${a.name}'s stage change`}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleHistory(a.application_id)}
+                                disabled={loadingHistoryId === a.application_id}
+                                className="btn btn-ghost btn-xs"
+                              >
+                                {loadingHistoryId === a.application_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'History'}
+                              </button>
                               <button
                                 onClick={() => handleRemoveApplication(a.application_id)}
                                 disabled={deletingId === a.application_id}
@@ -379,6 +425,20 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                               </button>
                             </div>
                           </div>
+
+                          {histories[a.application_id] && (
+                            <div className="rounded-lg border border-base-300 bg-base-100 p-3 text-xs space-y-2">
+                              <p className="font-semibold text-base-content/70">Pipeline history</p>
+                              {histories[a.application_id].length === 0 ? <p className="text-base-content/50">No stage changes yet.</p> : histories[a.application_id].map(event => (
+                                <div key={event.id} className="border-l-2 border-primary/40 pl-2">
+                                  <span className="font-medium capitalize">{event.from_stage} → {event.to_stage}</span>
+                                  <span className="text-base-content/50"> · {new Date(event.created_at).toLocaleString()}</span>
+                                  {event.by_user_name && <span className="text-base-content/50"> · {event.by_user_name}</span>}
+                                  {event.note && <p className="mt-0.5 text-base-content/70">{event.note}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
 
                           {/* AI Evaluation Reason & Cover Letter */}
                           {a.ai_evaluation?.reason && (

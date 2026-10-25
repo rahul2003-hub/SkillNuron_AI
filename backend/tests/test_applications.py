@@ -120,12 +120,12 @@ def test_status_transition_valid(as_jobseeker, as_recruiter):
 
     response = as_recruiter.patch(
         f"/applications/{application_id}/status",
-        json={"status": "shortlisted"}
+        json={"status": "screening", "note": "Initial review complete"}
     )
     assert response.status_code == 200, response.text
     data = response.json()
     assert data["success"] is True
-    assert data["status"] == "shortlisted"
+    assert data["status"] == "screening"
     assert data["previous_status"] == "applied"
     assert data["changed"] is True
 
@@ -170,7 +170,7 @@ def test_status_transition_full_pipeline(as_jobseeker, as_recruiter):
     apply_resp = as_jobseeker.post(f"/applications/apply/{job['id']}")
     application_id = apply_resp.json()["application_id"]
 
-    for status in ("shortlisted", "hired"):
+    for status in ("screening", "interview", "offer", "hired"):
         response = as_recruiter.patch(
             f"/applications/{application_id}/status",
             json={"status": status}
@@ -221,14 +221,14 @@ def test_notification_created_on_status_change(as_jobseeker, as_recruiter):
     apply_resp = as_jobseeker.post(f"/applications/apply/{job['id']}")
     application_id = apply_resp.json()["application_id"]
 
-    as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "shortlisted"})
+    as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "screening"})
 
     response = as_jobseeker.get("/applications/notifications")
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert data["unread_count"] >= 1
-    assert any("shortlisted" in n["message"] for n in data["notifications"])
+    assert any("screening" in n["message"] for n in data["notifications"])
 
 
 def test_status_change_sends_email_and_skips_duplicate_update(as_jobseeker, as_recruiter, monkeypatch):
@@ -242,16 +242,16 @@ def test_status_change_sends_email_and_skips_duplicate_update(as_jobseeker, as_r
 
     monkeypatch.setattr("routes.applications.send_application_status_email", fake_send_email)
 
-    first = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "shortlisted"})
+    first = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "screening", "note": "Phone screen booked"})
     assert first.status_code == 200
     assert sent == [{
         "candidate_email": "pytest_jobseeker@skillnuron.test",
         "candidate_name": "Pytest Jobseeker",
         "job_title": job["title"],
-        "status": "shortlisted",
+        "status": "screening",
     }]
 
-    duplicate = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "shortlisted"})
+    duplicate = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "screening"})
     assert duplicate.status_code == 200
     assert duplicate.json()["changed"] is False
     assert len(sent) == 1
@@ -261,7 +261,7 @@ def test_mark_notifications_read(as_jobseeker, as_recruiter):
     job = _create_job(as_recruiter)
     apply_resp = as_jobseeker.post(f"/applications/apply/{job['id']}")
     application_id = apply_resp.json()["application_id"]
-    as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "hired"})
+    as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "rejected"})
 
     mark_response = as_jobseeker.post("/applications/notifications/mark-read")
     assert mark_response.status_code == 200
@@ -269,3 +269,30 @@ def test_mark_notifications_read(as_jobseeker, as_recruiter):
 
     check_response = as_jobseeker.get("/applications/notifications")
     assert check_response.json()["unread_count"] == 0
+
+
+def test_stage_history_records_recruiter_and_note(as_jobseeker, as_recruiter):
+    job = _create_job(as_recruiter)
+    application_id = as_jobseeker.post(f"/applications/apply/{job['id']}").json()["application_id"]
+
+    move = as_recruiter.patch(
+        f"/applications/{application_id}/status",
+        json={"status": "screening", "note": "Meets the baseline requirements."},
+    )
+    assert move.status_code == 200
+
+    history = as_recruiter.get(f"/applications/{application_id}/history")
+    assert history.status_code == 200
+    event = history.json()["events"][0]
+    assert event["from_stage"] == "applied"
+    assert event["to_stage"] == "screening"
+    assert event["note"] == "Meets the baseline requirements."
+
+
+def test_stage_transition_must_follow_pipeline(as_jobseeker, as_recruiter):
+    job = _create_job(as_recruiter)
+    application_id = as_jobseeker.post(f"/applications/apply/{job['id']}").json()["application_id"]
+
+    response = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "offer"})
+    assert response.status_code == 400
+    assert "Cannot go applied" in response.json()["detail"]

@@ -6,7 +6,7 @@ from database import get_db
 import uuid
 from datetime import datetime, timezone
 
-from models.application import JobApplication, Notification, ALLOWED_STATUSES
+from models.application import JobApplication, Notification, ApplicationEvent, ALLOWED_STATUSES, move_stage
 from models.job import JobPosting
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from deps import get_current_user, require_recruiter
@@ -21,6 +21,7 @@ router = APIRouter(prefix="/applications", tags=["Applications"])
 
 class StatusUpdateRequest(BaseModel):
     status: str
+    note: str = ""
 
 @router.post("/apply/{job_id}")
 async def apply_for_job(
@@ -216,6 +217,8 @@ def update_application_status(
 ):
     if req.status not in ALLOWED_STATUSES:
         raise HTTPException(status_code=400, detail=f"Status must be one of {ALLOWED_STATUSES}")
+    if len(req.note) > 2000:
+        raise HTTPException(status_code=400, detail="Note must be 2000 characters or fewer")
 
     try:
         valid_id = uuid.UUID(application_id)
@@ -243,14 +246,7 @@ def update_application_status(
         }
 
     candidate = db.query(User).filter(User.id == application.candidate_id).first()
-    application.status = req.status
-    application.updated_at = datetime.now(timezone.utc)
-
-    notification = Notification(
-        user_id=application.candidate_id,
-        message=f"Your application for '{job.title}' is now {req.status}."
-    )
-    db.add(notification)
+    move_stage(db, application, req.status, current_user, req.note.strip())
 
     db.commit()
     db.refresh(application)
@@ -271,6 +267,40 @@ def update_application_status(
         "status": application.status,
         "previous_status": previous_status,
         "changed": True,
+    }
+
+
+@router.get("/{application_id}/history")
+def get_application_history(
+    application_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    """Return the pipeline audit trail to the recruiter who owns the job."""
+    try:
+        valid_id = uuid.UUID(application_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application_id format")
+
+    application = db.query(JobApplication).filter(JobApplication.id == valid_id).first()
+    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first() if application else None
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if not job or job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view history for applications to your own job postings")
+
+    events = db.query(ApplicationEvent).filter(
+        ApplicationEvent.application_id == application.id
+    ).order_by(ApplicationEvent.created_at.desc()).all()
+    return {
+        "success": True,
+        "application_id": str(application.id),
+        "events": [{
+            "id": str(event.id), "from_stage": event.from_stage,
+            "to_stage": event.to_stage, "by_user_id": str(event.by_user_id),
+            "by_user_name": event.by_user.name if event.by_user else None,
+            "note": event.note or "", "created_at": str(event.created_at),
+        } for event in events],
     }
 
 

@@ -9,7 +9,7 @@ from database import engine, Base
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from models.skill import SkillCategory
 from models.job import JobPosting
-from models.application import JobApplication, Notification
+from models.application import JobApplication, Notification, ApplicationEvent
 from models.job_alert import JobAlertPreference
 Base.metadata.create_all(bind=engine)
 

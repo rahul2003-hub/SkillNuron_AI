@@ -6,6 +6,7 @@ from collections import Counter
 from database import get_db
 from models.user import User, ResumeAnalysis
 from models.job import JobPosting
+from models.application import JobApplication, STAGES
 from deps import require_recruiter
 
 router = APIRouter(prefix="/recruiter", tags=["Recruiter Analytics"])
@@ -82,11 +83,22 @@ def recruiter_analytics(
     except Exception:
         skill_demand = []
 
+    funnel = [{"stage": stage, "count": 0} for stage in STAGES]
+    if recruiter_jobs:
+        counts = dict(
+            db.query(JobApplication.status, func.count(JobApplication.id))
+            .filter(JobApplication.job_id.in_([job.id for job in recruiter_jobs]))
+            .group_by(JobApplication.status)
+            .all()
+        )
+        funnel = [{"stage": stage, "count": counts.get(stage, 0)} for stage in STAGES]
+
     return {
         "total_jobs": total_jobs,
         "total_candidates": total_candidates,
         "top_skills": top_skills,
         "average_resume_score": avg_resume_score,
         "skill_demand": skill_demand,
-        "match_score_distribution": buckets
+        "match_score_distribution": buckets,
+        "application_funnel": funnel,
     }

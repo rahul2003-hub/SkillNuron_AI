@@ -1,4 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Float, String, DateTime
+from fastapi import HTTPException
+from sqlalchemy import Column, ForeignKey, Float, String, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -6,7 +7,14 @@ from datetime import datetime, timezone
 
 from database import Base
 
-ALLOWED_STATUSES = ("applied", "shortlisted", "rejected", "hired")
+STAGES = ("applied", "screening", "interview", "offer", "hired", "rejected")
+ALLOWED = {
+    "applied": {"screening", "rejected"},
+    "screening": {"interview", "rejected"},
+    "interview": {"offer", "rejected"},
+    "offer": {"hired", "rejected"},
+}
+ALLOWED_STATUSES = STAGES
 
 
 class JobApplication(Base):
@@ -29,6 +37,42 @@ class JobApplication(Base):
 
     job = relationship("JobPosting")
     candidate = relationship("User")
+    events = relationship("ApplicationEvent", back_populates="application", cascade="all, delete-orphan")
+
+
+class ApplicationEvent(Base):
+    """Immutable record of a recruiter moving an application in the pipeline."""
+    __tablename__ = "application_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    application_id = Column(UUID(as_uuid=True), ForeignKey("job_applications.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_stage = Column(String, nullable=False)
+    to_stage = Column(String, nullable=False)
+    by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    note = Column(Text, default="", nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    application = relationship("JobApplication", back_populates="events")
+    by_user = relationship("User")
+
+
+def move_stage(db, app: JobApplication, to_stage: str, user, note: str = "") -> ApplicationEvent:
+    """Validate and persist one pipeline transition with its audit event."""
+    if to_stage not in ALLOWED.get(app.status, set()):
+        raise HTTPException(status_code=400, detail=f"Cannot go {app.status} → {to_stage}")
+
+    event = ApplicationEvent(
+        application_id=app.id,
+        from_stage=app.status,
+        to_stage=to_stage,
+        by_user_id=user.id,
+        note=note,
+    )
+    db.add(event)
+    app.status = to_stage
+    app.updated_at = datetime.now(timezone.utc)
+    db.add(Notification(user_id=app.candidate_id, message=f"Update: now in {to_stage}"))
+    return event
 
 
 class Notification(Base):

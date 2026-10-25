@@ -24,7 +24,7 @@ TARGET_ROLES = [
     "UI/UX Designer", "Product Manager", "QA Engineer"
 ]
 
-APPLICATION_STATUSES = ["applied", "shortlisted", "rejected", "hired"]
+APPLICATION_STATUSES = ["applied", "screening", "interview", "offer", "hired", "rejected"]
 
 EDUCATION_LEVELS = ["BCA", "MCA", "B.Tech", "M.Tech", "B.Sc", "M.Sc", "BE", "ME", "Diploma", "Other"]
 EDUCATION_STATUSES = ["Completed", "Pursuing"]

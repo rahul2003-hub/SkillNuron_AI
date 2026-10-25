@@ -367,16 +367,26 @@ export async function getApplicationResumeUrl(applicationId: string) {
   return response.json();
 }
 
-export async function updateApplicationStatus(applicationId: string, status: string) {
+export async function updateApplicationStatus(applicationId: string, status: string, note = "") {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/applications/${applicationId}/status`, {
     method: "PATCH",
     headers,
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, note }),
   });
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || "Failed to update status");
+  }
+  return response.json();
+}
+
+export async function getApplicationHistory(applicationId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/${applicationId}/history`, { headers });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to fetch application history");
   }
   return response.json();
 }

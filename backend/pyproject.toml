@@ -20,6 +20,7 @@ dependencies = [
     "python-dotenv>=1.2.3",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.32",
+    "resend>=2.50.0",
     "scikit-learn>=1.9.0",
     "scipy>=1.17.1",
     "sqlalchemy>=2.0.52",

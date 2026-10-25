@@ -22,7 +22,18 @@ def get_candidate_matches(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
-    matches = match_candidates_for_job(db, job_id, location, min_experience)
+    try:
+        valid_job_id = uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid job id")
+
+    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view matches for your own job postings")
+
+    matches = match_candidates_for_job(db, str(valid_job_id), location, min_experience)
 
     return {
         "job_id": job_id,
@@ -34,7 +45,7 @@ def recruiter_dashboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
-    jobs = db.query(JobPosting).count()
+    jobs = db.query(JobPosting).filter(JobPosting.posted_by_id == current_user.id).count()
     candidates = db.query(User).filter(User.user_type == "jobseeker").count()
 
     return {

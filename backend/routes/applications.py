@@ -425,6 +425,12 @@ def get_job_application_timeseries(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid job_id format")
 
+    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view analytics for your own job postings")
+
     rows = (
         db.query(func.date(JobApplication.applied_at).label("day"), func.count(JobApplication.id))
         .filter(JobApplication.job_id == valid_job_id)

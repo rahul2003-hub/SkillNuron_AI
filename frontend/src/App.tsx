@@ -182,10 +182,11 @@ function App() {
   if (userType === 'recruiter') {
     return (
       <div className="min-h-screen bg-base-200">
-        <RecruiterDashboard
-          userName={userName}
-          userId={userId}
-          onLogout={handleLogout}
+          <RecruiterDashboard
+            userName={userName}
+            userId={userId}
+            userEmail={userEmail}
+            onLogout={handleLogout}
         />
       </div>
     );

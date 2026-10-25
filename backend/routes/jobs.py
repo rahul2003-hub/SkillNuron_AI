@@ -67,7 +67,10 @@ class JobPostingRequest(BaseModel):
     required_skills: list[str]
     description: str
     posted_by: str
-    status: str = "draft"
+    # Preserve the established API behavior for clients that do not send a
+    # lifecycle status.  The recruiter UI explicitly sends "draft" when the
+    # user chooses it, so drafts remain fully supported.
+    status: str = "open"
     deadline: datetime | None = None
     openings: int = 1
 
@@ -434,63 +437,6 @@ async def get_job_recommendations(
     }
 
 
-@router.patch("/{job_id}")
-async def update_job(
-    job_id: str,
-    request: JobPostingUpdateRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_recruiter),
-):
-    try:
-        valid_job_id = uuid.UUID(job_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid job_id format")
-    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if job.posted_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only edit your own job postings")
-    values = request.model_dump(exclude_unset=True)
-    if values.get("status") and values["status"] not in {"draft", "open", "closed"}:
-        raise HTTPException(status_code=400, detail="Status must be draft, open, or closed")
-    if values.get("openings") is not None and values["openings"] < 1:
-        raise HTTPException(status_code=400, detail="Openings must be at least 1")
-    was_open = job.status == "open"
-    for field, value in values.items():
-        setattr(job, field, value)
-    db.commit()
-    db.refresh(job)
-    if job.status == "open" and not was_open:
-        background_tasks.add_task(alert_candidates_for_new_job, job.id)
-    return {"success": True, "job": _serialize_job(job)}
-
-
-@router.post("/{job_id}/duplicate")
-async def duplicate_job(
-    job_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_recruiter),
-):
-    try:
-        valid_job_id = uuid.UUID(job_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid job_id format")
-    original = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
-    if not original:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if original.posted_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You can only duplicate your own job postings")
-    duplicate = JobPosting(
-        title=f"Copy of {original.title}", company=original.company, location=original.location,
-        type=original.type, salary=original.salary, required_skills=original.required_skills,
-        description=original.description, posted_by=original.posted_by, posted_by_id=current_user.id,
-        status="draft", deadline=original.deadline, openings=original.openings,
-    )
-    db.add(duplicate)
-    db.commit()
-    db.refresh(duplicate)
-    return {"success": True, "job": _serialize_job(duplicate)}
     invited_ids = {
         str(job_id) for (job_id,) in db.query(Invitation.job_id)
         .filter(Invitation.candidate_id == current_user.id, Invitation.accepted_at.is_(None)).all()
@@ -671,6 +617,65 @@ async def duplicate_job(
             "canMatchProfile": bool(profile_skills),
         },
     }
+
+
+@router.patch("/{job_id}")
+async def update_job(
+    job_id: str,
+    request: JobPostingUpdateRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    try:
+        valid_job_id = uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own job postings")
+    values = request.model_dump(exclude_unset=True)
+    if values.get("status") and values["status"] not in {"draft", "open", "closed"}:
+        raise HTTPException(status_code=400, detail="Status must be draft, open, or closed")
+    if values.get("openings") is not None and values["openings"] < 1:
+        raise HTTPException(status_code=400, detail="Openings must be at least 1")
+    was_open = job.status == "open"
+    for field, value in values.items():
+        setattr(job, field, value)
+    db.commit()
+    db.refresh(job)
+    if job.status == "open" and not was_open:
+        background_tasks.add_task(alert_candidates_for_new_job, job.id)
+    return {"success": True, "job": _serialize_job(job)}
+
+
+@router.post("/{job_id}/duplicate")
+async def duplicate_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    try:
+        valid_job_id = uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    original = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not original:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if original.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only duplicate your own job postings")
+    duplicate = JobPosting(
+        title=f"Copy of {original.title}", company=original.company, location=original.location,
+        type=original.type, salary=original.salary, required_skills=original.required_skills,
+        description=original.description, posted_by=original.posted_by, posted_by_id=current_user.id,
+        status="draft", deadline=original.deadline, openings=original.openings,
+    )
+    db.add(duplicate)
+    db.commit()
+    db.refresh(duplicate)
+    return {"success": True, "job": _serialize_job(duplicate)}
 
 
 @router.get("/search")

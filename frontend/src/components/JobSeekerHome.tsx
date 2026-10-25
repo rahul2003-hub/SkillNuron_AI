@@ -54,25 +54,25 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3">
             {/* Welcome */}
-            <div className="bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl p-6 shadow-lg">
-                <h2 className="text-2xl font-bold">Welcome back, {userName} 👋</h2>
-                <p className="opacity-90 text-sm mt-1">Here's a snapshot of your job-search progress.</p>
+            <div className="bg-linear-to-r from-primary to-secondary text-primary-content rounded-xl px-5 py-4 shadow-lg">
+                <h2 className="text-xl font-bold">Welcome back, {userName} 👋</h2>
+                <p className="opacity-90 text-xs mt-0.5">Your job-search progress at a glance.</p>
             </div>
 
             {/* Profile Completeness Gauge + Summary Cards */}
-            <div className="grid md:grid-cols-4 gap-4">
-                <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 flex flex-col items-center justify-center text-center">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-3 flex flex-col items-center justify-center text-center min-h-28">
                     <div
                         className="radial-progress text-primary"
-                        style={{ '--value': completeness, '--size': '6rem', '--thickness': '8px' } as React.CSSProperties}
+                        style={{ '--value': completeness, '--size': '4.5rem', '--thickness': '6px' } as React.CSSProperties}
                         aria-valuenow={completeness}
                         role="progressbar"
                     >
                         <span className="text-base-content font-bold">{completeness}%</span>
                     </div>
-                    <p className="text-sm font-medium text-base-content/70 mt-3">Profile Completeness</p>
+                    <p className="text-xs font-medium text-base-content/70 mt-2">Profile Completeness</p>
                     {completeness < 100 && (
                         <button onClick={() => setActiveTab('profile')} className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
                             Complete profile <ArrowRight className="w-3 h-3" />
@@ -84,24 +84,24 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                     <button
                         key={label}
                         onClick={() => setActiveTab(tab)}
-                        className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 flex flex-col items-start text-left hover:shadow-md hover:border-primary/40 transition-all"
+                        className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-3 min-h-28 flex flex-col items-start text-left hover:shadow-md hover:border-primary/40 transition-all"
                     >
-                        <div className={`p-3 rounded-lg ${bg} ${color} mb-3`}>
-                            <Icon className="w-6 h-6" />
+                        <div className={`p-2 rounded-lg ${bg} ${color} mb-2`}>
+                            <Icon className="w-5 h-5" />
                         </div>
-                        <p className="text-2xl font-bold text-base-content">{value}</p>
-                        <p className="text-sm text-base-content/60 font-medium">{label}</p>
+                        <p className="text-xl font-bold text-base-content">{value}</p>
+                        <p className="text-xs text-base-content/60 font-medium">{label}</p>
                     </button>
                 ))}
             </div>
 
             {/* Top 5 Recruiters Hiring For You */}
             {topRecruiters.length > 0 && (
-                <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6 space-y-4">
+                <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-4 space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div>
-                            <h3 className="text-lg font-bold text-base-content flex items-center gap-2">
-                                <Building2 className="w-5 h-5 text-primary" /> Top 5 Recruiters Hiring For You
+                            <h3 className="text-base font-bold text-base-content flex items-center gap-2">
+                                <Building2 className="w-4 h-4 text-primary" /> Top Recruiters Hiring For You
                             </h3>
                             <p className="text-xs text-base-content/60 mt-0.5">
                                 Matched with your skills, target roles, and preferences
@@ -115,20 +115,20 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                         </button>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
                         {topRecruiters.map((recruiter, idx) => (
                             <div
                                 key={recruiter.company + idx}
-                                className="card bg-base-200/50 hover:bg-base-200/90 border border-base-300 hover:border-primary/40 transition-all p-4 rounded-xl flex flex-col justify-between gap-3 shadow-xs"
+                                className="card bg-base-200/50 hover:bg-base-200/90 border border-base-300 hover:border-primary/40 transition-all p-3 rounded-xl flex flex-col justify-between gap-2 shadow-xs min-w-0"
                             >
                                 <div>
                                     <div className="flex items-start justify-between gap-2 mb-2">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-base border border-primary/20 shrink-0">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 shrink-0">
                                                 {recruiter.company.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <h4 className="font-bold text-base-content text-sm truncate">
+                                                <h4 className="font-bold text-base-content text-xs truncate">
                                                     {recruiter.company}
                                                 </h4>
                                                 <p className="text-xs text-base-content/60 flex items-center gap-1 mt-0.5">
@@ -143,13 +143,13 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                                                 </p>
                                             </div>
                                         </div>
-                                        <span className="badge badge-success badge-sm font-semibold gap-1 shrink-0">
+                                        <span className="badge badge-success badge-xs font-semibold gap-1 shrink-0">
                                             <Sparkles className="w-3 h-3" /> {recruiter.match_score}%
                                         </span>
                                     </div>
 
                                     {recruiter.top_roles?.length > 0 && (
-                                        <p className="text-xs text-base-content/70 line-clamp-1 mb-2">
+                                        <p className="text-[11px] text-base-content/70 line-clamp-1 mb-1">
                                             <span className="font-medium text-base-content/90">Hiring: </span>
                                             {recruiter.top_roles.join(', ')}
                                         </p>
@@ -166,13 +166,13 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
                                     )}
                                 </div>
 
-                                <div className="flex items-center justify-between pt-2 border-t border-base-300 text-xs">
+                                <div className="flex items-center justify-between pt-1.5 border-t border-base-300 text-[11px]">
                                     <span className="text-base-content/60 font-medium">
                                         {recruiter.active_jobs_count} open {recruiter.active_jobs_count === 1 ? 'role' : 'roles'}
                                     </span>
                                     <button
                                         onClick={() => setActiveTab('job-recommendations')}
-                                        className="btn btn-primary btn-xs gap-1"
+                                        className="btn btn-primary btn-xs h-6 min-h-6 gap-1"
                                     >
                                         View Jobs <ChevronRight className="w-3 h-3" />
                                     </button>
@@ -184,18 +184,18 @@ export function JobSeekerHome({ userId, userName, setActiveTab }: JobSeekerHomeP
             )}
 
             {/* Quick Actions */}
-            <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-6">
-                <h3 className="text-lg font-semibold text-base-content mb-4 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary" /> Quick Actions
+            <div className="bg-base-100 rounded-xl shadow-sm border border-base-300 p-4">
+                <h3 className="text-base font-semibold text-base-content mb-2 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-primary" /> Quick Actions
                 </h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                    <button onClick={() => setActiveTab('gap-analysis')} className="btn btn-outline btn-primary justify-start">
+                <div className="grid sm:grid-cols-3 gap-2">
+                    <button onClick={() => setActiveTab('gap-analysis')} className="btn btn-outline btn-primary btn-sm justify-start">
                         Run Gap Analysis
                     </button>
-                    <button onClick={() => setActiveTab('job-recommendations')} className="btn btn-outline btn-primary justify-start">
+                    <button onClick={() => setActiveTab('job-recommendations')} className="btn btn-outline btn-primary btn-sm justify-start">
                         Browse Jobs
                     </button>
-                    <button onClick={() => setActiveTab('resume-analyzer')} className="btn btn-outline btn-primary justify-start">
+                    <button onClick={() => setActiveTab('resume-analyzer')} className="btn btn-outline btn-primary btn-sm justify-start">
                         Analyze Resume
                     </button>
                 </div>

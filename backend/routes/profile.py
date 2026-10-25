@@ -40,6 +40,7 @@ class SaveResumeAnalysisRequest(BaseModel):
 
 
 class UpdateProfileRequest(BaseModel):
+    name: str | None = None
     education: str = ""
     education_status: str = ""
     graduation_year: str = ""
@@ -136,6 +137,8 @@ async def update_profile(
     current_user: User = Depends(get_current_user)
 ):
     """Create or update user profile info"""
+    if request.name is not None and request.name.strip():
+        current_user.name = request.name.strip()
     profile = db.query(UserProfile).filter(
         UserProfile.user_id == current_user.id
     ).first()

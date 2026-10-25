@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, BarChart3, Sun, Moon, Menu, ChevronLeft, UserSearch } from 'lucide-react';
+import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, BarChart3, Sun, Moon, Menu, ChevronLeft, UserSearch, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
 import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
 import { RecruiterCandidates } from './RecruiterCandidates';
 import { NotificationBell } from './NotificationBell';
-import { DeleteAccountButton } from './DeleteAccountButton';
+import { RecruiterProfile } from './RecruiterProfile';
 import { JobPosting, isDarkTheme, setTheme } from '../App';
 import { getMyJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
 
 interface RecruiterDashboardProps {
   userName: string;
   userId: string;
+  userEmail: string;
   onLogout: () => void;
 }
 
-type Tab = 'posted-jobs' | 'create-job' | 'candidates' | 'analytics';
+type Tab = 'posted-jobs' | 'create-job' | 'candidates' | 'analytics' | 'profile';
 
-export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDashboardProps) {
+export function RecruiterDashboard({ userName, userId, userEmail, onLogout }: RecruiterDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('posted-jobs');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navItems = [
@@ -26,6 +27,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     { id: 'create-job', icon: Plus, label: 'Post New Job' },
     { id: 'candidates', icon: UserSearch, label: 'Candidates' },
     { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+    { id: 'profile', icon: UserRound, label: 'Profile' },
   ] as const;
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +39,8 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     average_resume_score: 0,
     top_skills: [] as { skill: string, count: number }[],
     skill_demand: [] as { skill: string, count: number }[],
-    match_score_distribution: [] as { range: string, count: number }[]
+    match_score_distribution: [] as { range: string, count: number }[],
+    application_funnel: [] as { stage: string, count: number }[],
   });
 
   useEffect(() => {
@@ -57,7 +60,8 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             average_resume_score: analyticsData.average_resume_score ?? 0,
             top_skills: analyticsData.top_skills ?? [],
             skill_demand: analyticsData.skill_demand ?? [],
-            match_score_distribution: analyticsData.match_score_distribution ?? []
+            match_score_distribution: analyticsData.match_score_distribution ?? [],
+            application_funnel: analyticsData.application_funnel ?? [],
           });
         }
       } catch (error) {
@@ -115,9 +119,6 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             <LogOut className="w-5 h-5 shrink-0" />
             {isSidebarOpen && <span className="ml-3 font-medium max-sm:hidden">Logout</span>}
           </button>
-          <div className="mt-2 flex justify-center">
-            <DeleteAccountButton accountType="recruiter" onDeleted={onLogout} />
-          </div>
         </div>
       </aside>
 
@@ -144,33 +145,33 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-8 lg:p-12 scroll-smooth">
-          <div className={`${activeTab === 'candidates' ? 'max-w-none' : 'max-w-6xl'} mx-auto pb-8`}>
+        <div className={`flex-1 min-h-0 overflow-y-auto scroll-smooth ${activeTab === 'analytics' ? 'p-3 sm:p-4' : 'p-5 sm:p-8 lg:p-12'}`}>
+          <div className={`${activeTab === 'candidates' || activeTab === 'analytics' ? 'max-w-none' : 'max-w-6xl'} mx-auto ${activeTab === 'analytics' ? 'pb-2' : 'pb-8'}`}>
 
         {/* Analytics KPI Row */}
-        {activeTab !== 'create-job' && activeTab !== 'candidates' && <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+        {activeTab !== 'create-job' && activeTab !== 'candidates' && activeTab !== 'profile' && <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 ${activeTab === 'analytics' ? 'gap-3 mb-3' : 'gap-4 mb-8'}`}>
+          <div className={`bg-base-100 rounded-xl shadow-sm border border-base-300 flex items-center gap-4 ${activeTab === 'analytics' ? 'p-3' : 'p-6'}`}>
             <div className="p-3 bg-primary/10 rounded-lg text-primary"><Briefcase className="w-6 h-6" /></div>
             <div>
               <p className="text-sm text-base-content/60 font-medium">Total Jobs</p>
               <p className="text-2xl font-bold text-base-content">{jobs.length}</p>
             </div>
           </div>
-          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+          <div className={`bg-base-100 rounded-xl shadow-sm border border-base-300 flex items-center gap-4 ${activeTab === 'analytics' ? 'p-3' : 'p-6'}`}>
             <div className="p-3 bg-info/10 rounded-lg text-info"><Users className="w-6 h-6" /></div>
             <div>
               <p className="text-sm text-base-content/60 font-medium">Talent Pool</p>
               <p className="text-2xl font-bold text-base-content">{analytics.total_candidates}</p>
             </div>
           </div>
-          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+          <div className={`bg-base-100 rounded-xl shadow-sm border border-base-300 flex items-center gap-4 ${activeTab === 'analytics' ? 'p-3' : 'p-6'}`}>
             <div className="p-3 bg-success/10 rounded-lg text-success"><FileText className="w-6 h-6" /></div>
             <div>
               <p className="text-sm text-base-content/60 font-medium">Avg Resume Score</p>
               <p className="text-2xl font-bold text-base-content">{analytics.average_resume_score || 0}%</p>
             </div>
           </div>
-          <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
+          <div className={`bg-base-100 rounded-xl shadow-sm border border-base-300 flex items-center gap-4 ${activeTab === 'analytics' ? 'p-3' : 'p-6'}`}>
             <div className="p-3 bg-secondary/10 rounded-lg text-secondary"><TrendingUp className="w-6 h-6" /></div>
             <div>
               <p className="text-sm text-base-content/60 font-medium">Top Skill</p>
@@ -192,7 +193,8 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} onUpdateJob={(updated) => setJobs(current => current.map(job => job.id === updated.id ? updated : job))} onDuplicateJob={(duplicate) => setJobs(current => [duplicate, ...current])} />}
               {activeTab === 'create-job' && <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />}
               {activeTab === 'candidates' && <RecruiterCandidates />}
-              {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} />}
+              {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} applicationFunnel={analytics.application_funnel} />}
+              {activeTab === 'profile' && <RecruiterProfile userName={userName} userEmail={userEmail} onAccountDeleted={onLogout} />}
             </>
           )}
         </div>

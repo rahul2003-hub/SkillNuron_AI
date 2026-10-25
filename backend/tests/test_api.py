@@ -8,6 +8,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from main import app
 
+# This pre-Supabase suite exercises removed password-based register/login
+# endpoints and unauthenticated profile/job calls.  Authenticated coverage is
+# maintained in the current fixture-backed test modules.
+pytestmark = pytest.mark.skip(reason="Legacy password-auth integration tests were superseded by Supabase authentication")
+
 client = TestClient(app)
 
 # ============================================================

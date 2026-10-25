@@ -18,7 +18,7 @@ class JobPosting(Base):
     description = Column(String)
     posted_by = Column(String)  # display name — kept for backward-compat display only
     posted_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)  # stable owner FK
-    status = Column(String, nullable=False, default="draft")  # draft / open / closed
-    deadline = Column(DateTime, nullable=True)
+    status = Column(String, nullable=False, default="open")  # draft / open / closed
+    deadline = Column(DateTime(timezone=True), nullable=True)
     openings = Column(Integer, nullable=False, default=1)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

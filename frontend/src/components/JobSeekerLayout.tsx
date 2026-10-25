@@ -170,8 +170,8 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
           </div>
         </header>
  
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
-          <div className="max-w-6xl mx-auto pb-8">
+        <div className={`flex-1 overflow-y-auto scroll-smooth ${activeTab === 'home' ? 'p-3 sm:p-4' : 'p-6 lg:p-10'}`}>
+          <div className={`max-w-6xl mx-auto ${activeTab === 'home' ? 'pb-2' : 'pb-8'}`}>
             {activeTab === 'home' && (
               <JobSeekerHome userId={userId} userName={userName} setActiveTab={setActiveTab} />
             )}

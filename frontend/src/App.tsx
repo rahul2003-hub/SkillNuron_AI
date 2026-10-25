@@ -34,6 +34,9 @@ export interface JobPosting {
   description: string;
   postedBy: string;
   postedDate: string;
+  status?: 'draft' | 'open' | 'closed';
+  deadline?: string | null;
+  openings?: number;
   matchScore?: number;
 }
 

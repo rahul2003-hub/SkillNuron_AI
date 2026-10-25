@@ -17,6 +17,9 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
     type: 'Full-time',
     salary: '',
     description: '',
+    status: 'draft',
+    deadline: '',
+    openings: 1,
   });
   const [skills, setSkills] = useState<string[]>([]);
   const [currentSkill, setCurrentSkill] = useState('');
@@ -88,6 +91,9 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
       description: formData.description,
       required_skills: skills,      // snake_case to match backend
       posted_by: recruiterName      // snake_case to match backend
+      ,status: formData.status,
+      deadline: formData.deadline ? new Date(`${formData.deadline}T23:59:59`).toISOString() : null,
+      openings: Number(formData.openings),
     };
 
     try {
@@ -110,10 +116,13 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
         type: 'Full-time',
         salary: '',
         description: '',
+        status: 'draft',
+        deadline: '',
+        openings: 1,
       });
       setSkills([]);
 
-      toast.success('Job successfully posted');
+      toast.success(formData.status === 'open' ? 'Job published' : 'Draft saved');
 
     } catch (error: any) {
       console.error("Error posting job:", error);
@@ -207,6 +216,11 @@ export function CreateJobPost({ onCreateJob, recruiterName }: CreateJobPostProps
                   placeholder="e.g. ₹5,00,000 - ₹8,00,000"
                   className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent "
                 />
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div><label className="block text-sm font-semibold text-base-content/80 mb-3">Lifecycle</label><select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg"><option value="draft">Draft</option><option value="open">Open</option><option value="closed">Closed</option></select></div>
+                <div><label className="block text-sm font-semibold text-base-content/80 mb-3">Application deadline</label><input type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg" /></div>
+                <div><label className="block text-sm font-semibold text-base-content/80 mb-3">Openings</label><input type="number" min="1" value={formData.openings} onChange={(e) => setFormData({ ...formData, openings: Math.max(1, Number(e.target.value)) })} className="w-full px-4 py-3 border border-base-300 bg-base-100 rounded-lg" /></div>
               </div>
             </div>
           </div>

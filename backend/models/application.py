@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import Column, ForeignKey, Float, String, DateTime, Text, UniqueConstraint
+from sqlalchemy import Column, ForeignKey, Float, Integer, String, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -68,6 +68,20 @@ class Invitation(Base):
     invited_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     accepted_at = Column(DateTime, nullable=True)
+
+
+class Interview(Base):
+    """A recruiter-scheduled interview for a candidate application."""
+    __tablename__ = "interviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    application_id = Column(UUID(as_uuid=True), ForeignKey("job_applications.id", ondelete="CASCADE"), nullable=False, index=True)
+    scheduled_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    starts_at = Column(DateTime, nullable=False)
+    duration_minutes = Column(Integer, nullable=False, default=30)
+    location = Column(String, default="")
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 def move_stage(db, app: JobApplication, to_stage: str, user, note: str = "") -> ApplicationEvent:

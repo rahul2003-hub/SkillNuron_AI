@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { 
   MapPin, Briefcase, IndianRupee, Trash2, Building, Users, X, 
-  Loader2, Sparkles, BrainCircuit, CheckCircle2, FileText, Eye, Send
+  Loader2, Sparkles, BrainCircuit, CheckCircle2, FileText, Eye, Send, Copy, Pencil, CalendarDays
 } from 'lucide-react';
 import { JobPosting } from "../App";
 import { toast } from 'sonner';
 import { 
   getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, getApplicationHistory, inviteCandidateToJob,
-  getApplicationResumeUrl, getCandidateMatches 
+  getApplicationResumeUrl, getCandidateMatches, updateJob, duplicateJob, scheduleInterview
 } from '../services/api';
 
 interface PostedJobsProps {
   jobs: JobPosting[];
   onDeleteJob: (jobId: string) => void;
+  onUpdateJob: (job: JobPosting) => void;
+  onDuplicateJob: (job: JobPosting) => void;
 }
 
 interface Applicant {
@@ -50,7 +52,7 @@ const NEXT_STAGES: Record<string, string[]> = {
   offer: ['hired', 'rejected'],
 };
 
-export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
+export function PostedJobs({ jobs, onDeleteJob, onUpdateJob, onDuplicateJob }: PostedJobsProps) {
   const [applicantsModalJob, setApplicantsModalJob] = useState<JobPosting | null>(null);
   const [activeModalTab, setActiveModalTab] = useState<'applied' | 'sourced'>('applied');
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -67,6 +69,11 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
   const [invitingCandidateId, setInvitingCandidateId] = useState<string | null>(null);
   const [invitedCandidateIds, setInvitedCandidateIds] = useState<Set<string>>(new Set());
+  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [jobEdit, setJobEdit] = useState({ title: '', company: '', status: 'draft', deadline: '', openings: 1 });
+  const [interviewApplicant, setInterviewApplicant] = useState<Applicant | null>(null);
+  const [interviewDetails, setInterviewDetails] = useState({ starts_at: '', duration_minutes: 30, location: '', notes: '' });
+  const [isSchedulingInterview, setIsSchedulingInterview] = useState(false);
 
   useEffect(() => {
     getCatalog()
@@ -182,6 +189,35 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
     }
   };
 
+  const startEdit = (job: JobPosting) => {
+    setEditingJob(job);
+    setJobEdit({ title: job.title, company: job.company, status: job.status || 'draft', deadline: job.deadline ? job.deadline.slice(0, 10) : '', openings: job.openings || 1 });
+  };
+  const saveEdit = async () => {
+    if (!editingJob) return;
+    try {
+      const result = await updateJob(editingJob.id, { ...jobEdit, deadline: jobEdit.deadline ? new Date(`${jobEdit.deadline}T23:59:59`).toISOString() : null });
+      onUpdateJob(result.job);
+      setEditingJob(null);
+      toast.success('Job updated');
+    } catch (err: any) { toast.error(err.message || 'Could not update job.'); }
+  };
+  const handleDuplicate = async (jobId: string) => {
+    try { const result = await duplicateJob(jobId); onDuplicateJob(result.job); toast.success('Draft copy created'); }
+    catch (err: any) { toast.error(err.message || 'Could not duplicate job.'); }
+  };
+  const saveInterview = async () => {
+    if (!interviewApplicant || !interviewDetails.starts_at) { toast.error('Choose an interview date and time.'); return; }
+    setIsSchedulingInterview(true);
+    try {
+      const { blob, filename } = await scheduleInterview(interviewApplicant.application_id, { ...interviewDetails, starts_at: new Date(interviewDetails.starts_at).toISOString() });
+      const url = URL.createObjectURL(blob); const link = document.createElement('a');
+      link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
+      setInterviewApplicant(null); toast.success('Interview scheduled and calendar file downloaded');
+    } catch (err: any) { toast.error(err.message || 'Could not schedule interview.'); }
+    finally { setIsSchedulingInterview(false); }
+  };
+
   if (jobs.length === 0) {
     return (
       <div className="text-center py-20 bg-base-100 rounded-xl shadow-sm border border-base-300">
@@ -205,6 +241,11 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
               <Trash2 className="w-5 h-5" />
             </button>
 
+            <div className="absolute top-4 right-14 flex gap-1">
+              <button onClick={() => startEdit(job)} className="btn btn-ghost btn-xs" title="Edit job"><Pencil className="w-4 h-4" /></button>
+              <button onClick={() => handleDuplicate(job.id)} className="btn btn-ghost btn-xs" title="Duplicate job"><Copy className="w-4 h-4" /></button>
+            </div>
+
             <div className="mb-4 pr-8">
               <h3 className="text-xl font-bold text-base-content mb-1">{job.title}</h3>
               <div className="flex items-center gap-2 text-primary font-medium">
@@ -226,6 +267,7 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                 <IndianRupee className="w-4 h-4" />
                 {job.salary || 'Not specified'}
               </div>
+              <div className="flex items-center gap-2 text-base-content/70 text-sm"><span className={`badge badge-sm ${job.status === 'open' ? 'badge-success' : job.status === 'closed' ? 'badge-error' : 'badge-ghost'}`}>{job.status || 'draft'}</span><span>{job.openings || 1} opening{(job.openings || 1) === 1 ? '' : 's'}</span>{job.deadline && <span>· Due {new Date(job.deadline).toLocaleDateString()}</span>}</div>
             </div>
 
             <div className="mb-4">
@@ -253,6 +295,8 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       </div>
 
       {/* Candidates Modal (Applied + Sourced) */}
+      {editingJob && <div className="modal modal-open"><div className="modal-box"><h3 className="font-bold text-lg mb-4">Edit job</h3><div className="space-y-3"><input value={jobEdit.title} onChange={e => setJobEdit({ ...jobEdit, title: e.target.value })} className="input input-bordered w-full" placeholder="Title" /><input value={jobEdit.company} onChange={e => setJobEdit({ ...jobEdit, company: e.target.value })} className="input input-bordered w-full" placeholder="Company" /><div className="grid grid-cols-3 gap-2"><select value={jobEdit.status} onChange={e => setJobEdit({ ...jobEdit, status: e.target.value })} className="select select-bordered"><option value="draft">Draft</option><option value="open">Open</option><option value="closed">Closed</option></select><input type="date" value={jobEdit.deadline} onChange={e => setJobEdit({ ...jobEdit, deadline: e.target.value })} className="input input-bordered" /><input type="number" min="1" value={jobEdit.openings} onChange={e => setJobEdit({ ...jobEdit, openings: Math.max(1, Number(e.target.value)) })} className="input input-bordered" /></div></div><div className="modal-action"><button className="btn btn-ghost" onClick={() => setEditingJob(null)}>Cancel</button><button className="btn btn-primary" onClick={saveEdit}>Save</button></div></div></div>}
+      {interviewApplicant && <div className="modal modal-open"><div className="modal-box"><h3 className="font-bold text-lg">Schedule interview</h3><p className="text-sm text-base-content/60 mb-4">{interviewApplicant.name}</p><div className="space-y-3"><input type="datetime-local" value={interviewDetails.starts_at} onChange={e => setInterviewDetails({ ...interviewDetails, starts_at: e.target.value })} className="input input-bordered w-full" /><div className="grid grid-cols-2 gap-3"><input type="number" min="15" max="480" value={interviewDetails.duration_minutes} onChange={e => setInterviewDetails({ ...interviewDetails, duration_minutes: Number(e.target.value) })} className="input input-bordered" /><input value={interviewDetails.location} onChange={e => setInterviewDetails({ ...interviewDetails, location: e.target.value })} className="input input-bordered" placeholder="Video link or location" /></div><textarea value={interviewDetails.notes} onChange={e => setInterviewDetails({ ...interviewDetails, notes: e.target.value })} className="textarea textarea-bordered w-full" placeholder="Interview notes" /></div><div className="modal-action"><button className="btn btn-ghost" disabled={isSchedulingInterview} onClick={() => setInterviewApplicant(null)}>Cancel</button><button className="btn btn-primary" disabled={isSchedulingInterview} onClick={saveInterview}>{isSchedulingInterview && <Loader2 className="w-4 h-4 animate-spin" />}Schedule & download .ics</button></div></div></div>}
       {applicantsModalJob && (
         <div className="modal modal-open" onClick={() => setApplicantsModalJob(null)}>
           <div className="modal-box max-w-4xl p-6" onClick={(e) => e.stopPropagation()}>
@@ -430,6 +474,7 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                               >
                                 {loadingHistoryId === a.application_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'History'}
                               </button>
+                              <button type="button" className="btn btn-outline btn-xs gap-1" onClick={() => { setInterviewApplicant(a); setInterviewDetails({ starts_at: '', duration_minutes: 30, location: '', notes: '' }); }}><CalendarDays className="w-3.5 h-3.5" /> Interview</button>
                               <button
                                 onClick={() => handleRemoveApplication(a.application_id)}
                                 disabled={deletingId === a.application_id}

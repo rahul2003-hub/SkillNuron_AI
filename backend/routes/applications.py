@@ -1,12 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from database import get_db
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from models.application import JobApplication, Notification, ApplicationEvent, Invitation, ALLOWED_STATUSES, move_stage
+from models.application import JobApplication, Notification, ApplicationEvent, Invitation, Interview, ALLOWED_STATUSES, move_stage
 from models.job import JobPosting
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from deps import get_current_user, require_recruiter
@@ -22,6 +23,12 @@ router = APIRouter(prefix="/applications", tags=["Applications"])
 class StatusUpdateRequest(BaseModel):
     status: str
     note: str = ""
+
+class InterviewScheduleRequest(BaseModel):
+    starts_at: datetime
+    duration_minutes: int = 30
+    location: str = ""
+    notes: str = ""
 
 @router.post("/apply/{job_id}")
 async def apply_for_job(
@@ -43,6 +50,9 @@ async def apply_for_job(
 
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    now = datetime.now(timezone.utc)
+    if job.status != "open" or (job.deadline and job.deadline < now):
+        raise HTTPException(status_code=400, detail="This job is not accepting applications")
 
     existing = db.query(JobApplication).filter(
         JobApplication.job_id == valid_job_id,
@@ -119,6 +129,46 @@ async def apply_for_job(
         "message": "Applied successfully",
         "application_id": str(application.id)
     }
+
+
+@router.post("/{application_id}/interviews")
+def schedule_interview(
+    application_id: str,
+    request: InterviewScheduleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    if not 15 <= request.duration_minutes <= 480:
+        raise HTTPException(status_code=400, detail="Interview duration must be between 15 and 480 minutes")
+    try:
+        valid_id = uuid.UUID(application_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application_id format")
+    application = db.query(JobApplication).filter(JobApplication.id == valid_id).first()
+    job = db.query(JobPosting).filter(JobPosting.id == application.job_id).first() if application else None
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+    if not job or job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only schedule interviews for your own job applications")
+    interview = Interview(
+        application_id=application.id, scheduled_by_user_id=current_user.id,
+        starts_at=request.starts_at, duration_minutes=request.duration_minutes,
+        location=request.location.strip(), notes=request.notes.strip(),
+    )
+    db.add(interview)
+    db.add(Notification(user_id=application.candidate_id, message=f"Interview scheduled for '{job.title}' on {request.starts_at.isoformat()}"))
+    db.commit()
+
+    start = request.starts_at.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ") if request.starts_at.tzinfo else request.starts_at.strftime("%Y%m%dT%H%M%S")
+    end_at = request.starts_at + timedelta(minutes=request.duration_minutes)
+    end = end_at.astimezone(timezone.utc).strftime("%Y%m%dT%H%M%SZ") if end_at.tzinfo else end_at.strftime("%Y%m%dT%H%M%S")
+    def escape(value: str) -> str:
+        return value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+    ics = "\r\n".join(["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SkillNuron AI//EN", "BEGIN:VEVENT",
+        f"UID:{interview.id}@skillnuron.ai", f"DTSTAMP:{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
+        f"DTSTART:{start}", f"DTEND:{end}", f"SUMMARY:{escape('Interview: ' + job.title)}",
+        f"LOCATION:{escape(request.location)}", f"DESCRIPTION:{escape(request.notes)}", "END:VEVENT", "END:VCALENDAR", ""])
+    return Response(content=ics, media_type="text/calendar", headers={"Content-Disposition": f'attachment; filename="interview-{interview.id}.ics"'})
 
 
 @router.get("/job/{job_id}")

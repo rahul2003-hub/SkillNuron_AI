@@ -12,7 +12,7 @@ import os
 import httpx
 import re
 import secrets
-from datetime import date
+from datetime import date, datetime, timezone
 from models.job_alert import JobAlertPreference
 from services.job_alerts import get_adzuna_matches, send_daily_job_alert_email
 from services.internal_job_alerts import alert_candidates_for_new_job
@@ -67,6 +67,22 @@ class JobPostingRequest(BaseModel):
     required_skills: list[str]
     description: str
     posted_by: str
+    status: str = "draft"
+    deadline: datetime | None = None
+    openings: int = 1
+
+
+class JobPostingUpdateRequest(BaseModel):
+    title: str | None = None
+    company: str | None = None
+    location: str | None = None
+    type: str | None = None
+    salary: str | None = None
+    required_skills: list[str] | None = None
+    description: str | None = None
+    status: str | None = None
+    deadline: datetime | None = None
+    openings: int | None = None
 
 
 class JobMatchRequest(BaseModel):
@@ -94,7 +110,10 @@ def _serialize_job(j: JobPosting) -> dict:
         "requiredSkills": j.required_skills or [],
         "description": j.description,
         "postedBy": j.posted_by,
-        "postedDate": str(j.created_at.date()) if j.created_at else ""
+        "postedDate": str(j.created_at.date()) if j.created_at else "",
+        "status": j.status,
+        "deadline": j.deadline.isoformat() if j.deadline else None,
+        "openings": j.openings,
     }
 
 
@@ -103,7 +122,11 @@ def _serialize_job(j: JobPosting) -> dict:
 @router.get("/")
 async def get_all_jobs(db: Session = Depends(get_db)):
     """Get all job postings from PostgreSQL"""
-    jobs = db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()
+    now = datetime.now(timezone.utc)
+    jobs = db.query(JobPosting).filter(
+        JobPosting.status == "open",
+        (JobPosting.deadline.is_(None)) | (JobPosting.deadline >= now),
+    ).order_by(JobPosting.created_at.desc()).all()
     return {
         "success": True,
         "total": len(jobs),
@@ -158,6 +181,10 @@ async def create_job(
 
     if not job.title or not job.company:
         raise HTTPException(status_code=400, detail="Job title and company are required")
+    if job.status not in {"draft", "open", "closed"}:
+        raise HTTPException(status_code=400, detail="Status must be draft, open, or closed")
+    if job.openings < 1:
+        raise HTTPException(status_code=400, detail="Openings must be at least 1")
 
     new_job = JobPosting(
         title=job.title,
@@ -168,13 +195,17 @@ async def create_job(
         required_skills=job.required_skills,
         description=job.description,
         posted_by=job.posted_by,
-        posted_by_id=current_user.id
+        posted_by_id=current_user.id,
+        status=job.status,
+        deadline=job.deadline,
+        openings=job.openings,
     )
 
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
-    background_tasks.add_task(alert_candidates_for_new_job, new_job.id)
+    if new_job.status == "open":
+        background_tasks.add_task(alert_candidates_for_new_job, new_job.id)
 
     return {
         "success": True,
@@ -401,6 +432,65 @@ async def get_job_recommendations(
         str(job_id) for (job_id,) in db.query(JobApplication.job_id)
         .filter(JobApplication.candidate_id == current_user.id).all()
     }
+
+
+@router.patch("/{job_id}")
+async def update_job(
+    job_id: str,
+    request: JobPostingUpdateRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    try:
+        valid_job_id = uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    job = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only edit your own job postings")
+    values = request.model_dump(exclude_unset=True)
+    if values.get("status") and values["status"] not in {"draft", "open", "closed"}:
+        raise HTTPException(status_code=400, detail="Status must be draft, open, or closed")
+    if values.get("openings") is not None and values["openings"] < 1:
+        raise HTTPException(status_code=400, detail="Openings must be at least 1")
+    was_open = job.status == "open"
+    for field, value in values.items():
+        setattr(job, field, value)
+    db.commit()
+    db.refresh(job)
+    if job.status == "open" and not was_open:
+        background_tasks.add_task(alert_candidates_for_new_job, job.id)
+    return {"success": True, "job": _serialize_job(job)}
+
+
+@router.post("/{job_id}/duplicate")
+async def duplicate_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_recruiter),
+):
+    try:
+        valid_job_id = uuid.UUID(job_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
+    original = db.query(JobPosting).filter(JobPosting.id == valid_job_id).first()
+    if not original:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if original.posted_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only duplicate your own job postings")
+    duplicate = JobPosting(
+        title=f"Copy of {original.title}", company=original.company, location=original.location,
+        type=original.type, salary=original.salary, required_skills=original.required_skills,
+        description=original.description, posted_by=original.posted_by, posted_by_id=current_user.id,
+        status="draft", deadline=original.deadline, openings=original.openings,
+    )
+    db.add(duplicate)
+    db.commit()
+    db.refresh(duplicate)
+    return {"success": True, "job": _serialize_job(duplicate)}
     invited_ids = {
         str(job_id) for (job_id,) in db.query(Invitation.job_id)
         .filter(Invitation.candidate_id == current_user.id, Invitation.accepted_at.is_(None)).all()
@@ -416,7 +506,10 @@ async def get_job_recommendations(
             "source": "internal", "sourceLabel": "SkillNuron", "url": None,
             "applied": str(job.id) in applied_ids,
             "invited": str(job.id) in invited_ids,
-        } for job in db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()]
+        } for job in db.query(JobPosting).filter(
+            JobPosting.status == "open",
+            (JobPosting.deadline.is_(None)) | (JobPosting.deadline >= datetime.now(timezone.utc)),
+        ).order_by(JobPosting.created_at.desc()).all()]
 
     external_jobs = []
     if source != "internal":

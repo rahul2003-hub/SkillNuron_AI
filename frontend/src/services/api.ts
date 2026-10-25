@@ -288,6 +288,27 @@ export async function getCandidateMatches(
   return response.json();
 }
 
+export async function updateJob(jobId: string, job: Record<string, unknown>) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/jobs/${jobId}`, { method: "PATCH", headers, body: JSON.stringify(job) });
+  if (!response.ok) { const error = await response.json(); throw new Error(error.detail || "Failed to update job"); }
+  return response.json();
+}
+
+export async function duplicateJob(jobId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/jobs/${jobId}/duplicate`, { method: "POST", headers });
+  if (!response.ok) { const error = await response.json(); throw new Error(error.detail || "Failed to duplicate job"); }
+  return response.json();
+}
+
+export async function scheduleInterview(applicationId: string, details: { starts_at: string; duration_minutes: number; location?: string; notes?: string }) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/applications/${applicationId}/interviews`, { method: "POST", headers, body: JSON.stringify(details) });
+  if (!response.ok) { const error = await response.json(); throw new Error(error.detail || "Failed to schedule interview"); }
+  return { blob: await response.blob(), filename: response.headers.get("content-disposition")?.match(/filename="?([^";]+)"?/)?.[1] || "interview.ics" };
+}
+
 export async function inviteCandidateToJob(jobId: string, candidateId: string) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/invite/${candidateId}`, {

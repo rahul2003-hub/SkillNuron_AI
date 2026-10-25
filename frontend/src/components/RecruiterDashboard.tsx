@@ -189,7 +189,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             </div>
           ) : (
             <>
-              {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />}
+              {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} onUpdateJob={(updated) => setJobs(current => current.map(job => job.id === updated.id ? updated : job))} onDuplicateJob={(duplicate) => setJobs(current => [duplicate, ...current])} />}
               {activeTab === 'create-job' && <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />}
               {activeTab === 'candidates' && <RecruiterCandidates />}
               {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} />}

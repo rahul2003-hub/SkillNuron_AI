@@ -287,10 +287,29 @@ export async function getCandidateMatches(
   return response.json();
 }
 
-export async function getCandidates() {
+export async function getCandidates(filters: { search?: string; location?: string; minExperience?: number } = {}) {
   const headers = await getHeaders();
-  const response = await fetch(`${BASE_URL}/recruiter/candidates`, { headers });
+  const params = new URLSearchParams();
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  if (filters.location?.trim()) params.set("location", filters.location.trim());
+  if (filters.minExperience) params.set("min_experience", String(filters.minExperience));
+  const query = params.toString();
+  const response = await fetch(`${BASE_URL}/recruiter/candidates${query ? `?${query}` : ""}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch candidates");
+  return response.json();
+}
+
+export async function getCandidateProfile(candidateId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/recruiter/candidate/${candidateId}`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch candidate profile");
+  return response.json();
+}
+
+export async function getCandidateResumeUrl(candidateId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/recruiter/candidate/${candidateId}/resume`, { headers });
+  if (!response.ok) throw new Error("Failed to get candidate resume");
   return response.json();
 }
 

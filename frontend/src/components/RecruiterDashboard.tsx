@@ -140,8 +140,8 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
           </div>
         </header>
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-10 scroll-smooth">
-          <div className="max-w-6xl mx-auto pb-8">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-8 lg:p-12 scroll-smooth">
+          <div className={`${activeTab === 'candidates' ? 'max-w-none' : 'max-w-6xl'} mx-auto pb-8`}>
 
         {/* Analytics KPI Row */}
         {activeTab !== 'create-job' && activeTab !== 'candidates' && <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
@@ -187,7 +187,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             <>
               {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />}
               {activeTab === 'create-job' && <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />}
-              {activeTab === 'candidates' && <RecruiterCandidates jobs={jobs} />}
+              {activeTab === 'candidates' && <RecruiterCandidates />}
               {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} />}
             </>
           )}

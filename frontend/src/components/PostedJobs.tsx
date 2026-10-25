@@ -4,6 +4,7 @@ import {
   Loader2, Sparkles, BrainCircuit, CheckCircle2, FileText, Eye 
 } from 'lucide-react';
 import { JobPosting } from "../App";
+import { toast } from 'sonner';
 import { 
   getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, 
   getApplicationResumeUrl, getCandidateMatches 
@@ -101,11 +102,12 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
 
     try {
       await updateApplicationStatus(applicationId, newStatus);
+      toast.success('Application status updated');
     } catch (err: any) {
       if (previous) {
         setApplicants(prev => prev.map(a => a.application_id === applicationId ? { ...a, status: previous } : a));
       }
-      alert(err.message || 'Failed to update status. Reverted.');
+      toast.error(err.message || 'Failed to update status. Reverted.');
     } finally {
       setUpdatingId(null);
     }
@@ -117,8 +119,9 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
     try {
       await deleteApplication(applicationId);
       setApplicants(prev => prev.filter(a => a.application_id !== applicationId));
+      toast.success('Applicant removed');
     } catch (err: any) {
-      alert(err.message || 'Failed to remove applicant.');
+      toast.error(err.message || 'Failed to remove applicant.');
     } finally {
       setDeletingId(null);
     }
@@ -130,7 +133,7 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       const { url } = await getApplicationResumeUrl(applicationId);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err: any) {
-      alert(err.message || 'Could not open the applicant resume.');
+      toast.error(err.message || 'Could not open the applicant resume.');
     } finally {
       setOpeningResumeId(null);
     }

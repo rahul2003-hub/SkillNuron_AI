@@ -4,7 +4,7 @@ from sqlalchemy import func
 from collections import Counter
 
 from database import get_db
-from models.user import User, UserSkill, ResumeAnalysis
+from models.user import User, ResumeAnalysis
 from models.job import JobPosting
 from deps import require_recruiter
 
@@ -19,8 +19,12 @@ def recruiter_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
+    recruiter_jobs = []
     try:
-        total_jobs = db.query(JobPosting).count()
+        recruiter_jobs = db.query(JobPosting).filter(
+            JobPosting.posted_by_id == current_user.id
+        ).all()
+        total_jobs = len(recruiter_jobs)
     except Exception:
         total_jobs = 0
 
@@ -32,9 +36,11 @@ def recruiter_analytics(
         total_candidates = 0
 
     try:
-        skills = db.query(UserSkill).all()
-        skill_list = [s.skill_name for s in skills if getattr(s, 'skill_name', None)]
-        skill_counter = Counter(skill_list)
+        skill_counter = Counter(
+            skill
+            for job in recruiter_jobs
+            for skill in (job.required_skills or [])
+        )
         top_skills = [
             {"skill": skill, "count": count}
             for skill, count in skill_counter.most_common(5)
@@ -50,7 +56,7 @@ def recruiter_analytics(
         avg_resume_score = 0
         valid_scores = []
 
-    # Match score distribution buckets: 0-40 / 40-60 / 60-80 / 80-100
+    # Resume score distribution buckets: 0-40 / 40-60 / 60-80 / 80-100
     buckets = [{"range": "0-40", "count": 0}, {"range": "40-60", "count": 0},
                {"range": "60-80", "count": 0}, {"range": "80-100", "count": 0}]
     for s in valid_scores:
@@ -64,8 +70,11 @@ def recruiter_analytics(
             buckets[3]["count"] += 1
 
     try:
-        all_skills = db.query(UserSkill).all()
-        skill_demand_counter = Counter(s.skill_name for s in all_skills if getattr(s, 'skill_name', None))
+        skill_demand_counter = Counter(
+            skill
+            for job in recruiter_jobs
+            for skill in (job.required_skills or [])
+        )
         skill_demand = [
             {"skill": skill, "count": count}
             for skill, count in skill_demand_counter.most_common(8)

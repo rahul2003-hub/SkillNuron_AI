@@ -280,6 +280,13 @@ export async function getCandidateMatches(jobId: string) {
   return response.json();
 }
 
+export async function getCandidates() {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/recruiter/candidates`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch candidates");
+  return response.json();
+}
+
 // --- APPLICATIONS ---
 export async function applyToJob(jobId: string, details: { resume?: File; coverLetter?: string; expectedSalary?: string } = {}) {
   const { data } = await supabase.auth.getSession();

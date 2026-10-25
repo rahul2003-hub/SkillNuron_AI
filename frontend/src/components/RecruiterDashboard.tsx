@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, BarChart3, Sun, Moon } from 'lucide-react';
+import { Brain, LogOut, Plus, Briefcase, Users, TrendingUp, FileText, BarChart3, Sun, Moon, Menu, ChevronLeft, UserSearch } from 'lucide-react';
+import { toast } from 'sonner';
 import { PostedJobs } from './PostedJobs';
 import { CreateJobPost } from './CreateJobPost';
 import { RecruiterAnalyticsCharts } from './RecruiterAnalyticsCharts';
+import { RecruiterCandidates } from './RecruiterCandidates';
 import { NotificationBell } from './NotificationBell';
 import { JobPosting, isDarkTheme, setTheme } from '../App';
 import { getMyJobs, getRecruiterAnalytics, deleteJob } from '../services/api';
@@ -13,10 +15,17 @@ interface RecruiterDashboardProps {
   onLogout: () => void;
 }
 
-type Tab = 'posted-jobs' | 'create-job' | 'analytics';
+type Tab = 'posted-jobs' | 'create-job' | 'candidates' | 'analytics';
 
 export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('posted-jobs');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navItems = [
+    { id: 'posted-jobs', icon: Briefcase, label: 'My Jobs' },
+    { id: 'create-job', icon: Plus, label: 'Post New Job' },
+    { id: 'candidates', icon: UserSearch, label: 'Candidates' },
+    { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+  ] as const;
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,26 +78,52 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
     try {
       await deleteJob(jobId);
       setJobs(jobs.filter(job => job.id !== jobId));
+      toast.success('Job deleted');
     } catch (error) {
       console.error('Error deleting job:', error);
-      alert("Failed to delete job.");
+      toast.error('Failed to delete job');
     }
   };
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Header */}
-      <header className="bg-base-100 border-b border-base-300 sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="w-8 h-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">SkillNuron AI</span>
-            <span className="hidden sm:inline px-3 py-1 bg-secondary/20 text-secondary text-sm rounded-full font-medium ml-2">Recruiter</span>
-          </div>
-          <div className="flex items-center gap-4">
+    <div className="fixed inset-0 flex bg-base-200 font-sans overflow-hidden">
+      <aside className={`h-full bg-base-100 border-r border-base-300 flex flex-col shrink-0 ${isSidebarOpen ? 'w-64 max-sm:w-20' : 'w-20'}`}>
+        <div className={`h-16 flex items-center border-b border-base-300 shrink-0 ${isSidebarOpen ? 'justify-between px-4 max-sm:justify-center' : 'justify-center'}`}>
+          {isSidebarOpen && (
+            <div className="flex items-center gap-2 whitespace-nowrap max-sm:hidden">
+              <Brain className="w-8 h-8 text-primary shrink-0" />
+              <span className="text-xl font-bold tracking-tight">SkillNuron <span className="text-primary">AI</span></span>
+            </div>
+          )}
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg hover:bg-base-200 text-base-content/50 max-sm:hidden" aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'} aria-expanded={isSidebarOpen}>
+            {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <Brain className="w-8 h-8 text-primary sm:hidden" />
+        </div>
+        <nav aria-label="Recruiter navigation" className="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-2">
+          {navItems.map(({ id, icon: Icon, label }) => (
+            <button key={id} onClick={() => setActiveTab(id)} title={label} aria-label={label} aria-current={activeTab === id ? 'page' : undefined}
+              className={`flex items-center rounded-xl py-3 ${isSidebarOpen ? 'w-full px-4 max-sm:px-0 max-sm:justify-center' : 'w-12 h-12 justify-center mx-auto'} ${activeTab === id ? 'bg-primary/10 text-primary font-medium' : 'text-base-content/60 hover:bg-base-200 hover:text-base-content'}`}>
+              <Icon className="w-5 h-5 shrink-0" />
+              {isSidebarOpen && <span className="ml-3 truncate whitespace-nowrap max-sm:hidden">{label}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="p-4 border-t border-base-300 shrink-0">
+          <button onClick={onLogout} title="Logout" aria-label="Logout" className={`flex items-center rounded-xl text-base-content/60 hover:bg-error/10 hover:text-error ${isSidebarOpen ? 'w-full px-4 py-3 max-sm:px-0 max-sm:justify-center' : 'w-12 h-12 justify-center mx-auto'}`}>
+            <LogOut className="w-5 h-5 shrink-0" />
+            {isSidebarOpen && <span className="ml-3 font-medium max-sm:hidden">Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 h-full flex flex-col min-w-0 overflow-hidden">
+        <header className="shrink-0 h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-4 sm:px-6 lg:px-10">
+          <h1 className="text-base sm:text-xl font-semibold text-base-content tracking-tight">{navItems.find(item => item.id === activeTab)?.label}</h1>
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm text-base-content/60">Welcome back,</p>
-              <p className="text-base-content font-semibold">{userName}</p>
+              <p className="text-xs text-base-content/50 font-medium uppercase tracking-wider">Welcome back</p>
+              <p className="text-sm font-bold text-base-content">{userName}</p>
             </div>
 
             {/* Theme Controller Button */}
@@ -99,23 +134,22 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             </label>
 
             <NotificationBell />
-            <button onClick={onLogout} className="flex items-center gap-2 px-4 py-2 text-base-content/70 hover:bg-base-200 rounded-lg">
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
+            <div className="w-10 h-10 bg-linear-to-br from-primary to-secondary rounded-full hidden sm:flex items-center justify-center text-primary-content font-bold shadow-md border-2 border-base-100">
+              {userName.charAt(0).toUpperCase()}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto px-6 py-8">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-10 scroll-smooth">
+          <div className="max-w-6xl mx-auto pb-8">
 
         {/* Analytics KPI Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {activeTab !== 'create-job' && activeTab !== 'candidates' && <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
           <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-lg text-primary"><Briefcase className="w-6 h-6" /></div>
             <div>
               <p className="text-sm text-base-content/60 font-medium">Total Jobs</p>
-              <p className="text-2xl font-bold text-base-content">{analytics.total_jobs}</p>
+              <p className="text-2xl font-bold text-base-content">{jobs.length}</p>
             </div>
           </div>
           <div className="bg-base-100 p-6 rounded-xl shadow-sm border border-base-300 flex items-center gap-4">
@@ -141,22 +175,7 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="bg-base-100 rounded-xl shadow-sm mb-8 p-2 border border-base-300">
-          <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setActiveTab('posted-jobs')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${activeTab === 'posted-jobs' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
-              <Briefcase className="w-4 h-4" /> <span className="hidden sm:inline">My Jobs</span>
-            </button>
-            <button onClick={() => setActiveTab('create-job')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${activeTab === 'create-job' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
-              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Post New Job</span>
-            </button>
-            <button onClick={() => setActiveTab('analytics')} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium ${activeTab === 'analytics' ? 'bg-linear-to-r from-primary to-secondary text-primary-content shadow-md' : 'text-base-content/70 hover:bg-base-200'}`}>
-              <BarChart3 className="w-4 h-4" /> <span className="hidden sm:inline">Analytics</span>
-            </button>
-          </div>
-        </div>
+        </div>}
 
         {/* Content Area */}
         <div>
@@ -168,11 +187,14 @@ export function RecruiterDashboard({ userName, userId, onLogout }: RecruiterDash
             <>
               {activeTab === 'posted-jobs' && <PostedJobs jobs={jobs} onDeleteJob={handleDeleteJob} />}
               {activeTab === 'create-job' && <CreateJobPost onCreateJob={handleCreateJob} recruiterName={userName} />}
+              {activeTab === 'candidates' && <RecruiterCandidates jobs={jobs} />}
               {activeTab === 'analytics' && <RecruiterAnalyticsCharts jobs={jobs} skillDemand={analytics.skill_demand} matchScoreDistribution={analytics.match_score_distribution} />}
             </>
           )}
         </div>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -103,6 +103,18 @@ def test_get_skills_forbidden_for_other_jobseeker(as_jobseeker, as_recruiter, re
     assert response.status_code == 403
 
 
+def test_get_profile_invalid_user_id_returns_400(as_jobseeker):
+    response = as_jobseeker.get("/api/profile/info/not-a-uuid")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid user_id format"
+
+
+def test_get_resume_history_invalid_user_id_returns_400(as_jobseeker):
+    response = as_jobseeker.get("/api/profile/resume/history/not-a-uuid")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid user_id format"
+
+
 # ============================================================
 # Dashboard
 # ============================================================

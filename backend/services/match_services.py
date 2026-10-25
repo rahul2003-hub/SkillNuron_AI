@@ -3,16 +3,19 @@ from models.user import User, UserSkill, UserProfile, ResumeAnalysis
 from models.job import JobPosting
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import Counter
+from functools import lru_cache
 from uuid import UUID
 from services.ai_service import ai_candidate_match 
 
-_AI_MATCH_CACHE = {}
+
+@lru_cache(maxsize=512)
+def _cached_ai_match(job_skills: tuple[str, ...], candidate_skills: tuple[str, ...]) -> dict:
+    return ai_candidate_match(list(job_skills), list(candidate_skills))
+
 
 def get_cached_ai_match(job_skills: list, candidate_skills: list) -> dict:
     key = (tuple(sorted(job_skills or [])), tuple(sorted(candidate_skills or [])))
-    if key not in _AI_MATCH_CACHE:
-        _AI_MATCH_CACHE[key] = ai_candidate_match(job_skills, candidate_skills)
-    return _AI_MATCH_CACHE[key]
+    return _cached_ai_match(*key)
 
 
 def calculate_match_score(job_skills, candidate_skills):

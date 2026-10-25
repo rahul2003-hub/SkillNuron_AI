@@ -78,7 +78,14 @@ async def get_profile(
     current_user: User = Depends(get_current_user)
 ):
     """Get full profile info for a user"""
-    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
+    if not user_id or user_id == "me":
+        target_uuid = current_user.id
+    else:
+        try:
+            target_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid user_id format")
+
     if target_uuid != current_user.id and current_user.user_type != "recruiter":
         raise HTTPException(status_code=403, detail="Access denied: cannot view another user's profile")
 
@@ -453,7 +460,14 @@ async def get_resume_history(
     current_user: User = Depends(get_current_user)
 ):
     """Get all past resume analyses for a user"""
-    target_uuid = current_user.id if (not user_id or user_id == "me") else uuid.UUID(user_id)
+    if not user_id or user_id == "me":
+        target_uuid = current_user.id
+    else:
+        try:
+            target_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid user_id format")
+
     if target_uuid != current_user.id and current_user.user_type != "recruiter":
         raise HTTPException(status_code=403, detail="Access denied: cannot view another user's resume history")
 

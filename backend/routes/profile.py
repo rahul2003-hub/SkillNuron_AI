@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from database import get_db
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
@@ -43,6 +43,7 @@ class UpdateProfileRequest(BaseModel):
     education_status: str = ""
     graduation_year: str = ""
     current_status: str = ""
+    experience_years: int = Field(default=0, ge=0, le=60)
     target_roles: list[str] = []
     primary_role: str = ""
     location: str = ""
@@ -111,6 +112,7 @@ async def get_profile(
             "education_status": profile.education_status if profile else "",
             "graduation_year": profile.graduation_year if profile else "",
             "current_status": profile.current_status if profile else "",
+            "experience_years": profile.experience_years if profile else 0,
             "target_roles": profile.target_roles if profile else [],
             "primary_role": profile.primary_role if profile else "",
             "location": profile.location if profile else "",
@@ -137,6 +139,7 @@ async def update_profile(
         profile.education_status = request.education_status
         profile.graduation_year = request.graduation_year
         profile.current_status = request.current_status
+        profile.experience_years = request.experience_years
         profile.target_roles = request.target_roles
         profile.primary_role = request.primary_role
         profile.location = request.location
@@ -151,6 +154,7 @@ async def update_profile(
             education_status=request.education_status,
             graduation_year=request.graduation_year,
             current_status=request.current_status,
+            experience_years=request.experience_years,
             target_roles=request.target_roles,
             primary_role=request.primary_role,
             location=request.location,

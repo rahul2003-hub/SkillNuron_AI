@@ -273,9 +273,16 @@ export async function getRecruiterAnalytics() {
 }
 
 // --- TALENT POOL & MATCHING ---
-export async function getCandidateMatches(jobId: string) {
+export async function getCandidateMatches(
+  jobId: string,
+  filters: { location?: string; minExperience?: number } = {},
+) {
   const headers = await getHeaders();
-  const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches`, { headers });
+  const params = new URLSearchParams();
+  if (filters.location?.trim()) params.set("location", filters.location.trim());
+  if (filters.minExperience) params.set("min_experience", String(filters.minExperience));
+  const query = params.toString();
+  const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches${query ? `?${query}` : ""}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch candidate matches");
   return response.json();
 }

@@ -1,3 +1,10 @@
+from types import SimpleNamespace
+
+import pytest
+from pydantic import ValidationError
+
+from routes.profile import UpdateProfileRequest
+from routes import recruiter
 from services import match_services
 
 
@@ -20,3 +27,51 @@ def test_ai_match_cache_is_bounded_and_uses_lru(monkeypatch):
     match_services.get_cached_ai_match(["job-0"], ["candidate"])
     assert len(calls) == 514
     match_services._cached_ai_match.cache_clear()
+
+
+def test_candidate_location_filter():
+    profile = SimpleNamespace(location="Pune, Maharashtra", experience_years=2)
+
+    assert match_services.candidate_matches_filters(profile, location="pune")
+    assert not match_services.candidate_matches_filters(profile, location="Mumbai")
+
+
+def test_candidate_minimum_experience_filter():
+    profile = SimpleNamespace(location="Pune", experience_years=4)
+
+    assert match_services.candidate_matches_filters(profile, min_experience=4)
+    assert not match_services.candidate_matches_filters(profile, min_experience=5)
+
+
+def test_candidate_location_and_experience_filters_together():
+    profile = SimpleNamespace(location="Navi Mumbai", experience_years=6)
+
+    assert match_services.candidate_matches_filters(profile, "mumbai", 5)
+    assert not match_services.candidate_matches_filters(profile, "Pune", 5)
+    assert not match_services.candidate_matches_filters(profile, "Mumbai", 7)
+
+
+def test_existing_candidate_without_profile_matches_default_filters():
+    assert match_services.candidate_matches_filters(None)
+    assert not match_services.candidate_matches_filters(None, min_experience=1)
+
+
+def test_matching_route_forwards_both_filters(monkeypatch):
+    received = {}
+
+    def fake_match(db, job_id, location, min_experience):
+        received.update(job_id=job_id, location=location, min_experience=min_experience)
+        return []
+
+    monkeypatch.setattr(recruiter, "match_candidates_for_job", fake_match)
+    recruiter.get_candidate_matches("job-id", "Pune", 3, object(), object())
+
+    assert received == {"job_id": "job-id", "location": "Pune", "min_experience": 3}
+
+
+def test_profile_experience_years_validation():
+    assert UpdateProfileRequest(experience_years=7).experience_years == 7
+    with pytest.raises(ValidationError):
+        UpdateProfileRequest(experience_years=-1)
+    with pytest.raises(ValidationError):
+        UpdateProfileRequest(experience_years=61)

@@ -120,7 +120,25 @@ def evaluate_location_fit(job_location: str | None, job_type: str | None, candid
     }
 
 
-def match_candidates_for_job(db: Session, job_id: str):
+def candidate_matches_filters(
+    profile: UserProfile | None,
+    location: str | None = None,
+    min_experience: int = 0,
+) -> bool:
+    candidate_location = (profile.location if profile else "") or ""
+    experience_years = (profile.experience_years if profile else 0) or 0
+    return (
+        (not location or location.strip().lower() in candidate_location.lower())
+        and experience_years >= min_experience
+    )
+
+
+def match_candidates_for_job(
+    db: Session,
+    job_id: str,
+    location: str | None = None,
+    min_experience: int = 0,
+):
     # 1. Safety Check UUID
     try:
         valid_uuid = UUID(job_id)
@@ -139,9 +157,12 @@ def match_candidates_for_job(db: Session, job_id: str):
     initial_results = []
 
     for candidate in candidates:
+        profile = db.query(UserProfile).filter(UserProfile.user_id == candidate.id).first()
+        if not candidate_matches_filters(profile, location, min_experience):
+            continue
+
         skills = db.query(UserSkill).filter(UserSkill.user_id == candidate.id).all()
         candidate_skills = [s.skill_name for s in skills]
-        profile = db.query(UserProfile).filter(UserProfile.user_id == candidate.id).first()
         cand_loc = profile.location if profile else None
 
         loc_eval = evaluate_location_fit(job.location, job.type, cand_loc)
@@ -194,6 +215,7 @@ def match_candidates_for_job(db: Session, job_id: str):
             "name": candidate.name,
             "email": candidate.email,
             "location": profile.location if profile else None,
+            "experience_years": profile.experience_years if profile else 0,
             "location_fit": loc_eval,
             "resume_score": resume.overall_score if resume else None,
             "skill_match_score": skill_score,

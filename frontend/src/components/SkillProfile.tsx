@@ -58,6 +58,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
     education_status: 'Completed',
     graduation_year: String(CURRENT_YEAR),
     current_status: 'Fresher',
+    experience_years: 0,
     target_roles: [] as string[],
     primary_role: '',
     location: '',
@@ -353,6 +354,23 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail }:
                       </select>
                     ) : (
                       <input value={profileInfo.current_status || '—'} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
+                    )}
+                  </div>
+
+                  {/* Professional Experience */}
+                  <div>
+                    <label className="block text-xs text-base-content/50 mb-1">Professional Experience (years)</label>
+                    {isEditingInfo ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        value={profileInfo.experience_years}
+                        onChange={e => setProfileInfo({ ...profileInfo, experience_years: Number(e.target.value) })}
+                        className="w-full px-4 py-2.5 border border-base-300 rounded-lg focus:outline-none focus:border-primary text-sm bg-base-100"
+                      />
+                    ) : (
+                      <input value={`${profileInfo.experience_years} years`} readOnly className="w-full px-4 py-2.5 border border-base-300 rounded-lg bg-base-200 text-base-content/70 text-sm" />
                     )}
                   </div>
 

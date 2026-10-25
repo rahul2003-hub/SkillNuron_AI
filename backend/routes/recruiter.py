@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from services.match_services import match_candidates_for_job
@@ -12,10 +12,12 @@ router = APIRouter(prefix="/recruiter", tags=["Recruiter"])
 @router.get("/job/{job_id}/matches")
 def get_candidate_matches(
     job_id: str,
+    location: str | None = Query(default=None),
+    min_experience: int = Query(default=0, ge=0, le=60),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
-    matches = match_candidates_for_job(db, job_id)
+    matches = match_candidates_for_job(db, job_id, location, min_experience)
 
     return {
         "job_id": job_id,

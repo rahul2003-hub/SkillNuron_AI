@@ -226,8 +226,11 @@ SkillNuron_AI/
 - `POST /applications/apply/{job_id}` applies to a posted job.
 - `GET /applications/my` returns the current user's applications.
 - `GET /applications/job/{job_id}` and `PATCH /applications/{application_id}/status` support recruiter application management.
-- Statuses are `applied`, `shortlisted`, `rejected`, and `hired`; updating one creates a candidate notification.
+- A new job application creates a recruiter notification and, when SMTP is configured, a new-application email to the recruiter who posted the job.
+- Statuses are `applied`, `shortlisted`, `rejected`, and `hired`; changing one creates a candidate notification and, when SMTP is configured, a status-update email. Re-saving the current status does not send a duplicate communication.
 - `GET /applications/notifications` and `POST /applications/notifications/mark-read` manage in-app notifications.
+
+To enable email delivery, add `SMTP_HOST`, `SMTP_PORT` (defaults to `587`), `SMTP_FROM`, and optionally `SMTP_USERNAME`, `SMTP_PASSWORD`, and `SMTP_USE_TLS` (defaults to `true`) to `backend/.env`.
 
 ### Recruiter, catalog, and resume enhancements
 

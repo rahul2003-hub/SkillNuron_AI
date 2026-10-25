@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Brain, ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { UserType } from '../App';
 import { supabase } from '../services/supabase';
 import { syncUserWithBackend } from '../services/api';
@@ -8,9 +8,10 @@ interface LoginPageProps {
   onLogin: (type: UserType, name: string, email: string, id: string) => void;
   onBackToLanding: () => void;
   initialUserType: UserType;
+  emailVerified?: boolean;
 }
 
-export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPageProps) {
+export function LoginPage({ onLogin, onBackToLanding, initialUserType, emailVerified = false }: LoginPageProps) {
   const [userType, setUserType] = useState<UserType>(initialUserType || 'jobseeker');
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -70,6 +71,9 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
           email: formData.email,
           password: formData.password,
           options: {
+            // Routes confirmation links to the dedicated success screen.
+            // This URL must be included in Supabase Auth's redirect allow list.
+            emailRedirectTo: `${window.location.origin}/?email-verified=true`,
             data: {
               name: formData.name,
               user_type: userType,
@@ -123,6 +127,13 @@ export function LoginPage({ onLogin, onBackToLanding, initialUserType }: LoginPa
             <Brain className="w-8 h-8 text-primary" />
             <span className="text-2xl text-primary">SkillNuron AI</span>
           </div>
+
+          {emailVerified && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-success/30 bg-success/10 p-3 text-sm text-success">
+              <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span>Email verified successfully. Please log in to continue.</span>
+            </div>
+          )}
 
           {/* User Type Toggle */}
           <div className="flex gap-2 mb-6 p-1 bg-base-200 rounded-xl">

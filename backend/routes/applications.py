@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -12,6 +12,10 @@ from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from deps import get_current_user, require_recruiter
 from services.storage_service import SUPABASE_SERVICE_KEY, upload_resume, get_resume_signed_url
 from services.match_services import evaluate_location_fit, calculate_match_score, get_cached_ai_match
+from services.candidate_communications import (
+    send_application_status_email,
+    send_recruiter_new_application_email,
+)
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
@@ -21,6 +25,7 @@ class StatusUpdateRequest(BaseModel):
 @router.post("/apply/{job_id}")
 async def apply_for_job(
     job_id: str,
+    background_tasks: BackgroundTasks,
     resume: UploadFile | None = File(None),
     cover_letter: str = Form(""),
     expected_salary: str = Form(""),
@@ -81,14 +86,25 @@ async def apply_for_job(
         resume_filename=resume_filename,
     )
 
+    recruiter = None
     db.add(application)
     if job.posted_by_id:
+        recruiter = db.query(User).filter(User.id == job.posted_by_id).first()
         db.add(Notification(
             user_id=job.posted_by_id,
             message=f"New application from {current_user.name} for '{job.title}'."
         ))
     db.commit()
     db.refresh(application)
+
+    if recruiter and recruiter.email:
+        background_tasks.add_task(
+            send_recruiter_new_application_email,
+            recruiter_email=recruiter.email,
+            recruiter_name=recruiter.name or "",
+            candidate_name=current_user.name or "",
+            job_title=job.title,
+        )
 
     return {
         "message": "Applied successfully",
@@ -194,6 +210,7 @@ async def get_application_resume(
 def update_application_status(
     application_id: str,
     req: StatusUpdateRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
@@ -216,6 +233,16 @@ def update_application_status(
     if not job or job.posted_by_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only update applications for your own job postings")
 
+    previous_status = application.status
+    if previous_status == req.status:
+        return {
+            "success": True,
+            "application_id": str(application.id),
+            "status": application.status,
+            "changed": False,
+        }
+
+    candidate = db.query(User).filter(User.id == application.candidate_id).first()
     application.status = req.status
     application.updated_at = datetime.now(timezone.utc)
 
@@ -228,7 +255,23 @@ def update_application_status(
     db.commit()
     db.refresh(application)
 
-    return {"success": True, "application_id": str(application.id), "status": application.status}
+    # A mail failure must never roll back a successfully persisted status change.
+    if candidate and candidate.email:
+        background_tasks.add_task(
+            send_application_status_email,
+            candidate_email=candidate.email,
+            candidate_name=candidate.name or "",
+            job_title=job.title,
+            status=req.status,
+        )
+
+    return {
+        "success": True,
+        "application_id": str(application.id),
+        "status": application.status,
+        "previous_status": previous_status,
+        "changed": True,
+    }
 
 
 @router.delete("/{application_id}")

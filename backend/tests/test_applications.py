@@ -67,6 +67,26 @@ def test_application_details_and_recruiter_notification(as_jobseeker, as_recruit
     assert any("New application" in item["message"] for item in notifications)
 
 
+def test_application_sends_recruiter_email(as_jobseeker, as_recruiter, monkeypatch):
+    job = _create_job(as_recruiter)
+    sent = []
+
+    def fake_send_email(**kwargs):
+        sent.append(kwargs)
+        return True
+
+    monkeypatch.setattr("routes.applications.send_recruiter_new_application_email", fake_send_email)
+    response = as_jobseeker.post(f"/applications/apply/{job['id']}")
+
+    assert response.status_code == 200
+    assert sent == [{
+        "recruiter_email": "pytest_recruiter@skillnuron.test",
+        "recruiter_name": "Pytest Recruiter",
+        "candidate_name": "Pytest Jobseeker",
+        "job_title": job["title"],
+    }]
+
+
 def test_apply_duplicate_rejected(as_jobseeker, as_recruiter):
     job = _create_job(as_recruiter)
 
@@ -106,6 +126,8 @@ def test_status_transition_valid(as_jobseeker, as_recruiter):
     data = response.json()
     assert data["success"] is True
     assert data["status"] == "shortlisted"
+    assert data["previous_status"] == "applied"
+    assert data["changed"] is True
 
 
 def test_status_transition_invalid_value_rejected(as_jobseeker, as_recruiter):
@@ -207,6 +229,32 @@ def test_notification_created_on_status_change(as_jobseeker, as_recruiter):
     assert data["success"] is True
     assert data["unread_count"] >= 1
     assert any("shortlisted" in n["message"] for n in data["notifications"])
+
+
+def test_status_change_sends_email_and_skips_duplicate_update(as_jobseeker, as_recruiter, monkeypatch):
+    job = _create_job(as_recruiter)
+    application_id = as_jobseeker.post(f"/applications/apply/{job['id']}").json()["application_id"]
+    sent = []
+
+    def fake_send_email(**kwargs):
+        sent.append(kwargs)
+        return True
+
+    monkeypatch.setattr("routes.applications.send_application_status_email", fake_send_email)
+
+    first = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "shortlisted"})
+    assert first.status_code == 200
+    assert sent == [{
+        "candidate_email": "pytest_jobseeker@skillnuron.test",
+        "candidate_name": "Pytest Jobseeker",
+        "job_title": job["title"],
+        "status": "shortlisted",
+    }]
+
+    duplicate = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "shortlisted"})
+    assert duplicate.status_code == 200
+    assert duplicate.json()["changed"] is False
+    assert len(sent) == 1
 
 
 def test_mark_notifications_read(as_jobseeker, as_recruiter):

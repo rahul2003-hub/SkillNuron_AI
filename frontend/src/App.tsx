@@ -46,7 +46,21 @@ export interface CareerPath {
 }
 
 function App() {
-  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'dashboard'>('landing');
+  // Supabase appends `code` (PKCE) or an access token (implicit flow) after a
+  // confirmation link. The explicit flag is added for all newly sent emails.
+  const isEmailVerificationRedirect = () => {
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    return query.get('email-verified') === 'true'
+      || query.has('code')
+      || (hash.get('type') === 'signup' && hash.has('access_token'));
+  };
+  const verificationRedirect = isEmailVerificationRedirect();
+
+  const [currentView, setCurrentView] = useState<'landing' | 'login' | 'dashboard'>(
+    verificationRedirect ? 'login' : 'landing'
+  );
+  const [emailVerified] = useState(verificationRedirect);
   const [userType, setUserType] = useState<UserType>(null);
   const [initialLoginType, setInitialLoginType] = useState<UserType>(null);
   const [userName, setUserName] = useState<string>('');
@@ -54,6 +68,13 @@ function App() {
   const [userId, setUserId] = useState<string>('');
 
   useEffect(() => {
+    if (verificationRedirect) {
+      // Confirmation links can create a temporary Supabase session. Clear it
+      // so the user intentionally continues through the login screen.
+      supabase.auth.signOut();
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const metadata = session.user.user_metadata || {};
@@ -130,6 +151,7 @@ function App() {
         onLogin={handleLogin}
         onBackToLanding={handleBackToLanding}
         initialUserType={initialLoginType}
+        emailVerified={emailVerified}
       />
     );
   }

@@ -296,3 +296,27 @@ def test_stage_transition_must_follow_pipeline(as_jobseeker, as_recruiter):
     response = as_recruiter.patch(f"/applications/{application_id}/status", json={"status": "offer"})
     assert response.status_code == 400
     assert "Cannot go applied" in response.json()["detail"]
+
+
+def test_invited_candidate_application_has_invited_source(as_jobseeker, as_recruiter):
+    job = _create_job(as_recruiter)
+    candidate_id = as_jobseeker.headers["X-Test-User-Id"]
+    invite = as_recruiter.post(f"/recruiter/job/{job['id']}/invite/{candidate_id}")
+    assert invite.status_code == 200, invite.text
+    assert invite.json()["invited"] is True
+
+    application = as_jobseeker.post(f"/applications/apply/{job['id']}")
+    assert application.status_code == 200
+    applicants = as_recruiter.get(f"/applications/job/{job['id']}").json()["applications"]
+    assert applicants[0]["source"] == "invited"
+
+
+def test_job_post_schedules_matching_alerts(as_recruiter, monkeypatch):
+    scheduled_job_ids = []
+
+    def fake_alert_job(job_id):
+        scheduled_job_ids.append(str(job_id))
+
+    monkeypatch.setattr("routes.jobs.alert_candidates_for_new_job", fake_alert_job)
+    job = _create_job(as_recruiter)
+    assert scheduled_job_ids == [job["id"]]

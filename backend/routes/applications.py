@@ -6,7 +6,7 @@ from database import get_db
 import uuid
 from datetime import datetime, timezone
 
-from models.application import JobApplication, Notification, ApplicationEvent, ALLOWED_STATUSES, move_stage
+from models.application import JobApplication, Notification, ApplicationEvent, Invitation, ALLOWED_STATUSES, move_stage
 from models.job import JobPosting
 from models.user import User, UserProfile, UserSkill, ResumeAnalysis
 from deps import get_current_user, require_recruiter
@@ -77,6 +77,11 @@ async def apply_for_job(
             )
             raise HTTPException(status_code=502, detail=detail) from exc
 
+    invitation = db.query(Invitation).filter(
+        Invitation.job_id == valid_job_id,
+        Invitation.candidate_id == valid_candidate_id,
+        Invitation.accepted_at.is_(None),
+    ).first()
     application = JobApplication(
         job_id=valid_job_id,
         candidate_id=valid_candidate_id,
@@ -85,10 +90,13 @@ async def apply_for_job(
         expected_salary=expected_salary.strip(),
         resume_path=resume_path,
         resume_filename=resume_filename,
+        source="invited" if invitation else "direct",
     )
 
     recruiter = None
     db.add(application)
+    if invitation:
+        invitation.accepted_at = datetime.now(timezone.utc)
     if job.posted_by_id:
         recruiter = db.query(User).filter(User.id == job.posted_by_id).first()
         db.add(Notification(
@@ -165,6 +173,7 @@ def get_job_applications(
                 "name": user.name,
                 "email": user.email,
                 "status": app.status,
+                "source": app.source,
                 "cover_letter": app.cover_letter or "",
                 "expected_salary": app.expected_salary or "",
                 "resume_filename": app.resume_filename,
@@ -348,6 +357,7 @@ def get_my_applications(
             "job_title": job.title if job else "Unknown",
             "company": job.company if job else "Unknown",
             "status": app.status,
+            "source": app.source,
             "applied_at": str(app.applied_at) if app.applied_at else ""
         })
 

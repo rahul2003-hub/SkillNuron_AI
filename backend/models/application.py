@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import Column, ForeignKey, Float, String, DateTime, Text
+from sqlalchemy import Column, ForeignKey, Float, String, DateTime, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -32,6 +32,7 @@ class JobApplication(Base):
     resume_filename = Column(String, nullable=True)
 
     status = Column(String, default="applied")
+    source = Column(String, default="direct", nullable=False)
     applied_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -54,6 +55,19 @@ class ApplicationEvent(Base):
 
     application = relationship("JobApplication", back_populates="events")
     by_user = relationship("User")
+
+
+class Invitation(Base):
+    """A recruiter's invitation for a sourced candidate to apply to a job."""
+    __tablename__ = "invitations"
+    __table_args__ = (UniqueConstraint("job_id", "candidate_id", name="uq_invitation_job_candidate"),)
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("job_postings.id", ondelete="CASCADE"), nullable=False, index=True)
+    candidate_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    invited_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    accepted_at = Column(DateTime, nullable=True)
 
 
 def move_stage(db, app: JobApplication, to_stage: str, user, note: str = "") -> ApplicationEvent:

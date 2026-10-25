@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Header, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
 from models.job import JobPosting
 from models.user import User, UserSkill, UserProfile
-from models.application import JobApplication
+from models.application import Invitation, JobApplication
 from deps import get_current_user, require_recruiter
 from services.ai_service import match_jobs_to_candidate, polish_job_description, recommend_skills_for_role
 import uuid
@@ -15,6 +15,7 @@ import secrets
 from datetime import date
 from models.job_alert import JobAlertPreference
 from services.job_alerts import get_adzuna_matches, send_daily_job_alert_email
+from services.internal_job_alerts import alert_candidates_for_new_job
 
 router = APIRouter(prefix="/api/jobs", tags=["Jobs"])
 
@@ -149,6 +150,7 @@ async def get_top_recruiters(
 @router.post("/")
 async def create_job(
     job: JobPostingRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_recruiter)
 ):
@@ -172,6 +174,7 @@ async def create_job(
     db.add(new_job)
     db.commit()
     db.refresh(new_job)
+    background_tasks.add_task(alert_candidates_for_new_job, new_job.id)
 
     return {
         "success": True,
@@ -398,6 +401,10 @@ async def get_job_recommendations(
         str(job_id) for (job_id,) in db.query(JobApplication.job_id)
         .filter(JobApplication.candidate_id == current_user.id).all()
     }
+    invited_ids = {
+        str(job_id) for (job_id,) in db.query(Invitation.job_id)
+        .filter(Invitation.candidate_id == current_user.id, Invitation.accepted_at.is_(None)).all()
+    }
     internal_jobs = []
     if source != "external":
         internal_jobs = [{
@@ -408,6 +415,7 @@ async def get_job_recommendations(
             "postedLabel": str(job.created_at.date()) if job.created_at else "",
             "source": "internal", "sourceLabel": "SkillNuron", "url": None,
             "applied": str(job.id) in applied_ids,
+            "invited": str(job.id) in invited_ids,
         } for job in db.query(JobPosting).order_by(JobPosting.created_at.desc()).all()]
 
     external_jobs = []

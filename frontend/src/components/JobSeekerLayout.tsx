@@ -25,7 +25,8 @@ interface JobSeekerLayoutProps {
 const defaultSkills: Skill[] = [];
  
 export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSeekerLayoutProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const invitationJobId = new URLSearchParams(window.location.search).get('invite_job') || undefined;
+  const [activeTab, setActiveTab] = useState<Tab>(invitationJobId ? 'job-recommendations' : 'home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [skills, setSkills] = useState<Skill[]>(defaultSkills);
   const [primaryRole, setPrimaryRole] = useState<string>('');
@@ -51,6 +52,10 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
       }).catch(console.error);
     }
   }, [activeTab, userId]);
+
+  useEffect(() => {
+    if (invitationJobId) setActiveTab('job-recommendations');
+  }, [invitationJobId]);
  
   const navItems = [
     { id: 'home', icon: LayoutDashboard, label: 'Home' },
@@ -180,7 +185,7 @@ export function JobSeekerLayout({ userName, userId, userEmail, onLogout }: JobSe
             {activeTab === 'career-path' && (
               <CareerPathView skills={skills} savedRole={primaryRole} />
             )}
-            {activeTab === 'job-recommendations' && <JobRecommendations />}
+            {activeTab === 'job-recommendations' && <JobRecommendations initialInvitationJobId={invitationJobId} />}
             {activeTab === 'assessment' && <PsychometricTest />}
             {activeTab === 'my-applications' && <MyApplications />}
           </div>

@@ -3,7 +3,7 @@ import { MapPin, Briefcase, TrendingUp, ExternalLink, Search, Loader2, RefreshCw
 import { applyToJob, getJobRecommendations } from '../services/api';
 import type { RecommendedJob } from '../services/api';
 
-export function JobRecommendations() {
+export function JobRecommendations({ initialInvitationJobId }: { initialInvitationJobId?: string }) {
   const [jobs, setJobs] = useState<RecommendedJob[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -81,6 +81,20 @@ export function JobRecommendations() {
     }
   };
 
+  const handleInvitationApply = async (job: RecommendedJob) => {
+    setApplyingJobId(job.id);
+    try {
+      const result = await applyToJob(job.id);
+      setJobs(previous => previous.map(item => item.id === job.id ? { ...item, applied: true, invited: false } : item));
+      setSelectedJob(null);
+      setSuccessMessage(result.message || 'Application submitted');
+    } catch (err: any) {
+      setError(err.message || 'Could not submit your application.');
+    } finally {
+      setApplyingJobId(null);
+    }
+  };
+
   useEffect(() => {
     setPage(1);
   }, [searchText, technology, location, sourceFilter, typeFilter, companyFilter, statusFilter, matchProfile]);
@@ -89,6 +103,14 @@ export function JobRecommendations() {
     const timer = window.setTimeout(loadJobs, 300);
     return () => window.clearTimeout(timer);
   }, [searchText, technology, location, sourceFilter, typeFilter, companyFilter, statusFilter, matchProfile, page]);
+
+  useEffect(() => {
+    if (!initialInvitationJobId || isLoading) return;
+    const invitedJob = jobs.find(job => job.id === initialInvitationJobId && job.invited && !job.applied);
+    if (!invitedJob) return;
+    setSelectedJob(invitedJob);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }, [initialInvitationJobId, isLoading, jobs]);
 
   return (
     <div className="space-y-6">
@@ -166,7 +188,7 @@ export function JobRecommendations() {
                   <div key={`${job.source}-${job.id}`} onClick={() => setSelectedJob(job)} className="bg-base-100 rounded-xl p-5 shadow-sm border border-base-300 hover:shadow-md hover:border-primary/40 cursor-pointer">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0"><h3 className="text-base-content font-medium truncate">{job.title}</h3><p className="text-primary text-sm">{job.company}</p></div>
-                      <span className={`badge badge-sm shrink-0 ml-2 ${isInternal ? 'badge-primary' : 'badge-success'}`}>{job.sourceLabel}</span>
+                      <span className={`badge badge-sm shrink-0 ml-2 ${isInternal ? 'badge-primary' : 'badge-success'}`}>{job.invited ? 'Invited' : job.sourceLabel}</span>
                     </div>
                     <div className="space-y-1.5 mb-3">
                       <div className="flex items-center gap-2 text-sm text-base-content/70"><MapPin className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{job.location || 'Remote'}</span></div>
@@ -245,7 +267,7 @@ export function JobRecommendations() {
               <div className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-base-content/50" /><div><p className="text-xs text-base-content/60">Posted</p><p className="text-sm text-base-content">{selectedJob.postedLabel}</p></div></div>
             </div>
             <div className="mb-6"><h3 className="text-base-content font-medium mb-2">Job Description</h3><p className="text-sm text-base-content/70 leading-relaxed">{selectedJob.description}</p></div>
-            <div className="modal-action mt-0"><button onClick={() => setSelectedJob(null)} className="btn btn-outline flex-1">Close</button>{selectedJob.source === 'internal' ? <button disabled={selectedJob.applied} onClick={() => { setApplicationError(''); setApplicationJob(selectedJob); setSelectedJob(null); }} className="btn btn-primary flex-1">{selectedJob.applied ? 'Already Applied' : 'Apply Now'} <Send className="w-4 h-4" /></button> : <a href={selectedJob.url} target="_blank" rel="noopener noreferrer" className="btn btn-primary flex-1">Apply on Adzuna <ExternalLink className="w-4 h-4" /></a>}</div>
+            <div className="modal-action mt-0"><button onClick={() => setSelectedJob(null)} className="btn btn-outline flex-1">Close</button>{selectedJob.source === 'internal' ? <button disabled={selectedJob.applied || applyingJobId === selectedJob.id} onClick={() => selectedJob.invited ? handleInvitationApply(selectedJob) : (setApplicationError(''), setApplicationJob(selectedJob), setSelectedJob(null))} className="btn btn-primary flex-1">{applyingJobId === selectedJob.id ? <Loader2 className="w-4 h-4 animate-spin" /> : selectedJob.applied ? 'Already Applied' : selectedJob.invited ? 'Apply invitation' : 'Apply Now'} <Send className="w-4 h-4" /></button> : <a href={selectedJob.url} target="_blank" rel="noopener noreferrer" className="btn btn-primary flex-1">Apply on Adzuna <ExternalLink className="w-4 h-4" /></a>}</div>
           </div>
         </div>
       )}

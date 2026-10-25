@@ -11,7 +11,7 @@ from main import app
 from database import SessionLocal
 from models.user import User, UserSkill, UserProfile, ResumeAnalysis
 from models.job import JobPosting
-from models.application import JobApplication, Notification
+from models.application import JobApplication, Invitation, Notification
 from deps import get_current_user, require_recruiter
  
 TEST_JOBSEEKER_EMAIL = "pytest_jobseeker@skillnuron.test"
@@ -51,6 +51,9 @@ def _wipe_fixture_data(db):
  
     # Children referencing users or jobs — delete first.
     db.query(Notification).filter(Notification.user_id.in_(user_ids)).delete(synchronize_session=False)
+    db.query(Invitation).filter(Invitation.candidate_id.in_(user_ids)).delete(synchronize_session=False)
+    if job_ids:
+        db.query(Invitation).filter(Invitation.job_id.in_(job_ids)).delete(synchronize_session=False)
     db.query(JobApplication).filter(JobApplication.candidate_id.in_(user_ids)).delete(synchronize_session=False)
     if job_ids:
         db.query(JobApplication).filter(JobApplication.job_id.in_(job_ids)).delete(synchronize_session=False)

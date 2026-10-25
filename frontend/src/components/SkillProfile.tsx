@@ -462,7 +462,7 @@ export function SkillProfile({ skills, setSkills, userId, userName, userEmail, o
 
               <div className="bg-base-100 rounded-xl shadow-sm p-6">
                 <h3 className="text-base-content font-medium mb-2">Daily job alerts</h3>
-                <p className="text-xs text-base-content/50 mb-4">Receive up to 10 matching Adzuna jobs each day, based on your roles, skills, and location.</p>
+                <p className="text-xs text-base-content/50 mb-4">Receive matching jobs from SkillNuron as they are posted, plus up to 10 Adzuna matches each day.</p>
                 {isEditingInfo ? (
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" className="toggle toggle-primary" checked={profileInfo.job_alerts_enabled} onChange={e => setProfileInfo({ ...profileInfo, job_alerts_enabled: e.target.checked })} />

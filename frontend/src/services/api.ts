@@ -135,6 +135,7 @@ export interface RecommendedJob {
   sourceLabel: string;
   url?: string;
   applied: boolean;
+  invited?: boolean;
 }
 
 export async function getJobRecommendations(filters: Record<string, string | number | boolean>) {
@@ -284,6 +285,19 @@ export async function getCandidateMatches(
   const query = params.toString();
   const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/matches${query ? `?${query}` : ""}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch candidate matches");
+  return response.json();
+}
+
+export async function inviteCandidateToJob(jobId: string, candidateId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/recruiter/job/${jobId}/invite/${candidateId}`, {
+    method: "POST",
+    headers,
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to invite candidate");
+  }
   return response.json();
 }
 

@@ -8,6 +8,10 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 MODEL = "qwen/qwen3.8-27b"
+# Groq's on-demand tier allows 1,000 output tokens per minute for this model.
+# Leave headroom for provider accounting tokens so a request is never rejected
+# before it starts with an OTPM 429.
+MAX_COMPLETION_TOKENS = 1000
 
 
 def clean_json_response(text: str) -> dict:
@@ -48,7 +52,7 @@ def _chat_json(prompt: str, max_tokens: int = 2000, temperature: float = 0.3) ->
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
-        max_tokens=max_tokens,
+        max_tokens=min(max_tokens, MAX_COMPLETION_TOKENS),
         response_format={"type": "json_object"},
         reasoning_effort="none",
     )

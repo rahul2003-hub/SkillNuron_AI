@@ -123,7 +123,12 @@ function App() {
   };
 
   const handleLogin = (type: UserType, name: string, email: string, id: string) => {
-    window.history.replaceState({}, document.title, window.location.pathname);
+    // Preserve an invitation deep link through authentication so the job can
+    // open immediately after the candidate signs in.
+    const query = new URLSearchParams(window.location.search);
+    query.delete('email-verified');
+    const queryString = query.toString();
+    window.history.replaceState({}, document.title, `${window.location.pathname}${queryString ? `?${queryString}` : ''}`);
     setUserType(type);
     setUserName(name);
     setUserEmail(email);

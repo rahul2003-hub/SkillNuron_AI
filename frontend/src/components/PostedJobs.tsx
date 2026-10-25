@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
   MapPin, Briefcase, IndianRupee, Trash2, Building, Users, X, 
-  Loader2, Sparkles, BrainCircuit, CheckCircle2, FileText, Eye 
+  Loader2, Sparkles, BrainCircuit, CheckCircle2, FileText, Eye, Send
 } from 'lucide-react';
 import { JobPosting } from "../App";
 import { toast } from 'sonner';
 import { 
-  getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, getApplicationHistory,
+  getJobApplications, updateApplicationStatus, deleteApplication, getCatalog, getApplicationHistory, inviteCandidateToJob,
   getApplicationResumeUrl, getCandidateMatches 
 } from '../services/api';
 
@@ -65,6 +65,8 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [histories, setHistories] = useState<Record<string, Array<{ id: string; from_stage: string; to_stage: string; note: string; created_at: string; by_user_name?: string | null }>>>({});
   const [loadingHistoryId, setLoadingHistoryId] = useState<string | null>(null);
+  const [invitingCandidateId, setInvitingCandidateId] = useState<string | null>(null);
+  const [invitedCandidateIds, setInvitedCandidateIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     getCatalog()
@@ -138,6 +140,19 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
       toast.error(err.message || 'Could not load pipeline history.');
     } finally {
       setLoadingHistoryId(null);
+    }
+  };
+
+  const handleInvite = async (jobId: string, candidateId: string) => {
+    setInvitingCandidateId(candidateId);
+    try {
+      const result = await inviteCandidateToJob(jobId, candidateId);
+      setInvitedCandidateIds(previous => new Set(previous).add(candidateId));
+      toast.success(result.invited ? 'Invitation sent' : 'Candidate has already been invited');
+    } catch (err: any) {
+      toast.error(err.message || 'Could not send invitation.');
+    } finally {
+      setInvitingCandidateId(null);
     }
   };
 
@@ -614,6 +629,15 @@ export function PostedJobs({ jobs, onDeleteJob }: PostedJobsProps) {
                                 )}
                               </div>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => handleInvite(applicantsModalJob.id, candidate.candidate_id)}
+                              disabled={invitingCandidateId === candidate.candidate_id || invitedCandidateIds.has(candidate.candidate_id)}
+                              className="btn btn-primary btn-sm mt-4 gap-2"
+                            >
+                              {invitingCandidateId === candidate.candidate_id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                              {invitedCandidateIds.has(candidate.candidate_id) ? 'Invited' : 'Invite to apply'}
+                            </button>
                           </div>
                         </div>
                       </div>

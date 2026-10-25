@@ -219,24 +219,6 @@ SkillNuron_AI/
 
 ---
 
-## Recent additions backend
-
-### Application tracking and notifications
-
-- `POST /applications/apply/{job_id}` applies to a posted job.
-- `GET /applications/my` returns the current user's applications.
-- `GET /applications/job/{job_id}` and `PATCH /applications/{application_id}/status` support recruiter application management.
-- A new job application creates a recruiter notification and, when SMTP is configured, a new-application email to the recruiter who posted the job.
-- Statuses are `applied`, `shortlisted`, `rejected`, and `hired`; changing one creates a candidate notification and, when SMTP is configured, a status-update email. Re-saving the current status does not send a duplicate communication.
-- `GET /applications/notifications` and `POST /applications/notifications/mark-read` manage in-app notifications.
-
-To enable email delivery, add `SMTP_HOST`, `SMTP_PORT` (defaults to `587`), `SMTP_FROM`, and optionally `SMTP_USERNAME`, `SMTP_PASSWORD`, and `SMTP_USE_TLS` (defaults to `true`) to `backend/.env`.
-
-Job seekers can opt in to one daily email containing up to 10 Adzuna matches. Configure `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and `JOB_ALERTS_CRON_SECRET`, then have your daily scheduler call `POST /api/jobs/job-alerts/daily-send` with the `X-Job-Alert-Secret` header.
-
-### Test daily job recommendations locally
-
-With the backend running on port 8000 and a job seeker opted in to daily alerts, trigger the delivery from a second PowerShell terminal:
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/api/jobs/job-alerts/daily-send" -Headers @{ "X-Job-Alert-Secret" = "<your JOB_ALERTS_CRON_SECRET>" }
@@ -255,14 +237,7 @@ The value in the header must exactly match `JOB_ALERTS_CRON_SECRET` in `backend/
 
 ---
 
-## Recent additions frontend
 
-- The job-seeker dashboard now includes a home overview, **My Applications** status tracking, and an in-app notification bell for recruiter status updates.
-- Recruiters now have analytics charts, AI job-description polishing, and job lists scoped to the authenticated recruiter.
-- The frontend uses backend-provided catalog values for shared selector data, including roles, cities, education fields, and skill buckets.
-- Resume analysis history is available alongside optional stored-PDF download links when backend storage is configured.
-
----
 
 # Running Tests in backend directory
 ```bash

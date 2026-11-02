@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from services.ai_service import analyze_psychometric
 from models.user import User
@@ -283,7 +284,7 @@ async def analyze_personality(
 
     try:
         # Pass BOTH required arguments exactly as your original code did
-        result = analyze_psychometric(answers_with_context, CAREER_ROLES)
+        result = await run_in_threadpool(analyze_psychometric, answers_with_context, CAREER_ROLES)
         
         # Note: Added both 'profile' and 'analysis' to support varying frontend states
         return {
@@ -292,9 +293,8 @@ async def analyze_personality(
             "profile": result,
             "analysis": result 
         }
-    except Exception as e:
-        print(f"Error during analysis: {str(e)}") # Help debug any future issues
+    except Exception:
         raise HTTPException(
-            status_code=500,
-            detail=f"Psychometric analysis failed: {str(e)}"
+            status_code=503,
+            detail="AI service is temporarily unavailable"
         )

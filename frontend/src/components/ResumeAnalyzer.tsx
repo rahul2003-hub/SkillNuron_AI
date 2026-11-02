@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import {
   FileText, CheckCircle, AlertCircle, XCircle, TrendingUp, Award, Brain, Zap,
   Eye, FileCheck, AlertTriangle, Upload, X, Loader2, Sparkles, Download, Clock,
-  FolderOpen, ChevronDown, ChevronUp,
+  FolderOpen, ChevronDown, ChevronUp, Trash2,
 } from 'lucide-react';
-import { analyzeResume, analyzeResumeFromText, saveResumeAnalysis, getResumeHistory, getResumeDownloadUrl } from '../services/api';
+import { analyzeResume, analyzeResumeFromText, saveResumeAnalysis, getResumeHistory, getResumeDownloadUrl, deleteResumeAnalysis } from '../services/api';
  
 interface ResumeAnalyzerProps {
   userId?: string;
@@ -48,6 +48,7 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
   const [historyError, setHistoryError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
  
   const loadHistory = () => {
     if (!userId) return;
@@ -88,9 +89,9 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
       const data = await analyzeResume(file, targetRole, jobDescription);
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
-      saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, data.resume_path, file.name).catch(
-        (e) => console.error('Failed to save resume analysis:', e)
-      );
+      if (!data.history_reused) {
+        await saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, data.resume_path, file.name, data.source_hash, targetRole, jobDescription);
+      }
     } catch (err: any) {
       // PDF text extraction failed — show paste fallback
       if (err.message === 'PDF_TEXT_EXTRACTION_FAILED') {
@@ -117,9 +118,9 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
       setAnalysisData(data.analysis);
       setIsAnalyzed(true);
       setShowTextFallback(false);
-      saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, null, 'pasted_text.txt').catch(
-        (e) => console.error('Failed to save resume analysis:', e)
-      );
+      if (!data.history_reused) {
+        await saveResumeAnalysis(data.analysis?.overall_score ?? 0, data.analysis, null, 'pasted_text.txt', data.source_hash, targetRole, jobDescription);
+      }
     } catch (err: any) {
       setError(err.message || 'Analysis failed. Please try again.');
     } finally {
@@ -161,6 +162,20 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
       setHistoryError('Download failed');
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this saved resume analysis? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      await deleteResumeAnalysis(id);
+      setResumes(items => items.filter(item => item.id !== id));
+      if (expandedId === id) setExpandedId(null);
+    } catch (err: any) {
+      setHistoryError(err.message || 'Failed to delete resume analysis');
+    } finally {
+      setDeletingId(null);
     }
   };
  
@@ -431,6 +446,25 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                       </div>
                     ))}
                   </div>
+                  {analysisData.ats_breakdown && (
+                    <div className="mt-6 border-t border-base-300 pt-4">
+                      <p className="mb-3 text-sm font-medium text-base-content">ATS evaluation methodology</p>
+                      <div className="grid gap-2 text-sm text-base-content/70 sm:grid-cols-2">
+                        {[
+                          ['Resume structure and formatting', 20, analysisData.ats_breakdown.structure_formatting],
+                          ['ATS-readable section headings', 15, analysisData.ats_breakdown.ats_readable_headings],
+                          ['Keyword optimization', 30, analysisData.ats_breakdown.keyword_optimization],
+                          ['Skills and technology relevance', 20, analysisData.ats_breakdown.skills_relevance],
+                          ['Contact information and links', 15, analysisData.ats_breakdown.contact_information_links],
+                        ].map(([label, weight, score]) => (
+                          <div key={label as string} className="flex justify-between gap-3 rounded bg-base-200 px-3 py-2">
+                            <span>{label as string} <span className="opacity-60">({weight as number})</span></span>
+                            <span className="font-medium text-base-content">{score as number}/{weight as number}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
  
                 <div className="bg-base-100 rounded-xl shadow-sm p-6">
@@ -481,6 +515,57 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                   ))}
                 </div>
               </div>
+
+              {(analysisData.role_suitability?.length > 0 || analysisData.interview_preparation?.length > 0) && (
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="bg-base-100 rounded-xl shadow-sm p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Brain className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg text-base-content">Job Role Suitability</h3>
+                    </div>
+                    <div className="space-y-4">
+                      {analysisData.role_suitability?.map((role: any, i: number) => (
+                        <div key={i} className="rounded-lg bg-base-200 p-4">
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <h4 className="font-medium text-base-content">{role.role}</h4>
+                            <span className={`badge ${scoreBadge(role.fit_score)}`}>{role.fit_score}/100 fit</span>
+                          </div>
+                          <p className="text-sm text-base-content/70">{role.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-base-100 rounded-xl shadow-sm p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FileCheck className="w-5 h-5 text-info" />
+                      <h3 className="text-lg text-base-content">Interview Preparation</h3>
+                    </div>
+                    <div className="space-y-4">
+                      {analysisData.interview_preparation?.map((item: any, i: number) => (
+                        <div key={i} className="rounded-lg bg-base-200 p-4">
+                          <p className="font-medium text-base-content">{item.question}</p>
+                          {item.why_ask && <p className="mt-1 text-sm text-base-content/70">Why this may come up: {item.why_ask}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {analysisData.final_recommendations?.length > 0 && (
+                <div className="bg-base-100 rounded-xl shadow-sm p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Zap className="w-5 h-5 text-warning" />
+                    <h3 className="text-lg text-base-content">Final Recommendations</h3>
+                  </div>
+                  <ol className="space-y-3 list-decimal list-inside text-base-content/80">
+                    {analysisData.final_recommendations.map((recommendation: string, i: number) => (
+                      <li key={i} className="pl-1">{recommendation}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
  
               <button onClick={handleReset} className="w-full border-2 border-primary text-primary py-3 rounded-lg hover:bg-primary/10 ">
                 Analyze Another Resume
@@ -579,6 +664,17 @@ export function ResumeAnalyzer({ userId }: ResumeAnalyzerProps) {
                               : <Download className="w-4 h-4" />}
                           </button>
                         )}
+
+                        <button
+                          className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                          title="Delete analysis"
+                          onClick={e => { e.stopPropagation(); handleDelete(r.id); }}
+                          disabled={deletingId === r.id}
+                        >
+                          {deletingId === r.id
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Trash2 className="w-4 h-4" />}
+                        </button>
  
                         {expanded ? <ChevronUp className="w-4 h-4 text-base-content/40" /> : <ChevronDown className="w-4 h-4 text-base-content/40" />}
                       </div>

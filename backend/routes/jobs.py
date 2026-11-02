@@ -1,4 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Header, Query
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
@@ -227,14 +228,14 @@ async def polish_description(
         raise HTTPException(status_code=400, detail="Please provide a description to polish")
 
     try:
-        result = polish_job_description(
+        result = await run_in_threadpool(polish_job_description,
             description=request.description,
             title=request.title,
             required_skills=request.required_skills
         )
         return {"success": True, "polished_description": result.get("polished_description", "")}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"JD polishing failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI service is temporarily unavailable")
 
 
 @router.post("/recommend-skills")
@@ -247,10 +248,10 @@ async def recommend_skills(
         return {"success": True, "skills": []}
 
     try:
-        skills = recommend_skills_for_role(request.title.strip())
+        skills = await run_in_threadpool(recommend_skills_for_role, request.title.strip())
         return {"success": True, "skills": skills}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Skill recommendation failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI service is temporarily unavailable")
 
 
 @router.delete("/{job_id}")
@@ -309,7 +310,7 @@ async def match_jobs(
     ]
 
     try:
-        matches = match_jobs_to_candidate(
+        matches = await run_in_threadpool(match_jobs_to_candidate,
             user_skills=request.user_skills,
             job_listings=job_listings
         )
@@ -318,8 +319,8 @@ async def match_jobs(
             "user_skills": request.user_skills,
             "matches": matches
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Job matching failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI service is temporarily unavailable")
 
 
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID")

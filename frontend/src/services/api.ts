@@ -95,14 +95,35 @@ export async function analyzeResume(file: File, targetRole = "", jobDescription 
   return response.json();
 }
 
-export async function saveResumeAnalysis(overallScore: number, analysisJson: any, resumePath?: string | null, filename?: string) {
+export async function saveResumeAnalysis(
+  overallScore: number,
+  analysisJson: any,
+  resumePath?: string | null,
+  filename?: string,
+  sourceHash = "",
+  targetRole = "",
+  jobDescription = "",
+) {
   const headers = await getHeaders();
   const response = await fetch(`${BASE_URL}/api/profile/resume/save`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ overall_score: overallScore, analysis_json: analysisJson, resume_path: resumePath, filename }),
+    body: JSON.stringify({ overall_score: overallScore, analysis_json: analysisJson, resume_path: resumePath, filename, source_hash: sourceHash, target_role: targetRole, job_description: jobDescription }),
   });
-  if (!response.ok) throw new Error("Failed to save resume analysis");
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to save resume analysis");
+  }
+  return response.json();
+}
+
+export async function deleteResumeAnalysis(analysisId: string) {
+  const headers = await getHeaders();
+  const response = await fetch(`${BASE_URL}/api/profile/resume/history/${analysisId}`, { method: "DELETE", headers });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || "Failed to delete resume analysis");
+  }
   return response.json();
 }
 

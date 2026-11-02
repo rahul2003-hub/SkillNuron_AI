@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from database import get_db
@@ -8,6 +9,7 @@ from models.job import JobPosting
 from models.skill import SKILL_SUGGESTIONS
 from models.catalog import get_catalog, auto_categorize, get_bucket
 from models.job_alert import JobAlertPreference
+from services.storage_service import delete_resume
 from deps import get_current_user
 import uuid
 from datetime import datetime, timezone
@@ -37,6 +39,9 @@ class SaveResumeAnalysisRequest(BaseModel):
     analysis_json: dict
     resume_path: str | None = None
     filename: str | None = None
+    source_hash: str
+    target_role: str = ""
+    job_description: str = ""
 
 
 class UpdateProfileRequest(BaseModel):
@@ -460,10 +465,42 @@ async def save_resume_analysis(
     current_user: User = Depends(get_current_user)
 ):
     """Save resume analysis result for authenticated user"""
+    source = {
+        "hash": request.source_hash,
+        "target_role": " ".join(request.target_role.split()),
+        "job_description": " ".join(request.job_description.split()),
+    }
+    existing = next((a for a in db.query(ResumeAnalysis).filter(ResumeAnalysis.user_id == current_user.id).all()
+                     if (a.analysis_json or {}).get("_source") == source), None)
+    if existing:
+        return {"success": True, "message": "Existing resume analysis reused", "id": str(existing.id), "reused": True}
+
+    # Keep the newest 14 existing analyses before adding a new one. This also repairs
+    # histories created before the 15-item limit was introduced.
+    saved_analyses = (
+        db.query(ResumeAnalysis)
+        .filter(ResumeAnalysis.user_id == current_user.id)
+        .order_by(ResumeAnalysis.created_at.asc())
+        .all()
+    )
+    removed_count = 0
+    while len(saved_analyses) >= 15:
+        oldest = saved_analyses.pop(0)
+        if oldest.resume_path:
+            try:
+                await delete_resume(oldest.resume_path)
+            except Exception:
+                # A stale storage object must not prevent the history limit being enforced.
+                pass
+        db.delete(oldest)
+        removed_count += 1
+
+    analysis_json = dict(request.analysis_json)
+    analysis_json["_source"] = source
     analysis = ResumeAnalysis(
         user_id=current_user.id,
         overall_score=request.overall_score,
-        analysis_json=request.analysis_json,
+        analysis_json=analysis_json,
         resume_path=request.resume_path,
         filename=request.filename
     )
@@ -471,7 +508,41 @@ async def save_resume_analysis(
     db.add(analysis)
     db.commit()
 
-    return {"success": True, "message": "Resume analysis saved"}
+    return {
+        "success": True,
+        "message": "Resume analysis saved",
+        "id": str(analysis.id),
+        "reused": False,
+        "removed_oldest": removed_count,
+    }
+
+
+@router.delete("/resume/history/{analysis_id}")
+async def delete_resume_analysis(
+    analysis_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        analysis_uuid = uuid.UUID(analysis_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid resume analysis id")
+
+    analysis = db.query(ResumeAnalysis).filter(
+        ResumeAnalysis.id == analysis_uuid,
+        ResumeAnalysis.user_id == current_user.id,
+    ).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Resume analysis not found")
+    if analysis.resume_path:
+        try:
+            await delete_resume(analysis.resume_path)
+        except Exception:
+            # The analysis must remain removable even if a stale storage object cannot be removed.
+            pass
+    db.delete(analysis)
+    db.commit()
+    return {"success": True}
 
 
 @router.get("/resume/history/{user_id}")
@@ -530,7 +601,7 @@ async def get_skill_gap(
         raise HTTPException(status_code=400, detail="Please provide a target role")
 
     try:
-        result = analyze_skill_gap(
+        result = await run_in_threadpool(analyze_skill_gap,
             user_skills=request.user_skills,
             target_role=request.target_role
         )
@@ -540,8 +611,8 @@ async def get_skill_gap(
             "user_skills": request.user_skills,
             "analysis": result
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Skill gap analysis failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI service is temporarily unavailable")
 
 
 @router.post("/career-path")
@@ -556,7 +627,7 @@ async def get_career_path(
         raise HTTPException(status_code=400, detail="Please provide at least one skill")
 
     try:
-        result = recommend_career_path(
+        result = await run_in_threadpool(recommend_career_path,
             user_skills=request.user_skills,
             experience_years=request.experience_years,
             target_role=request.target_role
@@ -566,5 +637,5 @@ async def get_career_path(
             "target_role": request.target_role,
             "recommendation": result
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Career path recommendation failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=503, detail="AI service is temporarily unavailable")
